@@ -89,15 +89,13 @@ export default function TemplateLibrary() {
   const [selectedCategory, setSelectedCategory] = useState("");
 
   const handleUseTemplate = (templateId) => {
-    // TODO: Implement template usage logic
-    console.log(`Using template ${templateId}`);
-    // This could redirect to contract creation with pre-filled template
+    // Redirect to new contract page with template ID
+    window.location.href = `/contracts/new?template=${templateId}`;
   };
 
   const handleBlankDocument = () => {
-    // TODO: Implement blank document creation
-    console.log("Creating blank document");
-    // This could redirect to contract creation without template
+    // Redirect to new contract page without template
+    window.location.href = "/contracts/new";
   };
 
   const handleNewTemplate = () => {
@@ -130,27 +128,27 @@ export default function TemplateLibrary() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button
-            onClick={handleBlankDocument}
-            variant="outline"
-            size="sm"
-            className="flex items-center gap-2"
-          >
-            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-            Blank Document (New)
-          </Button>
-          <Button
-            onClick={handleNewTemplate}
-            size="sm"
-            className="flex items-center gap-2"
-          >
-            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-            </svg>
-            New Template
-          </Button>
+            <Button
+              onClick={handleBlankDocument}
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-2 cursor-pointer"
+            >
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              Blank Document (New)
+            </Button>
+            <Button
+              onClick={handleNewTemplate}
+              size="sm"
+              className="flex items-center gap-2 cursor-pointer"
+            >
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+              </svg>
+              New Template
+            </Button>
         </div>
       </div>
 
@@ -184,7 +182,7 @@ export default function TemplateLibrary() {
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery("")}
-                className="absolute inset-y-0 right-0 pr-3 flex items-center text-[var(--muted)] hover:text-[var(--foreground)] transition-colors"
+                className="absolute inset-y-0 right-0 pr-3 flex items-center text-[var(--muted)] hover:text-[var(--foreground)] transition-colors cursor-pointer"
               >
                 <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -235,7 +233,7 @@ export default function TemplateLibrary() {
                 setSearchQuery("");
                 setSelectedCategory("");
               }}
-              className="text-xs px-3 py-2 bg-[var(--muted)]/20 text-[var(--muted)] rounded-md hover:bg-[var(--muted)]/30 transition-colors whitespace-nowrap"
+              className="text-xs px-3 py-2 bg-[var(--muted)]/20 text-[var(--muted)] rounded-md hover:bg-[var(--muted)]/30 transition-colors whitespace-nowrap cursor-pointer"
             >
               Clear all
             </button>
@@ -290,13 +288,13 @@ export default function TemplateLibrary() {
                 </div>
               </div>
 
-              <Button
-                onClick={() => handleUseTemplate(template.id)}
-                className="w-full mt-4"
-                size="sm"
-              >
-                Use Template
-              </Button>
+               <Button
+                 onClick={() => handleUseTemplate(template.id)}
+                 className="w-full mt-4 cursor-pointer"
+                 size="sm"
+               >
+                 Use Template
+               </Button>
             </CardContent>
           </Card>
         ))}
@@ -319,7 +317,7 @@ export default function TemplateLibrary() {
                 setSearchQuery("");
                 setSelectedCategory("");
               }}
-              className="mt-4 px-4 py-2 text-sm bg-[var(--primary)] text-white rounded-lg hover:bg-[var(--primary)]/90 transition-colors"
+              className="mt-4 px-4 py-2 text-sm bg-[var(--primary)] text-white rounded-lg hover:bg-[var(--primary)]/90 transition-colors cursor-pointer"
             >
               Clear All Filters
             </button>

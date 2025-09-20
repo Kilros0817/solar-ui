@@ -76,7 +76,7 @@ export default function ContractsIndex() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Contracts</h1>
         <Button asChild>
-          <Link href="/contracts/new">Create Contract</Link>
+          <Link href="/templates">Create Contract</Link>
         </Button>
       </div>
 
