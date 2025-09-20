@@ -6,7 +6,7 @@ import { cloneElement, isValidElement } from "react";
 export default function Button({ children, className, variant = "primary", size = "md", asChild = false, ...props }) {
   const base = "inline-flex items-center justify-center rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none";
   const variants = {
-    primary: "bg-[var(--primary)] text-white hover:bg-[var(--primary-600)] focus:ring-[var(--primary)]",
+    primary: "bg-black text-white hover:bg-gray-800 focus:ring-gray-500",
     secondary: "bg-white/10 text-white hover:bg-white/20 focus:ring-white/30",
     outline: "border border-[var(--border)] text-[var(--foreground)] hover:bg-white/10 focus:ring-white/20",
     subtle: "bg-white/10 text-[var(--foreground)] hover:bg-white/20 focus:ring-white/20",
