@@ -114,7 +114,7 @@ export default function NewContractPage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-6">
+    <div className="mx-auto space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Create Contract</h1>
         <Link className="text-sm text-[var(--primary)] hover:underline" href="/dashboard">Dashboard</Link>
