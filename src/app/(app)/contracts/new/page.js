@@ -12,6 +12,7 @@ export default function NewContractPage() {
   const [description, setDescription] = useState("");
   const [contractValue, setContractValue] = useState("");
   const [priority, setPriority] = useState("Medium");
+  const [clientCompany, setClientCompany] = useState("");
   const [errors, setErrors] = useState({});
   const [selectedDivisions, setSelectedDivisions] = useState([]);
   const [divisionSections, setDivisionSections] = useState({});
@@ -32,6 +33,7 @@ export default function NewContractPage() {
     if (!title.trim()) next.title = "Title is required";
     if (!description.trim()) next.description = "Description is required";
     if (contractValue === "" || Number(contractValue) < 0) next.contractValue = "Enter a non-negative value";
+    if (!clientCompany.trim()) next.clientCompany = "Client/Company is required";
     return next;
   }
 
@@ -57,6 +59,7 @@ export default function NewContractPage() {
       description: description.trim(),
       contractValue: Number(contractValue),
       priority,
+      clientCompany: clientCompany.trim(),
       divisions: selectedDivisions.map((divId) => ({
         id: divId,
         name: availableDivisions.find((d) => d.id === divId)?.name || divId,
@@ -135,6 +138,17 @@ export default function NewContractPage() {
                 placeholder="Contract title"
               />
               {errors.title && <p className="text-red-600 text-sm">{errors.title}</p>}
+            </div>
+
+            <div className="space-y-2">
+              <label className="block text-sm font-medium">Client/Company</label>
+              <input
+                value={clientCompany}
+                onChange={(e) => setClientCompany(e.target.value)}
+                className="w-full rounded-lg border border-[var(--border)] px-3 py-2 bg-white text-[var(--foreground)]"
+                placeholder="Enter client or company name"
+              />
+              {errors.clientCompany && <p className="text-red-600 text-sm">{errors.clientCompany}</p>}
             </div>
 
             <div className="space-y-2">
