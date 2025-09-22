@@ -75,14 +75,22 @@ export default function ContractDetail({ params }) {
                 {div.sections.length === 0 ? (
                   <p className="text-sm text-[var(--muted)]">No sections.</p>
                 ) : (
-                  <ul className="list-disc pl-5 space-y-1">
+                  <div className="space-y-3">
                     {div.sections.map((s, idx) => (
-                      <li key={idx}>
-                        <span className="font-medium">{s.title}</span>
-                        {s.notes ? <span className="text-[var(--muted)]"> — {s.notes}</span> : null}
-                      </li>
+                      <div key={idx} className="border-l-2 border-[var(--border)] pl-3">
+                        <div className="font-medium mb-2">{s.title}</div>
+                        {s.clauses && s.clauses.length > 0 ? (
+                          <ul className="list-disc pl-5 space-y-1 text-sm text-[var(--muted)]">
+                            {s.clauses.map((clause, clauseIdx) => (
+                              <li key={clauseIdx}>{clause}</li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <p className="text-sm text-[var(--muted)]">No clauses defined.</p>
+                        )}
+                      </div>
                     ))}
-                  </ul>
+                  </div>
                 )}
               </div>
             ))}

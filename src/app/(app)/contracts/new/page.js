@@ -65,7 +65,7 @@ export default function NewContractPage() {
         name: availableDivisions.find((d) => d.id === divId)?.name || divId,
         sections: (divisionSections[divId] || []).map((s) => ({
           title: s.title.trim(),
-          notes: s.notes?.trim() || "",
+          clauses: (s.clauses || []).map(c => c.trim()).filter(c => c.length > 0),
         })),
       })),
       createdAt: new Date().toISOString(),
@@ -95,7 +95,7 @@ export default function NewContractPage() {
   function addSection(divId) {
     setDivisionSections((prev) => {
       const next = [...(prev[divId] || [])];
-      next.push({ title: "", notes: "" });
+      next.push({ title: "", clauses: [] });
       return { ...prev, [divId]: next };
     });
   }
@@ -112,6 +112,33 @@ export default function NewContractPage() {
     setDivisionSections((prev) => {
       const next = [...(prev[divId] || [])];
       next.splice(index, 1);
+      return { ...prev, [divId]: next };
+    });
+  }
+
+  function addClause(divId, sectionIndex) {
+    setDivisionSections((prev) => {
+      const next = [...(prev[divId] || [])];
+      next[sectionIndex] = {
+        ...next[sectionIndex],
+        clauses: [...(next[sectionIndex].clauses || []), ""]
+      };
+      return { ...prev, [divId]: next };
+    });
+  }
+
+  function updateClause(divId, sectionIndex, clauseIndex, value) {
+    setDivisionSections((prev) => {
+      const next = [...(prev[divId] || [])];
+      next[sectionIndex].clauses[clauseIndex] = value;
+      return { ...prev, [divId]: next };
+    });
+  }
+
+  function removeClause(divId, sectionIndex, clauseIndex) {
+    setDivisionSections((prev) => {
+      const next = [...(prev[divId] || [])];
+      next[sectionIndex].clauses.splice(clauseIndex, 1);
       return { ...prev, [divId]: next };
     });
   }
@@ -237,25 +264,17 @@ export default function NewContractPage() {
                       {sections.length === 0 ? (
                         <p className="text-sm text-[var(--muted)]">No sections yet.</p>
                       ) : (
-                        <div className="space-y-3">
+                        <div className="space-y-4">
                           {sections.map((section, idx) => (
-                            <div key={idx} className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                              <input
-                                value={section.title}
-                                onChange={(e) =>
-                                  updateSection(divId, idx, "title", e.target.value)
-                                }
-                                className="rounded-lg border border-[var(--border)] px-3 py-2 bg-white text-[var(--foreground)]"
-                                placeholder="Section title"
-                              />
-                              <div className="flex gap-2">
+                            <div key={idx} className="rounded-lg border border-[var(--border)] p-4 bg-white/50">
+                              <div className="flex gap-2 mb-3">
                                 <input
-                                  value={section.notes}
+                                  value={section.title}
                                   onChange={(e) =>
-                                    updateSection(divId, idx, "notes", e.target.value)
+                                    updateSection(divId, idx, "title", e.target.value)
                                   }
                                   className="flex-1 rounded-lg border border-[var(--border)] px-3 py-2 bg-white text-[var(--foreground)]"
-                                  placeholder="Notes/instructions (optional)"
+                                  placeholder="Section title"
                                 />
                                 <Button
                                   type="button"
@@ -264,6 +283,47 @@ export default function NewContractPage() {
                                 >
                                   Remove
                                 </Button>
+                              </div>
+                              
+                              <div className="space-y-2">
+                                <div className="flex items-center justify-between">
+                                  <label className="text-sm font-medium text-[var(--muted)]">Clauses</label>
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => addClause(divId, idx)}
+                                  >
+                                    Add Clause
+                                  </Button>
+                                </div>
+                                
+                                {section.clauses && section.clauses.length > 0 ? (
+                                  <div className="space-y-2">
+                                    {section.clauses.map((clause, clauseIdx) => (
+                                      <div key={clauseIdx} className="flex gap-2">
+                                        <input
+                                          value={clause}
+                                          onChange={(e) =>
+                                            updateClause(divId, idx, clauseIdx, e.target.value)
+                                          }
+                                          className="flex-1 rounded-lg border border-[var(--border)] px-3 py-2 bg-white text-[var(--foreground)] text-sm"
+                                          placeholder="Enter clause text"
+                                        />
+                                        <Button
+                                          type="button"
+                                          size="sm"
+                                          variant="outline"
+                                          onClick={() => removeClause(divId, idx, clauseIdx)}
+                                        >
+                                          Remove
+                                        </Button>
+                                      </div>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <p className="text-sm text-[var(--muted)]">No clauses yet. Click "Add Clause" to add one.</p>
+                                )}
                               </div>
                             </div>
                           ))}
@@ -276,7 +336,7 @@ export default function NewContractPage() {
             )}
 
             <div className="pt-2">
-              <Button type="button" onClick={handleContinue}>Continue</Button>
+              <Button type="button" onClick={handleContinue}>Confirm</Button>
             </div>
           </div>
         </CardContent>
