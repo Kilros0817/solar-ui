@@ -11,10 +11,13 @@ export default function LoginPage() {
 
   const users = useMemo(
     () => [
-      { id: "u-legal-1", name: "Alice Legal", role: "legal" },
-      { id: "u-legal-2", name: "Bob Legal", role: "legal" },
-      { id: "u-leader-1", name: "Cara Leader", role: "leader" },
-      { id: "u-member-1", name: "Dave Member", role: "member" },
+      { id: "u-legal-1", name: "Alice Legal", role: "Legal Team", division: null },
+      { id: "u-legal-2", name: "Bob Legal", role: "Legal Team", division: null },
+      { id: "u-leader-legal", name: "Cara Legal Leader", role: "Division Leader", division: "legal" },
+      { id: "u-leader-finance", name: "David Finance Leader", role: "Division Leader", division: "finance" },
+      { id: "u-leader-procurement", name: "Eva Procurement Leader", role: "Division Leader", division: "procurement" },
+      { id: "u-leader-operations", name: "Frank Operations Leader", role: "Division Leader", division: "operations" },
+      { id: "u-leader-compliance", name: "Grace Compliance Leader", role: "Division Leader", division: "compliance" },
     ],
     []
   );
@@ -30,7 +33,13 @@ export default function LoginPage() {
     const user = users.find((u) => u.id === selectedUserId);
     if (!user) return;
     localStorage.setItem("sessionUser", JSON.stringify(user));
-    router.replace("/dashboard");
+    
+    // Route based on user role
+    if (user.role === "Division Leader") {
+      router.replace("/division/dashboard");
+    } else {
+      router.replace("/dashboard");
+    }
   }
 
   return (
@@ -52,7 +61,7 @@ export default function LoginPage() {
                 <option value="">-- Choose --</option>
                 {users.map((u) => (
                   <option key={u.id} value={u.id}>
-                    {u.name} ({u.role})
+                    {u.name} ({u.role}{u.division ? ` - ${u.division}` : ''})
                   </option>
                 ))}
               </select>

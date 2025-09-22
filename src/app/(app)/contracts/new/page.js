@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Button from "@/components/ui/Button";
@@ -13,9 +13,11 @@ export default function NewContractPage() {
   const [contractValue, setContractValue] = useState("");
   const [priority, setPriority] = useState("Medium");
   const [clientCompany, setClientCompany] = useState("");
+  const [assignedDivision, setAssignedDivision] = useState("");
   const [errors, setErrors] = useState({});
   const [selectedDivisions, setSelectedDivisions] = useState([]);
   const [divisionSections, setDivisionSections] = useState({});
+  const [user, setUser] = useState(null);
 
   const availableDivisions = useMemo(
     () => [
@@ -28,12 +30,25 @@ export default function NewContractPage() {
     []
   );
 
+  useEffect(() => {
+    try {
+      const stored = JSON.parse(localStorage.getItem("sessionUser") || "null");
+      setUser(stored);
+    } catch {
+      setUser(null);
+    }
+  }, []);
+
   function validate() {
     const next = {};
     if (!title.trim()) next.title = "Title is required";
     if (!description.trim()) next.description = "Description is required";
-    if (contractValue === "" || Number(contractValue) < 0) next.contractValue = "Enter a non-negative value";
+    // Only require contract value for legal team
+    if (user?.role !== "Division Leader" && (contractValue === "" || Number(contractValue) < 0)) {
+      next.contractValue = "Enter a non-negative value";
+    }
     if (!clientCompany.trim()) next.clientCompany = "Client/Company is required";
+    if (!assignedDivision.trim()) next.assignedDivision = "Assigned Division is required";
     return next;
   }
 
@@ -57,9 +72,10 @@ export default function NewContractPage() {
       id: crypto.randomUUID(),
       title: title.trim(),
       description: description.trim(),
-      contractValue: Number(contractValue),
+      contractValue: user?.role !== "Division Leader" ? Number(contractValue) : 0,
       priority,
       clientCompany: clientCompany.trim(),
+      assignedDivision: assignedDivision.trim(),
       divisions: selectedDivisions.map((divId) => ({
         id: divId,
         name: availableDivisions.find((d) => d.id === divId)?.name || divId,
@@ -189,21 +205,23 @@ export default function NewContractPage() {
               {errors.description && <p className="text-red-600 text-sm">{errors.description}</p>}
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label className="block text-sm font-medium">Contract Value</label>
-                <input
-                  type="number"
-                  inputMode="decimal"
-                  value={contractValue}
-                  onChange={(e) => setContractValue(e.target.value)}
-                  className="w-full rounded-lg border border-[var(--border)] px-3 py-2 bg-white text-[var(--foreground)]"
-                  placeholder="0.00"
-                />
-                {errors.contractValue && (
-                  <p className="text-red-600 text-sm">{errors.contractValue}</p>
-                )}
-              </div>
+            <div className={`grid grid-cols-1 gap-4 ${user?.role !== "Division Leader" ? "sm:grid-cols-3" : "sm:grid-cols-2"}`}>
+              {user?.role !== "Division Leader" && (
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium">Contract Value</label>
+                  <input
+                    type="number"
+                    inputMode="decimal"
+                    value={contractValue}
+                    onChange={(e) => setContractValue(e.target.value)}
+                    className="w-full rounded-lg border border-[var(--border)] px-3 py-2 bg-white text-[var(--foreground)]"
+                    placeholder="0.00"
+                  />
+                  {errors.contractValue && (
+                    <p className="text-red-600 text-sm">{errors.contractValue}</p>
+                  )}
+                </div>
+              )}
               <div className="space-y-2">
                 <label className="block text-sm font-medium">Priority</label>
                 <select
@@ -216,6 +234,24 @@ export default function NewContractPage() {
                   <option>High</option>
                   <option>Critical</option>
                 </select>
+              </div>
+              <div className="space-y-2">
+                <label className="block text-sm font-medium">Assigned Division *</label>
+                <select
+                  value={assignedDivision}
+                  onChange={(e) => setAssignedDivision(e.target.value)}
+                  className="w-full rounded-lg border border-[var(--border)] px-3 py-2 bg-white text-[var(--foreground)]"
+                >
+                  <option value="">Select Division</option>
+                  {availableDivisions.map((div) => (
+                    <option key={div.id} value={div.id}>
+                      {div.name}
+                    </option>
+                  ))}
+                </select>
+                {errors.assignedDivision && (
+                  <p className="text-red-600 text-sm">{errors.assignedDivision}</p>
+                )}
               </div>
             </div>
           </div>

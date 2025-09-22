@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
 import PriorityBadge from "@/components/ui/PriorityBadge";
 import TabButton from "@/components/ui/TabButton";
-import { seedContractsIfEmpty } from "@/lib/activity";
+import { seedContracts, seedMembers } from "@/lib/seedData";
 import { Eye, Edit, Download, Building2, Calendar, DollarSign, FileText, Clock, Search, ChevronDown } from "lucide-react";
 
 export default function ContractsIndex() {
@@ -16,7 +16,10 @@ export default function ContractsIndex() {
   const [sortBy, setSortBy] = useState("mostRecent");
 
   useEffect(() => {
-    seedContractsIfEmpty();
+    // Seed dummy data
+    seedContracts();
+    seedMembers();
+    
     try {
       const all = JSON.parse(localStorage.getItem("contracts") || "[]");
       setContracts(all);
@@ -39,8 +42,8 @@ export default function ContractsIndex() {
       const query = searchQuery.toLowerCase().trim();
       result = result.filter((c) => 
         c.title.toLowerCase().includes(query) ||
-        c.client.toLowerCase().includes(query) ||
-        (c.company && c.company.toLowerCase().includes(query))
+        (c.clientCompany && c.clientCompany.toLowerCase().includes(query)) ||
+        (c.description && c.description.toLowerCase().includes(query))
       );
     }
     
@@ -52,9 +55,9 @@ export default function ContractsIndex() {
         case "dueDate":
           return new Date(a.dueDate || a.createdAt) - new Date(b.dueDate || b.createdAt);
         case "clientName":
-          return a.client.localeCompare(b.client);
+          return (a.clientCompany || "").localeCompare(b.clientCompany || "");
         case "contractPrice":
-          return b.value - a.value;
+          return (b.contractValue || 0) - (a.contractValue || 0);
         default:
           return 0;
       }
@@ -143,28 +146,48 @@ export default function ContractsIndex() {
                       <div className="flex items-center gap-4 mt-2 text-sm text-[var(--muted)]">
                         <div className="flex items-center gap-1">
                           <Building2 size={14} className="text-gray-500" />
-                          <span className="font-medium">{c.client}</span>
+                          <span className="font-medium">{c.clientCompany || 'Not specified'}</span>
                         </div>
                         <span>•</span>
                         <div className="flex items-center gap-1">
                           <Calendar size={14} className="text-gray-500" />
-                          <span className="font-medium">{new Date(c.dueDate || c.createdAt).toLocaleDateString()}</span>
+                          <span className="font-medium">{new Date(c.createdAt).toLocaleDateString()}</span>
                         </div>
                         <span>•</span>
                         <div className="flex items-center gap-1">
-                          <span className="font-medium">${c.value.toLocaleString()}</span>
+                          <span className="font-medium">${(c.contractValue || 0).toLocaleString()}</span>
                         </div>
+                        {c.assignedDivision && (
+                          <>
+                            <span>•</span>
+                            <div className="flex items-center gap-1">
+                              <span className="text-xs px-2 py-1 bg-[var(--primary)]/10 text-[var(--primary)] rounded">
+                                {c.assignedDivision.charAt(0).toUpperCase() + c.assignedDivision.slice(1)}
+                              </span>
+                            </div>
+                          </>
+                        )}
                       </div>
                       <div className="flex items-center gap-4 mt-1 text-xs text-[var(--muted)]">
                         <div className="flex items-center gap-1">
                           <FileText size={12} className="text-gray-500" />
-                          <span>v{c.version || '1.0'}</span>
+                          <span>v1.0</span>
                         </div>
                         <span>•</span>
                         <div className="flex items-center gap-1">
                           <Clock size={12} className="text-gray-500" />
-                          <span>{new Date(c.modifiedAt || c.createdAt).toLocaleDateString()}</span>
+                          <span>{new Date(c.createdAt).toLocaleDateString()}</span>
                         </div>
+                        {c.divisions && c.divisions.length > 0 && (
+                          <>
+                            <span>•</span>
+                            <div className="flex items-center gap-1">
+                              <span className="text-xs">
+                                {c.divisions.length} section{c.divisions.length !== 1 ? 's' : ''}
+                              </span>
+                            </div>
+                          </>
+                        )}
                       </div>
                     </div>
                     <div className="ml-4 flex-shrink-0 flex items-center gap-2">
@@ -197,6 +220,7 @@ export default function ContractsIndex() {
     </div>
   );
 }
+
 
 
 

@@ -8,6 +8,16 @@ import Badge from "@/components/ui/Badge";
 export default function ContractDetail({ params }) {
   const { id } = params;
   const [contract, setContract] = useState(null);
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    try {
+      const stored = JSON.parse(localStorage.getItem("sessionUser") || "null");
+      setUser(stored);
+    } catch {
+      setUser(null);
+    }
+  }, []);
 
   useEffect(() => {
     try {
@@ -46,11 +56,13 @@ export default function ContractDetail({ params }) {
         </CardHeader>
         <CardContent>
           <p className="text-[var(--muted)]">{contract.description}</p>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
-            <div className="rounded-lg border border-[var(--border)] p-3 bg-white/80">
-              <div className="text-xs text-[var(--muted)]">Value</div>
-              <div className="font-medium">{contract.contractValue}</div>
-            </div>
+          <div className={`grid grid-cols-1 gap-4 mt-4 ${user?.role !== "Division Leader" ? "sm:grid-cols-3" : "sm:grid-cols-2"}`}>
+            {user?.role !== "Division Leader" && (
+              <div className="rounded-lg border border-[var(--border)] p-3 bg-white/80">
+                <div className="text-xs text-[var(--muted)]">Value</div>
+                <div className="font-medium">${contract.contractValue?.toLocaleString() || '0'}</div>
+              </div>
+            )}
             <div className="rounded-lg border border-[var(--border)] p-3 bg-white/80">
               <div className="text-xs text-[var(--muted)]">Priority</div>
               <div className="font-medium mt-1"><PriorityBadge priority={contract.priority} /></div>
@@ -59,6 +71,12 @@ export default function ContractDetail({ params }) {
               <div className="text-xs text-[var(--muted)]">Created</div>
               <div className="font-medium">{new Date(contract.createdAt).toLocaleString()}</div>
             </div>
+            {contract.assignedDivision && (
+              <div className="rounded-lg border border-[var(--border)] p-3 bg-white/80">
+                <div className="text-xs text-[var(--muted)]">Assigned Division</div>
+                <div className="font-medium capitalize">{contract.assignedDivision}</div>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>

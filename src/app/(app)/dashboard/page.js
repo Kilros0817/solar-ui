@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { seedActivitiesIfEmpty, getActivities, seedDeadlinesIfEmpty, getUpcomingDeadlines } from "@/lib/activity";
+import { seedContracts, seedMembers } from "@/lib/seedData";
 import Button from "@/components/ui/Button";
 import { Card, CardContent, CardHeader } from "@/components/ui/Card";
 import StatCard from "@/components/ui/StatCard";
@@ -17,6 +18,10 @@ export default function DashboardPage() {
   const [deadlineLimit, setDeadlineLimit] = useState(5);
 
   useEffect(() => {
+    // Seed dummy data
+    seedContracts();
+    seedMembers();
+    
     try {
       const all = JSON.parse(localStorage.getItem("contracts") || "[]");
       setContracts(all);
