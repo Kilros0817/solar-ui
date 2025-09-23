@@ -358,7 +358,7 @@ export default function NewContractPage() {
                                     ))}
                                   </div>
                                 ) : (
-                                  <p className="text-sm text-[var(--muted)]">No clauses yet. Click "Add Clause" to add one.</p>
+                                  <p className="text-sm text-[var(--muted)]">No clauses yet. Click &quot;Add Clause&quot; to add one.</p>
                                 )}
                               </div>
                             </div>
