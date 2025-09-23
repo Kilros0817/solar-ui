@@ -161,7 +161,7 @@ export default function ClauseEditPage({ params }) {
   if (!contract || !clauseData) {
     return (
       <div className="max-w-3xl mx-auto p-6 space-y-4">
-        <p>Clause not found or you don't have permission to edit this clause.</p>
+        <p>Clause not found or you don&apos;t have permission to edit this clause.</p>
         <Link className="text-[var(--primary)] hover:underline" href="/division/member/contracts">
           Back to My Clauses
         </Link>
