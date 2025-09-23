@@ -29,6 +29,10 @@ export default function AppLayout({ children }) {
         if (stored.role === "Division Leader" && !pathname.startsWith("/division")) {
           router.replace("/division/dashboard");
         }
+        // Redirect division members to their dashboard
+        if (stored.role && stored.role !== "Division Leader" && stored.role !== "Legal Team" && !pathname.startsWith("/division/member")) {
+          router.replace("/division/member/dashboard");
+        }
       }
     } catch {
       router.replace("/login");
@@ -48,6 +52,23 @@ export default function AppLayout({ children }) {
             )
           : [];
         setContracts(filteredContracts);
+      } else if (user?.role && user.role !== "Division Leader" && user.role !== "Legal Team") {
+        // For division members, count only contracts where they have assigned clauses
+        const memberContracts = all.filter(contract => {
+          if (contract.clauseAllocations) {
+            return Object.keys(contract.clauseAllocations).some(divisionId => {
+              if (contract.clauseAllocations[divisionId]) {
+                return Object.keys(contract.clauseAllocations[divisionId]).some(sectionTitle => {
+                  const allocations = contract.clauseAllocations[divisionId][sectionTitle];
+                  return allocations.some(allocation => allocation.assignedTo === user.id);
+                });
+              }
+              return false;
+            });
+          }
+          return false;
+        });
+        setContracts(memberContracts);
       } else {
         setContracts(all);
       }
@@ -105,6 +126,55 @@ export default function AppLayout({ children }) {
           </nav>
           <div className="space-y-2">
             <div className="text-sm text-[var(--muted)]">{user.name} ({user.role})</div>
+            <div className="text-xs text-[var(--muted)]">Division: {user.division || 'Not assigned'}</div>
+            <button onClick={logout} className="w-full rounded-lg border border-[var(--border)] px-3 py-2 hover:bg-black/5">Logout</button>
+          </div>
+        </aside>
+        <div className="flex-1 flex flex-col min-h-0" style={{ height: 'calc(100vh - 56px)' }}>
+          <main className="p-6 flex-1 min-h-0 overflow-y-auto">{children}</main>
+        </div>
+      </div>
+    );
+  }
+
+  // Division member layout
+  if (user.role && user.role !== "Division Leader" && user.role !== "Legal Team") {
+    const memberNavItems = [
+      { href: "/division/member/dashboard", label: "Dashboard", icon: LayoutDashboard },
+      { href: "/division/member/contracts", label: "My Clauses", icon: FileText },
+    ];
+
+    return (
+      <div className="flex">
+        <aside className="w-[260px] border-r border-[var(--border)] bg-white/80 backdrop-blur p-5 flex flex-col gap-4" style={{ height: 'calc(100vh - 56px)' }}>
+          <div className="px-2 py-1 text-xs uppercase tracking-wide text-gray-500">Division Member</div>
+          <nav className="flex-1 space-y-1">
+            {memberNavItems.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={
+                  "block rounded-lg px-3 py-2 transition-colors " +
+                  (pathname === item.href
+                    ? "bg-[var(--foreground)]/5 text-[var(--foreground)]"
+                    : "text-[var(--foreground)] hover:bg-black/5")
+                }
+              >
+                <span className="flex items-center justify-between gap-3">
+                  <span className="inline-flex items-center gap-2">
+                    {item.icon ? <item.icon size={18} /> : null}
+                    <span>{item.label}</span>
+                  </span>
+                  {item.href === "/division/member/contracts" && (
+                    <span className="text-xs text-[var(--muted)]">{counts.all}</span>
+                  )}
+                </span>
+              </Link>
+            ))}
+          </nav>
+          <div className="space-y-2">
+            <div className="text-sm text-[var(--muted)]">{user.name}</div>
+            <div className="text-xs text-[var(--muted)]">{user.role || 'Division Member'}</div>
             <div className="text-xs text-[var(--muted)]">Division: {user.division || 'Not assigned'}</div>
             <button onClick={logout} className="w-full rounded-lg border border-[var(--border)] px-3 py-2 hover:bg-black/5">Logout</button>
           </div>

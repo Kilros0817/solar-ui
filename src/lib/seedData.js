@@ -135,7 +135,20 @@ export function seedContracts() {
         }
       ],
       createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-      clauseAllocations: {}
+      clauseAllocations: {
+        "finance": {
+          "Service Level Agreement": [
+            { clauseIndex: 0, assignedTo: "member-7", assignedAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString() },
+            { clauseIndex: 1, assignedTo: "member-8", assignedAt: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString() },
+            { clauseIndex: 2, assignedTo: "member-7", assignedAt: new Date(Date.now() - 30 * 60 * 1000).toISOString() }
+          ],
+          "Compliance Requirements": [
+            { clauseIndex: 0, assignedTo: "member-8", assignedAt: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString() },
+            { clauseIndex: 1, assignedTo: "member-7", assignedAt: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString() },
+            { clauseIndex: 2, assignedTo: "member-8", assignedAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString() }
+          ]
+        }
+      }
     },
     {
       id: "contract-4",
@@ -162,7 +175,15 @@ export function seedContracts() {
         }
       ],
       createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-      clauseAllocations: {}
+      clauseAllocations: {
+        "operations": {
+          "Infrastructure Requirements": [
+            { clauseIndex: 0, assignedTo: "member-9", assignedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString() },
+            { clauseIndex: 1, assignedTo: "member-10", assignedAt: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString() },
+            { clauseIndex: 2, assignedTo: "member-9", assignedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString() }
+          ]
+        }
+      }
     },
     {
       id: "contract-5",
@@ -189,7 +210,98 @@ export function seedContracts() {
         }
       ],
       createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-      clauseAllocations: {}
+      clauseAllocations: {
+        "compliance": {
+          "Audit Scope": [
+            { clauseIndex: 0, assignedTo: "member-11", assignedAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString() },
+            { clauseIndex: 1, assignedTo: "member-12", assignedAt: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString() },
+            { clauseIndex: 2, assignedTo: "member-11", assignedAt: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString() }
+          ]
+        }
+      }
+    },
+    {
+      id: "contract-6",
+      title: "Marketing Services Agreement",
+      description: "Digital marketing and advertising services contract",
+      contractValue: 85000,
+      priority: "Medium",
+      clientCompany: "Creative Marketing Co",
+      assignedDivision: "legal",
+      divisions: [
+        {
+          id: "legal",
+          name: "Legal",
+          sections: [
+            {
+              title: "Service Terms",
+              clauses: [
+                "Campaign delivery within agreed timelines",
+                "Performance metrics reporting monthly",
+                "Creative approval process defined"
+              ]
+            },
+            {
+              title: "Payment Schedule",
+              clauses: [
+                "50% upfront payment required",
+                "Remaining 50% upon completion",
+                "Late payment fees apply after 15 days"
+              ]
+            }
+          ]
+        }
+      ],
+      createdAt: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(),
+      clauseAllocations: {
+        "legal": {
+          "Service Terms": [
+            { clauseIndex: 0, assignedTo: "member-1", assignedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString() },
+            { clauseIndex: 1, assignedTo: "member-2", assignedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString() },
+            { clauseIndex: 2, assignedTo: "member-3", assignedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString() }
+          ],
+          "Payment Schedule": [
+            { clauseIndex: 0, assignedTo: "member-1", assignedAt: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString() },
+            { clauseIndex: 1, assignedTo: "member-2", assignedAt: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString() },
+            { clauseIndex: 2, assignedTo: "member-3", assignedAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString() }
+          ]
+        }
+      }
+    },
+    {
+      id: "contract-7",
+      title: "HR Software License",
+      description: "Annual HR management software subscription",
+      contractValue: 45000,
+      priority: "Low",
+      clientCompany: "HR Solutions Inc",
+      assignedDivision: "procurement",
+      divisions: [
+        {
+          id: "procurement",
+          name: "Procurement",
+          sections: [
+            {
+              title: "License Terms",
+              clauses: [
+                "Single user license per seat",
+                "Annual renewal required",
+                "Support included for 12 months"
+              ]
+            }
+          ]
+        }
+      ],
+      createdAt: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString(),
+      clauseAllocations: {
+        "procurement": {
+          "License Terms": [
+            { clauseIndex: 0, assignedTo: "member-4", assignedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString() },
+            { clauseIndex: 1, assignedTo: "member-5", assignedAt: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString() },
+            { clauseIndex: 2, assignedTo: "member-6", assignedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString() }
+          ]
+        }
+      }
     }
   ];
 

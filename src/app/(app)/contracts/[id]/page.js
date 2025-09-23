@@ -1,14 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, use } from "react";
 import Link from "next/link";
 import { Card, CardContent, CardHeader } from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
+import Button from "@/components/ui/Button";
 
 export default function ContractDetail({ params }) {
-  const { id } = params;
+  const { id } = use(params);
   const [contract, setContract] = useState(null);
   const [user, setUser] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedClauses, setEditedClauses] = useState({});
 
   useEffect(() => {
     try {
@@ -29,6 +32,73 @@ export default function ContractDetail({ params }) {
     }
   }, [id]);
 
+  function handleEditToggle() {
+    if (!isEditing) {
+      // Initialize edited clauses with current values
+      const initialEditedClauses = {};
+      if (contract?.divisions) {
+        contract.divisions.forEach(div => {
+          div.sections.forEach(section => {
+            if (section.clauses) {
+              section.clauses.forEach((clause, clauseIdx) => {
+                const key = `${div.id}-${section.title}-${clauseIdx}`;
+                initialEditedClauses[key] = clause;
+              });
+            }
+          });
+        });
+      }
+      setEditedClauses(initialEditedClauses);
+    }
+    setIsEditing(!isEditing);
+  }
+
+  function handleClauseChange(divId, sectionTitle, clauseIdx, newValue) {
+    const key = `${divId}-${sectionTitle}-${clauseIdx}`;
+    setEditedClauses(prev => ({
+      ...prev,
+      [key]: newValue
+    }));
+  }
+
+  function handleSaveChanges() {
+    if (!contract) return;
+
+    try {
+      const allContracts = JSON.parse(localStorage.getItem("contracts") || "[]");
+      const contractIndex = allContracts.findIndex(c => c.id === contract.id);
+      
+      if (contractIndex === -1) return;
+
+      // Update the contract with edited clauses
+      const updatedContract = { ...contract };
+      updatedContract.divisions = updatedContract.divisions.map(div => ({
+        ...div,
+        sections: div.sections.map(section => ({
+          ...section,
+          clauses: section.clauses.map((clause, clauseIdx) => {
+            const key = `${div.id}-${section.title}-${clauseIdx}`;
+            return editedClauses[key] || clause;
+          })
+        }))
+      }));
+
+      allContracts[contractIndex] = updatedContract;
+      localStorage.setItem("contracts", JSON.stringify(allContracts));
+      
+      setContract(updatedContract);
+      setIsEditing(false);
+      setEditedClauses({});
+    } catch (error) {
+      console.error("Error saving changes:", error);
+    }
+  }
+
+  function handleCancelEdit() {
+    setIsEditing(false);
+    setEditedClauses({});
+  }
+
   if (!contract) {
     return (
       <div className="max-w-3xl mx-auto p-6 space-y-4">
@@ -47,7 +117,25 @@ export default function ContractDetail({ params }) {
             <p className="text-[var(--muted)] mt-1">Client/Company: {contract.clientCompany}</p>
           )}
         </div>
-        <Link className="text-sm text-[var(--primary)] hover:underline" href="/dashboard">Dashboard</Link>
+        <div className="flex items-center gap-3">
+          {isEditing ? (
+            <>
+              <Button onClick={handleCancelEdit} variant="outline" size="sm">
+                Cancel
+              </Button>
+              <Button onClick={handleSaveChanges} size="sm">
+                Save Changes
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button onClick={handleEditToggle} size="sm">
+                Edit Contract
+              </Button>
+              <Link className="text-sm text-[var(--primary)] hover:underline" href="/dashboard">Dashboard</Link>
+            </>
+          )}
+        </div>
       </div>
 
       <Card>
@@ -83,7 +171,15 @@ export default function ContractDetail({ params }) {
 
       <Card>
         <CardHeader>
-          <div className="font-medium">Divisions & Sections</div>
+          <div className="flex items-center justify-between">
+            <div className="font-medium">Divisions & Sections</div>
+            {isEditing && (
+              <div className="flex items-center gap-2 text-sm text-[var(--primary)]">
+                <div className="w-2 h-2 bg-[var(--primary)] rounded-full"></div>
+                <span>Edit Mode</span>
+              </div>
+            )}
+          </div>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
@@ -98,11 +194,29 @@ export default function ContractDetail({ params }) {
                       <div key={idx} className="border-l-2 border-[var(--border)] pl-3">
                         <div className="font-medium mb-2">{s.title}</div>
                         {s.clauses && s.clauses.length > 0 ? (
-                          <ul className="list-disc pl-5 space-y-1 text-sm text-[var(--muted)]">
-                            {s.clauses.map((clause, clauseIdx) => (
-                              <li key={clauseIdx}>{clause}</li>
-                            ))}
-                          </ul>
+                          <div className="space-y-2">
+                            {s.clauses.map((clause, clauseIdx) => {
+                              const key = `${div.id}-${s.title}-${clauseIdx}`;
+                              const currentValue = editedClauses[key] || clause;
+                              
+                              return (
+                                <div key={clauseIdx} className="flex items-start gap-2">
+                                  <div className="w-2 h-2 bg-black rounded-full mt-2 flex-shrink-0"></div>
+                                  {isEditing ? (
+                                    <textarea
+                                      value={currentValue}
+                                      onChange={(e) => handleClauseChange(div.id, s.title, clauseIdx, e.target.value)}
+                                      className="flex-1 p-2 border border-[var(--border)] rounded-md text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent"
+                                      rows={2}
+                                      placeholder="Enter clause content..."
+                                    />
+                                  ) : (
+                                    <span className="text-sm text-[var(--muted)] leading-relaxed">{clause}</span>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
                         ) : (
                           <p className="text-sm text-[var(--muted)]">No clauses defined.</p>
                         )}

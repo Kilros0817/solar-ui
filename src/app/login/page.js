@@ -18,6 +18,19 @@ export default function LoginPage() {
       { id: "u-leader-procurement", name: "Eva Procurement Leader", role: "Division Leader", division: "procurement" },
       { id: "u-leader-operations", name: "Frank Operations Leader", role: "Division Leader", division: "operations" },
       { id: "u-leader-compliance", name: "Grace Compliance Leader", role: "Division Leader", division: "compliance" },
+      // Division Members
+      { id: "member-1", name: "Sarah Johnson", role: "Senior Legal Associate", division: "legal" },
+      { id: "member-2", name: "Michael Chen", role: "Legal Associate", division: "legal" },
+      { id: "member-3", name: "Emily Rodriguez", role: "Legal Assistant", division: "legal" },
+      { id: "member-4", name: "David Kim", role: "Procurement Specialist", division: "procurement" },
+      { id: "member-5", name: "Lisa Thompson", role: "Senior Procurement Manager", division: "procurement" },
+      { id: "member-6", name: "James Wilson", role: "Procurement Coordinator", division: "procurement" },
+      { id: "member-7", name: "Anna Martinez", role: "Financial Analyst", division: "finance" },
+      { id: "member-8", name: "Robert Taylor", role: "Senior Financial Manager", division: "finance" },
+      { id: "member-9", name: "Jennifer Brown", role: "Operations Manager", division: "operations" },
+      { id: "member-10", name: "Kevin Davis", role: "IT Operations Specialist", division: "operations" },
+      { id: "member-11", name: "Amanda White", role: "Compliance Officer", division: "compliance" },
+      { id: "member-12", name: "Christopher Lee", role: "Senior Compliance Analyst", division: "compliance" },
     ],
     []
   );
@@ -37,6 +50,8 @@ export default function LoginPage() {
     // Route based on user role
     if (user.role === "Division Leader") {
       router.replace("/division/dashboard");
+    } else if (user.role && user.role !== "Division Leader" && user.role !== "Legal Team") {
+      router.replace("/division/member/dashboard");
     } else {
       router.replace("/dashboard");
     }

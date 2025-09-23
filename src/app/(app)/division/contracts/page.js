@@ -225,7 +225,10 @@ export default function DivisionContractsPage() {
                                         const allocation = getClauseAllocation(contract, div.id, section.title, clauseIdx);
                                         return (
                                           <div key={clauseIdx} className="flex items-center justify-between text-xs">
-                                            <span className="flex-1 text-[var(--muted)] truncate mr-2">{clause}</span>
+                                            <div className="flex items-center flex-1 mr-2">
+                                              <div className="w-2 h-2 bg-black rounded-full mr-3 flex-shrink-0"></div>
+                                              <span className="text-[var(--muted)] truncate">{clause}</span>
+                                            </div>
                                             <div className="flex items-center gap-2">
                                               <select
                                                 value={allocation?.assignedTo || ""}
