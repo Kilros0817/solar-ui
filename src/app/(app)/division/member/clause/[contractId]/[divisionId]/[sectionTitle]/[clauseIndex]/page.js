@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Card, CardContent, CardHeader } from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
+import RichTextEditor from "@/components/ui/RichTextEditor";
 import { seedContracts, seedMembers } from "@/lib/seedData";
 
 export default function ClauseEditPage({ params }) {
@@ -231,12 +232,11 @@ export default function ClauseEditPage({ params }) {
             </div>
             <div>
               <div className="text-sm font-medium text-[var(--muted)] mb-2">Clause Content</div>
-              <textarea
-                value={editedContent}
-                onChange={(e) => setEditedContent(e.target.value)}
-                className="w-full p-3 border border-[var(--border)] rounded-md text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent"
-                rows={6}
+              <RichTextEditor
+                content={editedContent}
+                onChange={setEditedContent}
                 placeholder="Enter clause content..."
+                className="min-h-[200px]"
               />
             </div>
             <div className="text-xs text-[var(--muted)]">
