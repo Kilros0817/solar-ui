@@ -62,9 +62,15 @@ export default function Home() {
               category: 'Custom',
               tags: [],
               usageCount: 0,
+              lastUsed: null,
               lastModified: new Date().toISOString(),
               icon: FileText,
-              sections: []
+              isBlank: true,
+              createdDate: new Date().toISOString(),
+              createdBy: 'System',
+              estimatedTime: '30-60 min',
+              complexity: 'simple',
+              status: 'active'
             }
             handleCreateFromTemplate(blankTemplate)
           }}

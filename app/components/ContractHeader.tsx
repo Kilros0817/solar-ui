@@ -1,6 +1,6 @@
 'use client'
 
-import { Bell, Search, User, LogOut, UserCircle } from 'lucide-react';
+import { Bell, Search, LogOut, UserCircle } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';

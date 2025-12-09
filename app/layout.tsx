@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import './globals.css'
-import { UserProvider } from './contexts/UserContext'
 import { Toaster } from 'sonner'
+import TBProvider from './provider'
 
 export const metadata: Metadata = {
   title: 'Contract Collaboration Platform UI',
@@ -16,10 +16,10 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body>
-        <UserProvider>
+        <TBProvider>
           {children}
           <Toaster position="top-right" />
-        </UserProvider>
+        </TBProvider>
       </body>
     </html>
   )

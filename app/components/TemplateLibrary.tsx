@@ -33,18 +33,7 @@ import {
   DropdownMenuSeparator
 } from './ui/dropdown-menu';
 import { useUser } from '../contexts/UserContext';
-
-interface ContractTemplate {
-  id: string;
-  name: string;
-  description: string;
-  category: string;
-  icon: any;
-  usageCount: number;
-  lastUsed?: string;
-  isBlank?: boolean;
-  selectedSections?: any[];
-}
+import { ContractTemplate } from '../data/templates';
 
 interface TemplateLibraryProps {
   onSelectContractTemplate?: (template: ContractTemplate) => void;
@@ -599,7 +588,7 @@ export function TemplateLibrary({ onSelectContractTemplate }: TemplateLibraryPro
               description: contract.description,
               category: contract.category,
               icon: FileText,
-              selectedSections: contract.selectedSections,
+              lastModified: new Date().toISOString(),
             }
           : t
         )
@@ -615,8 +604,15 @@ export function TemplateLibrary({ onSelectContractTemplate }: TemplateLibraryPro
         category: contract.category,
         icon: FileText,
         usageCount: 0,
-        lastUsed: 'Never',
-        selectedSections: contract.selectedSections,
+        lastUsed: null,
+        isBlank: false,
+        createdDate: new Date().toISOString(),
+        lastModified: new Date().toISOString(),
+        createdBy: 'System',
+        tags: [],
+        estimatedTime: '30-60 min',
+        complexity: 'simple',
+        status: 'active'
       };
       
       setContractTemplates(prev => [...prev, newContract]);
@@ -854,7 +850,20 @@ export function TemplateLibrary({ onSelectContractTemplate }: TemplateLibraryPro
                           className="flex-1"
                           onClick={() => {
                             if (onSelectContractTemplate) {
-                              onSelectContractTemplate(template);
+                              // Convert to full ContractTemplate format
+                              const fullTemplate: ContractTemplate = {
+                                ...template,
+                                lastUsed: template.lastUsed || null,
+                                isBlank: template.isBlank || false,
+                                createdDate: new Date().toISOString(),
+                                lastModified: new Date().toISOString(),
+                                createdBy: 'System',
+                                tags: [],
+                                estimatedTime: '30-60 min',
+                                complexity: 'simple',
+                                status: 'active'
+                              };
+                              onSelectContractTemplate(fullTemplate);
                             } else {
                               handlePreviewTemplate(template);
                             }
