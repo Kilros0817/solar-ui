@@ -1,6 +1,7 @@
 'use client'
 
 import { useConnection, useConfig } from 'wagmi';
+import { useRouter } from 'next/navigation';
 import { FileText, Copy, CheckCircle2, AlertCircle, Wallet } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
@@ -16,6 +17,7 @@ interface RegistrationPageProps {
 }
 
 export function RegistrationPage({ onComplete }: RegistrationPageProps) {
+  const router = useRouter();
   const { address, isConnected } = useConnection();
   const config = useConfig();
   const { logout } = useUser();
@@ -68,7 +70,7 @@ export function RegistrationPage({ onComplete }: RegistrationPageProps) {
   const handleBackToLogin = async () => {
     try {
       await logout();
-      // logout() will set userRole to null, which will trigger the login page to show
+      router.push('/login');
     } catch (error) {
       console.error('Error logging out:', error);
       toast.error('Failed to logout. Please try again.');

@@ -56,6 +56,7 @@ export default function Web3AuthConnectorInstance(chains: any) {
   const authAdapter = new AuthAdapter({
     adapterSettings: {
       uxMode: UX_MODE.REDIRECT,
+      redirectUrl: window.location.origin + "/login"
     }
   });
 

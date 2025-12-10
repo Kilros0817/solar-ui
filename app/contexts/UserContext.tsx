@@ -19,7 +19,7 @@ const UserContext = createContext<UserContextType | undefined>(undefined);
 export function UserProvider({ children }: { children: ReactNode }) {
   const [userRole, setUserRole] = useState<UserRole>(null);
   const [userName, setUserName] = useState('');
-  const { mutate: disconnect } = useDisconnect();
+  const { mutateAsync: disconnectAsync } = useDisconnect();
 
   const handleSetUserRole = (role: UserRole) => {
     setUserRole(role);
@@ -63,7 +63,13 @@ export function UserProvider({ children }: { children: ReactNode }) {
     }
     
     // Disconnect from wagmi
-    disconnect();
+    try {
+      await disconnectAsync();
+      // Wait a bit more to ensure wagmi state updates
+      await new Promise(resolve => setTimeout(resolve, 200));
+    } catch (error) {
+      console.error('Error disconnecting from wagmi:', error);
+    }
   };
 
   return (
