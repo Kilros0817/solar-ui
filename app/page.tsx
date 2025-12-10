@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useUser } from './contexts/UserContext'
 import { Login } from './components/Login'
+import { RegistrationPage } from './components/RegistrationPage'
 import { ContractHeader } from './components/ContractHeader'
 import { ContractSidebar } from './components/ContractSidebar'
 import { Dashboard } from './components/Dashboard'
@@ -20,6 +21,7 @@ import { FileText } from 'lucide-react'
 
 export default function Home() {
   const { userRole, setUserRole } = useUser()
+  const [isRegistered, setIsRegistered] = useState(false)
   const [activeTab, setActiveTab] = useState('dashboard')
   const [selectedContract, setSelectedContract] = useState<number | null>(null)
   const [showContractCreation, setShowContractCreation] = useState(false)
@@ -30,6 +32,18 @@ export default function Home() {
   // If not logged in, show login page
   if (!userRole) {
     return <Login onLogin={setUserRole} />
+  }
+
+  // Show registration page if not registered (user will implement registration check)
+  if (!isRegistered) {
+    return (
+      <RegistrationPage 
+        onComplete={() => {
+          // User will implement registration logic here
+          setIsRegistered(true)
+        }}
+      />
+    )
   }
 
   const handleCreateContract = (contractData: any) => {
