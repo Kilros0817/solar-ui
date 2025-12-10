@@ -152,6 +152,8 @@ export default function DashboardPage() {
       case 'incoming':
         return <IncomingAssignments />
       case 'team':
+        // Team page is now at /divisions route for legal team
+        // Other roles can have different team views later
         return (
           <div className="p-6">
             <h1>{userRole === USER_ROLE.DIVISION_LEADER ? 'My Team' : userRole === USER_ROLE.PROJECT_OWNER ? 'Organization' : userRole === USER_ROLE.ADMIN ? 'User Management' : 'Team'}</h1>

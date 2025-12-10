@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { 
   LayoutDashboard, 
   FileText, 
@@ -54,6 +55,7 @@ interface SidebarProps {
 }
 
 export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
+  const router = useRouter();
   const { userRole, setUserRole } = useUser();
 
   // Define menu items based on user role
@@ -178,7 +180,14 @@ export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
             key={item.id}
             variant={activeTab === item.id ? "secondary" : "ghost"}
             className={`w-full justify-start h-10 ${activeTab === item.id ? 'bg-brand-primary/20 border-brand-secondary/60' : 'brand-hover'}`}
-            onClick={() => onTabChange(item.id)}
+            onClick={() => {
+              // Navigate to /divisions route for team tab if legal team
+              if (item.id === 'team' && userRole === USER_ROLE.LEGAL_TEAM) {
+                router.push('/divisions');
+              } else {
+                onTabChange(item.id);
+              }
+            }}
           >
             <item.icon className="h-4 w-4 mr-3" />
             <span className="flex-1 text-left">{item.label}</span>
