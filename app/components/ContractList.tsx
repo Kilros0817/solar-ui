@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './ui/dropdown-menu';
 import { useUser } from '../contexts/UserContext';
+import { USER_ROLE } from '@/utils/constants';
 import { 
   allContracts, 
   divisionLeadContracts, 
@@ -93,12 +94,12 @@ export function ContractList({ title, filterStatus, onCreateContract }: Contract
         <div>
           <h1>{title}</h1>
           <p className="text-muted-foreground">
-            {userRole === 'owner' 
+            {userRole === USER_ROLE.PROJECT_OWNER 
               ? 'Track and approve contracts you own'
               : 'Manage and track your contracts'}
           </p>
         </div>
-        {userRole === 'legal' && (
+        {userRole === USER_ROLE.LEGAL_TEAM && (
           <Button onClick={onCreateContract} className="bg-brand-secondary hover:bg-[var(--brand-secondary-hover)]">
             <FileText className="h-4 w-4 mr-2" />
             Create New Contract
@@ -122,7 +123,7 @@ export function ContractList({ title, filterStatus, onCreateContract }: Contract
           <SelectContent>
             <SelectItem value="recent">Most Recent</SelectItem>
             <SelectItem value="client">Client Name</SelectItem>
-            {userRole === 'owner' && <SelectItem value="value">Contract Value</SelectItem>}
+            {userRole === USER_ROLE.PROJECT_OWNER && <SelectItem value="value">Contract Value</SelectItem>}
           </SelectContent>
         </Select>
         <Button variant="outline">
@@ -165,7 +166,7 @@ export function ContractList({ title, filterStatus, onCreateContract }: Contract
                     </div>
                   </div>
                   
-                  {userRole === 'owner' && contract.value && (
+                  {userRole === USER_ROLE.PROJECT_OWNER && contract.value && (
                     <div className="flex items-center gap-2 mt-3 text-sm font-semibold text-emerald-600">
                       <DollarSign className="h-4 w-4" />
                       <span>{contract.value}</span>
@@ -177,7 +178,7 @@ export function ContractList({ title, filterStatus, onCreateContract }: Contract
                   <Button variant="ghost" size="sm">
                     <Eye className="h-4 w-4" />
                   </Button>
-                  {userRole === 'legal' && (
+                  {userRole === USER_ROLE.LEGAL_TEAM && (
                     <Button variant="ghost" size="sm">
                       <Edit className="h-4 w-4" />
                     </Button>
@@ -193,7 +194,7 @@ export function ContractList({ title, filterStatus, onCreateContract }: Contract
                         <Download className="h-4 w-4 mr-2" />
                         Download
                       </DropdownMenuItem>
-                      {userRole === 'legal' && (
+                      {userRole === USER_ROLE.LEGAL_TEAM && (
                         <>
                           <DropdownMenuItem>
                             <FileText className="h-4 w-4 mr-2" />
@@ -220,7 +221,7 @@ export function ContractList({ title, filterStatus, onCreateContract }: Contract
           <p className="text-muted-foreground mb-4">
             Try adjusting your search or filters
           </p>
-          {userRole === 'legal' && (
+          {userRole === USER_ROLE.LEGAL_TEAM && (
             <Button onClick={onCreateContract}>Create New Contract</Button>
           )}
         </div>

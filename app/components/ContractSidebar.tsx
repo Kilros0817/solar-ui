@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useUser, UserRole } from '../contexts/UserContext';
+import { USER_ROLE } from '@/utils/constants';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import {
@@ -58,7 +59,7 @@ export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
   // Define menu items based on user role
   const getMenuItems = () => {
     // Legal Division - Full access (current UI)
-    if (userRole === 'legal') {
+    if (userRole === USER_ROLE.LEGAL_TEAM) {
       const counts = getContractCounts(allContracts);
       return [
         { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, count: null },
@@ -72,7 +73,7 @@ export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
     }
 
     // Division Lead - Assigned sections and team management
-    if (userRole === 'division-lead') {
+    if (userRole === USER_ROLE.DIVISION_LEADER) {
       const counts = getContractCounts(divisionLeadContracts);
       return [
         { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, count: null },
@@ -88,7 +89,7 @@ export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
     }
 
     // Division Member - Only assigned work
-    if (userRole === 'division-member') {
+    if (userRole === USER_ROLE.DIVISION_MEMBER) {
       const counts = getContractCounts(divisionMemberContracts);
       return [
         { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, count: null },
@@ -102,7 +103,7 @@ export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
     }
 
     // Owner - High-level overview
-    if (userRole === 'owner') {
+    if (userRole === USER_ROLE.PROJECT_OWNER) {
       const counts = getContractCounts(ownerContracts);
       return [
         { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, count: null },
@@ -113,7 +114,7 @@ export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
     }
 
     // Administrator - System management
-    if (userRole === 'administrator') {
+    if (userRole === USER_ROLE.ADMIN) {
       return [
         { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, count: null },
         { id: 'my-contracts', label: 'All Contracts', icon: FileText, count: 42 },
@@ -134,15 +135,15 @@ export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
 
   const getRoleLabel = () => {
     switch (userRole) {
-      case 'legal':
+      case USER_ROLE.LEGAL_TEAM:
         return 'Legal Platform';
-      case 'division-lead':
+      case USER_ROLE.DIVISION_LEADER:
         return 'Division Lead';
-      case 'division-member':
+      case USER_ROLE.DIVISION_MEMBER:
         return 'Division Member';
-      case 'owner':
+      case USER_ROLE.PROJECT_OWNER:
         return 'Owner Portal';
-      case 'administrator':
+      case USER_ROLE.ADMIN:
         return 'Admin Portal';
       default:
         return 'Platform';
@@ -150,11 +151,11 @@ export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
   };
 
   const roleOptions = [
-    { value: 'legal' as UserRole, label: 'Legal Division' },
-    { value: 'division-lead' as UserRole, label: 'Division Lead' },
-    { value: 'division-member' as UserRole, label: 'Division Member' },
-    { value: 'owner' as UserRole, label: 'Owner' },
-    { value: 'administrator' as UserRole, label: 'Administrator' },
+    { value: USER_ROLE.LEGAL_TEAM as UserRole, label: 'Legal Division' },
+    { value: USER_ROLE.DIVISION_LEADER as UserRole, label: 'Division Lead' },
+    { value: USER_ROLE.DIVISION_MEMBER as UserRole, label: 'Division Member' },
+    { value: USER_ROLE.PROJECT_OWNER as UserRole, label: 'Owner' },
+    { value: USER_ROLE.ADMIN as UserRole, label: 'Administrator' },
   ];
 
   return (

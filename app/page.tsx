@@ -18,10 +18,10 @@ import { MyAssignments } from './components/MyAssignments'
 import { IncomingAssignments } from './components/IncomingAssignments'
 import { ContractTemplate } from './data/templates'
 import { FileText } from 'lucide-react'
+import { USER_ROLE } from '@/utils/constants'
 
 export default function Home() {
   const { userRole, setUserRole } = useUser()
-  const [isRegistered, setIsRegistered] = useState(false)
   const [activeTab, setActiveTab] = useState('dashboard')
   const [selectedContract, setSelectedContract] = useState<number | null>(null)
   const [showContractCreation, setShowContractCreation] = useState(false)
@@ -30,17 +30,17 @@ export default function Home() {
   const [selectedTemplate, setSelectedTemplate] = useState<ContractTemplate | null>(null)
 
   // If not logged in, show login page
-  if (!userRole) {
+  if (userRole === null) {
     return <Login onLogin={setUserRole} />
   }
 
-  // Show registration page if not registered (user will implement registration check)
-  if (!isRegistered) {
+  // Show registration page if user has NO_ROLE
+  if (userRole === USER_ROLE.NO_ROLE) {
     return (
       <RegistrationPage 
-        onComplete={() => {
-          // User will implement registration logic here
-          setIsRegistered(true)
+        onComplete={(role) => {
+          // Update user role after registration is complete
+          setUserRole(role);
         }}
       />
     )
@@ -133,13 +133,13 @@ export default function Home() {
     // Main navigation based on active tab and user role
     switch (activeTab) {
       case 'dashboard':
-        return <Dashboard onCreateContract={() => userRole === 'legal' ? setShowNewContractChoice(true) : null} />
+        return <Dashboard onCreateContract={() => userRole === USER_ROLE.LEGAL_TEAM ? setShowNewContractChoice(true) : null} />
       case 'my-contracts':
-        return <ContractList title={userRole === 'owner' || userRole === 'administrator' ? 'All Contracts' : 'My Contracts'} onCreateContract={() => userRole === 'legal' ? setShowNewContractChoice(true) : null} />
+        return <ContractList title={userRole === USER_ROLE.PROJECT_OWNER || userRole === USER_ROLE.ADMIN ? 'All Contracts' : 'My Contracts'} onCreateContract={() => userRole === USER_ROLE.LEGAL_TEAM ? setShowNewContractChoice(true) : null} />
       case 'pending':
-        return <ContractList title="Pending Review" filterStatus="pending" onCreateContract={() => userRole === 'legal' ? setShowNewContractChoice(true) : null} />
+        return <ContractList title="Pending Review" filterStatus="pending" onCreateContract={() => userRole === USER_ROLE.LEGAL_TEAM ? setShowNewContractChoice(true) : null} />
       case 'approved':
-        return <ContractList title="Approved Contracts" filterStatus="approved" onCreateContract={() => userRole === 'legal' ? setShowNewContractChoice(true) : null} />
+        return <ContractList title="Approved Contracts" filterStatus="approved" onCreateContract={() => userRole === USER_ROLE.LEGAL_TEAM ? setShowNewContractChoice(true) : null} />
       case 'templates':
         return (
           <TemplateLibrary />
@@ -155,14 +155,14 @@ export default function Home() {
       case 'team':
         return (
           <div className="p-6">
-            <h1>{userRole === 'division-lead' ? 'My Team' : userRole === 'owner' ? 'Organization' : userRole === 'administrator' ? 'User Management' : 'Team'}</h1>
+            <h1>{userRole === USER_ROLE.DIVISION_LEADER ? 'My Team' : userRole === USER_ROLE.PROJECT_OWNER ? 'Organization' : userRole === USER_ROLE.ADMIN ? 'User Management' : 'Team'}</h1>
             <p className="text-muted-foreground">Team management interface will be displayed here</p>
           </div>
         )
       case 'analytics':
         return (
           <div className="p-6">
-            <h1>{userRole === 'administrator' ? 'System Analytics' : 'Analytics'}</h1>
+            <h1>{userRole === USER_ROLE.ADMIN ? 'System Analytics' : 'Analytics'}</h1>
             <p className="text-muted-foreground">Contract analytics will be displayed here</p>
           </div>
         )
@@ -174,7 +174,7 @@ export default function Home() {
           </div>
         )
       default:
-        return <Dashboard onCreateContract={() => userRole === 'legal' ? setActiveTab('my-contracts') : null} />
+        return <Dashboard onCreateContract={() => userRole === USER_ROLE.LEGAL_TEAM ? setActiveTab('my-contracts') : null} />
     }
   }
 

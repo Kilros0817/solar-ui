@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { useUser } from '../contexts/UserContext';
 import { ownerContracts } from '../data/mockContracts';
+import { USER_ROLE } from '@/utils/constants';
 
 interface DashboardProps {
   onCreateContract: () => void;
@@ -25,7 +26,7 @@ export function Dashboard({ onCreateContract }: DashboardProps) {
 
   // Division-specific stats
   const getDivisionStats = () => {
-    if (userRole === 'division-lead') {
+    if (userRole === USER_ROLE.DIVISION_LEADER) {
       return [
         {
           title: 'Total Contracts',
@@ -58,7 +59,7 @@ export function Dashboard({ onCreateContract }: DashboardProps) {
       ];
     }
 
-    if (userRole === 'division-member') {
+    if (userRole === USER_ROLE.DIVISION_MEMBER) {
       return [
         {
           title: 'Total Contracts',
@@ -92,7 +93,7 @@ export function Dashboard({ onCreateContract }: DashboardProps) {
     }
 
     // Project Owner - Contract portfolio overview
-    if (userRole === 'owner') {
+    if (userRole === USER_ROLE.PROJECT_OWNER) {
       const totalValue = ownerContracts.reduce((sum, contract) => {
         const value = parseInt(contract.value?.replace(/[$,]/g, '') || '0');
         return sum + value;
@@ -169,7 +170,7 @@ export function Dashboard({ onCreateContract }: DashboardProps) {
 
   // Division-specific recent activity
   const getDivisionActivity = () => {
-    if (userRole === 'division-lead') {
+    if (userRole === USER_ROLE.DIVISION_LEADER) {
       return [
         {
           id: 1,
@@ -206,7 +207,7 @@ export function Dashboard({ onCreateContract }: DashboardProps) {
       ];
     }
 
-    if (userRole === 'division-member') {
+    if (userRole === USER_ROLE.DIVISION_MEMBER) {
       return [
         {
           id: 1,
@@ -284,7 +285,7 @@ export function Dashboard({ onCreateContract }: DashboardProps) {
 
   // Division-specific deadlines
   const getDivisionDeadlines = () => {
-    if (userRole === 'division-lead') {
+    if (userRole === USER_ROLE.DIVISION_LEADER) {
       return [
         {
           id: 1,
@@ -310,7 +311,7 @@ export function Dashboard({ onCreateContract }: DashboardProps) {
       ];
     }
 
-    if (userRole === 'division-member') {
+    if (userRole === USER_ROLE.DIVISION_MEMBER) {
       return [
         {
           id: 1,
@@ -366,16 +367,16 @@ export function Dashboard({ onCreateContract }: DashboardProps) {
 
   const getWelcomeMessage = () => {
     const firstName = userName.split(' ')[0];
-    if (userRole === 'division-lead') {
+    if (userRole === USER_ROLE.DIVISION_LEADER) {
       return `Welcome back, ${firstName}. Here's your team's workload overview.`;
     }
-    if (userRole === 'division-member') {
+    if (userRole === USER_ROLE.DIVISION_MEMBER) {
       return `Welcome back, ${firstName}. Here's your assignment overview.`;
     }
     return `Welcome back, ${firstName}. Here's your contract overview.`;
   };
 
-  const showCreateButton = userRole === 'legal';
+  const showCreateButton = userRole === USER_ROLE.LEGAL_TEAM;
 
   return (
     <div className="p-6 space-y-6">

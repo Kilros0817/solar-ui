@@ -3,8 +3,9 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 import { useDisconnect } from 'wagmi';
 import { getWeb3AuthInstance } from '@/utils/Web3AuthStore';
+import { USER_ROLE } from '@/utils/constants';
 
-export type UserRole = 'legal' | 'owner' | 'division-lead' | 'division-member' | 'administrator' | null;
+export type UserRole = number | null;
 
 interface UserContextType {
   userRole: UserRole;
@@ -24,19 +25,19 @@ export function UserProvider({ children }: { children: ReactNode }) {
     setUserRole(role);
     // Set default names based on role
     switch (role) {
-      case 'legal':
+      case USER_ROLE.LEGAL_TEAM:
         setUserName('Sarah Chen');
         break;
-      case 'owner':
+      case USER_ROLE.PROJECT_OWNER:
         setUserName('Michael Rodriguez');
         break;
-      case 'division-lead':
+      case USER_ROLE.DIVISION_LEADER:
         setUserName('Jennifer Taylor');
         break;
-      case 'division-member':
+      case USER_ROLE.DIVISION_MEMBER:
         setUserName('David Kim');
         break;
-      case 'administrator':
+      case USER_ROLE.ADMIN:
         setUserName('Admin User');
         break;
       default:
@@ -45,11 +46,17 @@ export function UserProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = async () => {
+    // Clear user state first to prevent auto-login
+    setUserRole(null);
+    setUserName('');
+    
     // Disconnect from Web3Auth
     const web3Auth = getWeb3AuthInstance();
     if (web3Auth?.connected) {
       try {
         await web3Auth.logout();
+        // Wait a bit to ensure Web3Auth state updates
+        await new Promise(resolve => setTimeout(resolve, 100));
       } catch (error) {
         console.error('Error disconnecting from Web3Auth:', error);
       }
@@ -57,10 +64,6 @@ export function UserProvider({ children }: { children: ReactNode }) {
     
     // Disconnect from wagmi
     disconnect();
-    
-    // Clear user state
-    setUserRole(null);
-    setUserName('');
   };
 
   return (

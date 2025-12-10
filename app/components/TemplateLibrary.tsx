@@ -33,6 +33,7 @@ import {
   DropdownMenuSeparator
 } from './ui/dropdown-menu';
 import { useUser } from '../contexts/UserContext';
+import { USER_ROLE } from '@/utils/constants';
 import { ContractTemplate } from '../data/templates';
 
 interface TemplateLibraryProps {
@@ -44,7 +45,7 @@ export function TemplateLibrary({ onSelectContractTemplate }: TemplateLibraryPro
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   // For division users, default to 'sections' tab since they can't access contracts
-  const isDivisionUser = userRole === 'division-lead' || userRole === 'division-member';
+  const isDivisionUser = userRole === USER_ROLE.DIVISION_LEADER || userRole === USER_ROLE.DIVISION_MEMBER;
   const [activeTab, setActiveTab] = useState(isDivisionUser ? 'sections' : 'contracts');
   const [showClauseCreator, setShowClauseCreator] = useState(false);
   const [showSectionCreator, setShowSectionCreator] = useState(false);

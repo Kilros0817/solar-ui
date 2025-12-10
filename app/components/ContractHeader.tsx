@@ -6,6 +6,7 @@ import { Input } from './ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Badge } from './ui/badge';
 import { useUser } from '../contexts/UserContext';
+import { USER_ROLE } from '@/utils/constants';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,15 +21,15 @@ export function ContractHeader() {
 
   const getRoleDisplay = () => {
     switch (userRole) {
-      case 'legal':
+      case USER_ROLE.LEGAL_TEAM:
         return 'Legal Division';
-      case 'owner':
+      case USER_ROLE.PROJECT_OWNER:
         return 'Owner';
-      case 'division-lead':
+      case USER_ROLE.DIVISION_LEADER:
         return 'Division Lead';
-      case 'division-member':
+      case USER_ROLE.DIVISION_MEMBER:
         return 'Division Member';
-      case 'administrator':
+      case USER_ROLE.ADMIN:
         return 'Administrator';
       default:
         return 'User';

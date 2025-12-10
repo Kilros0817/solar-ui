@@ -42,6 +42,7 @@
     "@web3auth/no-modal": "^9.7.0",
     "@web3auth/wallet-services-plugin": "^9.1.0",
     "@web3auth/web3auth-wagmi-connector": "^7.0.0",
+    "axios": "^1.13.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "*",
     "cmdk": "^1.1.1",

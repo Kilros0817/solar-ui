@@ -3,12 +3,14 @@
 import { useEffect, useState } from 'react';
 import { UserRole } from '../contexts/UserContext';
 import { FileText, Mail, AlertCircle } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
+import { Card, CardContent, CardDescription, CardHeader } from './ui/card';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
 import { getWeb3AuthInstance } from "@/utils/Web3AuthStore";
-import { useConnection } from 'wagmi';
+import { useConnection, useConfig } from 'wagmi';
 import { WALLET_ADAPTERS } from '@web3auth/base';
+import { getUserRole } from '@/utils/interact';
+import { USER_ROLE } from '@/utils/constants';
 
 interface LoginProps {
   onLogin: (role: UserRole) => void;
@@ -65,6 +67,7 @@ export function Login({ onLogin }: LoginProps) {
   const [emailError, setEmailError] = useState('');
   const [isTouched, setIsTouched] = useState(false);
   const { address, isConnected } = useConnection();
+  const config = useConfig();
 
   const validateEmail = (value: string) => {
     if (!value.trim()) {
@@ -128,10 +131,34 @@ export function Login({ onLogin }: LoginProps) {
   const isEmailValid = email.trim() && !emailError;
 
   useEffect(() => {
-    if (web3Auth?.connected && isConnected) {
-      onLogin("legal");
-    }
-  }, [web3Auth?.connected, isConnected])
+    const fetchUserRole = async () => {
+      // Only auto-login if Web3Auth is actually connected and wagmi is connected
+      // This prevents auto-login right after logout when web3Auth might still show as connected
+      if (web3Auth?.connected && isConnected && address && config) {
+        // Double-check Web3Auth is still connected after a small delay to avoid race conditions
+        await new Promise(resolve => setTimeout(resolve, 200));
+        
+        // Verify Web3Auth is still connected before proceeding
+        if (!web3Auth?.connected || !isConnected) {
+          return;
+        }
+        
+        try {
+          const memberInfo = await getUserRole(config, address);
+          // memberInfo returns [role, dCategory, ...] - role is the first element
+          const memberInfoArray = memberInfo as any;
+          const role = Number(memberInfoArray?.[0] ?? USER_ROLE.NO_ROLE);
+          onLogin(role);
+        } catch (error) {
+          console.error('Error fetching user role:', error);
+          // On error, default to NO_ROLE to show registration page
+          onLogin(USER_ROLE.NO_ROLE);
+        }
+      }
+    };
+
+    fetchUserRole();
+  }, [web3Auth?.connected, isConnected, address, config, onLogin])
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center p-6">

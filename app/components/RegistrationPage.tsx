@@ -1,19 +1,26 @@
 'use client'
 
-import { useConnection } from 'wagmi';
+import { useConnection, useConfig } from 'wagmi';
 import { FileText, Copy, CheckCircle2, AlertCircle, Wallet } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { getUserRole } from '@/utils/interact';
+import { USER_ROLE } from '@/utils/constants';
+import { UserRole } from '../contexts/UserContext';
+import { useUser } from '../contexts/UserContext';
 
 interface RegistrationPageProps {
-  onComplete?: () => void;
+  onComplete?: (role: UserRole) => void;
 }
 
 export function RegistrationPage({ onComplete }: RegistrationPageProps) {
   const { address, isConnected } = useConnection();
+  const config = useConfig();
+  const { logout } = useUser();
   const [copied, setCopied] = useState(false);
+  const [isChecking, setIsChecking] = useState(false);
 
   const copyToClipboard = () => {
     if (address) {
@@ -27,6 +34,45 @@ export function RegistrationPage({ onComplete }: RegistrationPageProps) {
   const formatAddress = (addr: string | undefined) => {
     if (!addr) return '';
     return `${addr.slice(0, 6)}...${addr.slice(-6)}`;
+  };
+
+  const handleCompleteRegistration = async () => {
+    if (!address || !config) return;
+    
+    setIsChecking(true);
+    try {
+      const memberInfo = await getUserRole(config, address);
+      console.log('memberInfo', memberInfo);
+      // memberInfo returns [role, dCategory, ...] - role is the first element
+      const memberInfoArray = memberInfo as any;
+      const role = Number(memberInfoArray?.[0] ?? USER_ROLE.NO_ROLE);
+      
+      if (role === USER_ROLE.NO_ROLE) {
+        toast.info('Still waiting...', {
+          description: 'Please contact support to complete your registration.',
+        });
+      } else {
+        // Role exists, proceed to next page
+        if (onComplete) {
+          onComplete(role);
+        }
+      }
+    } catch (error) {
+      console.error('Error checking user role:', error);
+      toast.error('Failed to check registration status. Please try again.');
+    } finally {
+      setIsChecking(false);
+    }
+  };
+
+  const handleBackToLogin = async () => {
+    try {
+      await logout();
+      // logout() will set userRole to null, which will trigger the login page to show
+    } catch (error) {
+      console.error('Error logging out:', error);
+      toast.error('Failed to logout. Please try again.');
+    }
   };
 
   if (!isConnected || !address) {
@@ -111,18 +157,16 @@ export function RegistrationPage({ onComplete }: RegistrationPageProps) {
           {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row gap-3 pt-4">
             <Button
-              onClick={onComplete}
+              onClick={handleCompleteRegistration}
+              disabled={isChecking}
               className="flex-1 h-12 text-base font-semibold"
               size="lg"
             >
-              Complete Registration
+              {isChecking ? 'Checking...' : 'Complete Registration'}
             </Button>
             <Button
               variant="outline"
-              onClick={() => {
-                // User will implement logout/back functionality
-                console.log('Back to login');
-              }}
+              onClick={handleBackToLogin}
               className="flex-1 h-12 text-base"
               size="lg"
             >

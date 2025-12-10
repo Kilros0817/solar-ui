@@ -3,6 +3,7 @@ import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { Clock, User, Bell, CheckCircle2 } from 'lucide-react';
 import { useUser } from '../contexts/UserContext';
+import { USER_ROLE } from '@/utils/constants';
 import { useState } from 'react';
 import {
   divisionLeadIncoming as initialDivisionLeadIncoming,
@@ -13,7 +14,7 @@ import {
 export function IncomingAssignments() {
   const { userRole } = useUser();
 
-  const initialAssignments = userRole === 'division-lead' ? initialDivisionLeadIncoming : initialDivisionMemberIncoming;
+  const initialAssignments = userRole === USER_ROLE.DIVISION_LEADER ? initialDivisionLeadIncoming : initialDivisionMemberIncoming;
   const [assignments, setAssignments] = useState<Assignment[]>(initialAssignments);
   
   const newCount = assignments.filter((a) => a.status === 'new').length;
@@ -68,7 +69,7 @@ export function IncomingAssignments() {
             )}
           </div>
           <p className="text-muted-foreground">
-            {userRole === 'division-lead' 
+            {userRole === USER_ROLE.DIVISION_LEADER 
               ? 'New sections assigned to you from the Legal division'
               : 'New clauses assigned to you by your Division Lead'}
           </p>
