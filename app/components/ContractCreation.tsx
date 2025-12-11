@@ -21,9 +21,10 @@ import {
   ChevronRight,
   Eye
 } from 'lucide-react';
-import { ContractTemplate } from '@/data/templates';
+import { ContractTemplate } from '../data/templates';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collapsible';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from './ui/hover-card';
+import { DIVISION_CATEGORY } from '@/utils/constants';
 
 interface ContractCreationProps {
   onBack: () => void;
@@ -69,24 +70,24 @@ export function ContractCreation({ onBack, onCreateContract, selectedTemplate }:
     setContractDetails({...contractDetails, value: formattedValue});
   };
 
-  const availableDivisions = [
-    'Legal',
-    'Finance',
-    'IT/Technology',
-    'Procurement',
-    'Sales',
-    'HR/Human Resources',
-    'Operations',
-    'Compliance',
-    'Risk Management',
-    'Business Development',
-    'Marketing',
-    'Product Management',
-    'Engineering',
-    'Security',
-    'Facilities',
-    'Supply Chain'
-  ];
+  // Division labels mapping
+  const divisionLabels: Record<number, string> = {
+    [DIVISION_CATEGORY.LEGAL]: 'Legal',
+    [DIVISION_CATEGORY.PROJECT_MANAGEMENT]: 'Project Management',
+    [DIVISION_CATEGORY.PRECONSTRUCTION]: 'Preconstruction',
+    [DIVISION_CATEGORY.ESTIMATING]: 'Estimating',
+    [DIVISION_CATEGORY.FINANCE]: 'Finance',
+    [DIVISION_CATEGORY.ACCOUNTING]: 'Accounting',
+    [DIVISION_CATEGORY.RISK_MANAGEMENT]: 'Risk Management',
+    [DIVISION_CATEGORY.INSURANCE]: 'Insurance',
+    [DIVISION_CATEGORY.SAFETY]: 'Safety',
+  };
+
+  // Get all divisions except NO_DIVISION
+  const availableDivisions = Object.entries(DIVISION_CATEGORY)
+    .filter(([_, value]) => value !== DIVISION_CATEGORY.NO_DIVISION)
+    .map(([_, value]) => divisionLabels[value as number])
+    .filter(Boolean); // Remove any undefined values
 
   const defaultContractSections = [
     'Terms & Conditions',
@@ -469,7 +470,8 @@ export function ContractCreation({ onBack, onCreateContract, selectedTemplate }:
                 </div>
               </div>
 
-              <div className="space-y-2">
+              {/* TODO: Assign To field - Hidden for now, will be used later if needed */}
+              {/* <div className="space-y-2">
                 <Label htmlFor="assignee">Assign To</Label>
                 <Select 
                   value={contractDetails.assignee} 
@@ -485,7 +487,7 @@ export function ContractCreation({ onBack, onCreateContract, selectedTemplate }:
                     <SelectItem value="alex-rodriguez">Alex Rodriguez</SelectItem>
                   </SelectContent>
                 </Select>
-              </div>
+              </div> */}
 
               <div className="space-y-2">
                 <Label htmlFor="divisions">Involved Divisions</Label>

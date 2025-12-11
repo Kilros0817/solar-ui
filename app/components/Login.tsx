@@ -166,15 +166,15 @@ export function Login({ onLogin }: LoginProps) {
         <Card className="border-2 bg-white shadow-lg">
           <CardHeader className="space-y-4 text-center pb-6">
             <div className="flex items-center justify-center gap-3 mb-2">
-              <div className="w-12 h-12 bg-brand-secondary rounded-xl flex items-center justify-center">
-                <FileText className="h-6 w-6 text-white" />
-              </div>
-              <h1 className="text-4xl font-bold">ContractFlow</h1>
+            <div className="w-12 h-12 bg-brand-secondary rounded-xl flex items-center justify-center">
+              <FileText className="h-6 w-6 text-white" />
             </div>
+              <h1 className="text-4xl font-bold">ContractFlow</h1>
+          </div>
             <CardDescription className="text-lg">
               Enter your email to continue
-            </CardDescription>
-          </CardHeader>
+                  </CardDescription>
+                </CardHeader>
           <CardContent className="space-y-6">
             <div className="space-y-2">
               <label htmlFor="email" className="text-sm font-medium text-foreground">
@@ -203,7 +203,7 @@ export function Login({ onLogin }: LoginProps) {
                   <span>{emailError}</span>
                 </div>
               )}
-            </div>
+        </div>
             <Button
               onClick={handleContinue}
               disabled={!isEmailValid}
@@ -215,8 +215,8 @@ export function Login({ onLogin }: LoginProps) {
             <div className="text-center">
               <p className="text-xs text-muted-foreground">
                 By continuing, you agree to our terms of service and privacy policy
-              </p>
-            </div>
+          </p>
+        </div>
           </CardContent>
         </Card>
       </div>

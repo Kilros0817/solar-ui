@@ -5,6 +5,7 @@ import { Button } from './ui/button';
 import { Textarea } from './ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
+import { ContractDocumentTemplate } from './ContractDocumentTemplate';
 import { 
   FileText, 
   Download, 
@@ -18,24 +19,55 @@ import {
   User,
   Calendar,
   DollarSign,
-  Building
+  Building,
+  ArrowLeft
 } from 'lucide-react';
+import { allContracts, divisionLeadContracts, divisionMemberContracts, ownerContracts, Contract } from '../data/mockContracts';
+import { useUser } from '../contexts/UserContext';
+import { USER_ROLE } from '@/utils/constants';
 
-export function ContractDetails() {
+interface ContractDetailsProps {
+  contractId?: number;
+  onBack?: () => void;
+}
+
+export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps) {
   const [newComment, setNewComment] = useState('');
+  const { userRole } = useUser();
 
+  // Get contracts based on role
+  const getContractsForRole = (): Contract[] => {
+    switch (userRole) {
+      case USER_ROLE.LEGAL_TEAM:
+        return allContracts;
+      case USER_ROLE.DIVISION_LEADER:
+        return divisionLeadContracts;
+      case USER_ROLE.DIVISION_MEMBER:
+        return divisionMemberContracts;
+      case USER_ROLE.PROJECT_OWNER:
+        return ownerContracts;
+      default:
+        return allContracts;
+    }
+  };
+
+  // Find the contract by ID
+  const contracts = getContractsForRole();
+  const foundContract = contracts.find(c => c.id === contractId) || contracts[0];
+
+  // Map contract data to the format needed
   const contract = {
-    id: 1,
-    title: 'Software License Agreement - TechCorp Solutions',
-    client: 'TechCorp Solutions Inc.',
-    status: 'pending',
-    priority: 'high',
-    value: '$125,000',
+    id: foundContract.id,
+    title: `${foundContract.name} - ${foundContract.client}`,
+    client: foundContract.client,
+    status: foundContract.status,
+    priority: foundContract.priority || 'medium',
+    value: foundContract.value || '$125,000', // Default value for display
     dueDate: '2024-12-15',
-    assignee: 'Sarah Johnson',
-    createdDate: '2024-11-15',
+    assignee: foundContract.owner,
+    createdDate: foundContract.lastModified,
     version: '2.1',
-    description: 'Comprehensive software licensing agreement for enterprise-level deployment of our SaaS platform including premium support and customization services.',
+    description: `Comprehensive agreement for ${foundContract.client} regarding ${foundContract.name.toLowerCase()}.`,
     involvedDivisions: ['Legal', 'Finance', 'IT/Technology', 'Procurement', 'Sales']
   };
 
@@ -112,7 +144,13 @@ export function ContractDetails() {
     <div className="p-6 space-y-6">
       {/* Header */}
       <div className="flex items-start justify-between">
-        <div>
+        <div className="flex-1">
+          {onBack && (
+            <Button variant="ghost" onClick={onBack} className="mb-4">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Contracts
+            </Button>
+          )}
           <h1>{contract.title}</h1>
           <p className="text-muted-foreground">{contract.client}</p>
         </div>
@@ -139,7 +177,8 @@ export function ContractDetails() {
             <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="comments">Comments</TabsTrigger>
-              <TabsTrigger value="versions">Versions</TabsTrigger>
+              {/* TODO: Versions tab - Hidden for now, will be used later if needed */}
+              {/* <TabsTrigger value="versions">Versions</TabsTrigger> */}
               <TabsTrigger value="activity">Activity</TabsTrigger>
             </TabsList>
             
@@ -164,10 +203,11 @@ export function ContractDetails() {
                       <span className="font-medium">Created:</span>
                       <p>{contract.createdDate}</p>
                     </div>
-                    <div>
+                    {/* TODO: Version field - Hidden for now, will be used later if needed */}
+                    {/* <div>
                       <span className="font-medium">Version:</span>
                       <p>{contract.version}</p>
-                    </div>
+                    </div> */}
                   </div>
                   
                   <div className="pt-4 border-t">
@@ -188,16 +228,12 @@ export function ContractDetails() {
                   <CardTitle>Document Preview</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="border rounded-lg p-4 bg-muted/30 h-64 flex items-center justify-center">
-                    <div className="text-center">
-                      <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
-                      <p className="text-muted-foreground">Document preview will appear here</p>
-                      <Button variant="outline" className="mt-4">
-                        <Eye className="h-4 w-4 mr-2" />
-                        Full Preview
-                      </Button>
-                    </div>
-                  </div>
+                  <ContractDocumentTemplate
+                    title={contract.title}
+                    client={contract.client}
+                    value={contract.value}
+                    createdDate={contract.createdDate}
+                  />
                 </CardContent>
               </Card>
             </TabsContent>
@@ -248,7 +284,8 @@ export function ContractDetails() {
               </Card>
             </TabsContent>
 
-            <TabsContent value="versions" className="space-y-4">
+            {/* TODO: Versions tab content - Hidden for now, will be used later if needed */}
+            {/* <TabsContent value="versions" className="space-y-4">
               <Card>
                 <CardHeader>
                   <CardTitle>Version History</CardTitle>
@@ -280,7 +317,7 @@ export function ContractDetails() {
                   ))}
                 </CardContent>
               </Card>
-            </TabsContent>
+            </TabsContent> */}
 
             <TabsContent value="activity">
               <Card>
@@ -307,10 +344,11 @@ export function ContractDetails() {
               </Badge>
               
               <div className="space-y-3">
-                <div className="flex items-center gap-2 text-sm">
+                {/* TODO: Assign To field - Hidden for now, will be used later if needed */}
+                {/* <div className="flex items-center gap-2 text-sm">
                   <User className="h-4 w-4 text-muted-foreground" />
                   <span>Assigned to {contract.assignee}</span>
-                </div>
+                </div> */}
                 <div className="flex items-center gap-2 text-sm">
                   <Calendar className="h-4 w-4 text-muted-foreground" />
                   <span>Due {contract.dueDate}</span>

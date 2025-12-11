@@ -32,9 +32,10 @@ interface ContractListProps {
   title: string;
   filterStatus?: string;
   onCreateContract: () => void;
+  onViewContract?: (contractId: number) => void;
 }
 
-export function ContractList({ title, filterStatus, onCreateContract }: ContractListProps) {
+export function ContractList({ title, filterStatus, onCreateContract, onViewContract }: ContractListProps) {
   const { userRole } = useUser();
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('recent');
@@ -42,13 +43,13 @@ export function ContractList({ title, filterStatus, onCreateContract }: Contract
   // Get contracts based on role
   const getContractsForRole = () => {
     switch (userRole) {
-      case 'legal':
+      case USER_ROLE.LEGAL_TEAM:
         return allContracts;
-      case 'division-lead':
+      case USER_ROLE.DIVISION_LEADER:
         return divisionLeadContracts;
-      case 'division-member':
+      case USER_ROLE.DIVISION_MEMBER:
         return divisionMemberContracts;
-      case 'owner':
+      case USER_ROLE.PROJECT_OWNER:
         return ownerContracts;
       default:
         return allContracts;
@@ -175,7 +176,15 @@ export function ContractList({ title, filterStatus, onCreateContract }: Contract
                 </div>
 
                 <div className="flex items-center gap-2 ml-4">
-                  <Button variant="ghost" size="sm">
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    type="button"
+                    onClick={() => {
+                      onViewContract?.(contract.id);
+                    }}
+                    title="View contract details"
+                  >
                     <Eye className="h-4 w-4" />
                   </Button>
                   {userRole === USER_ROLE.LEGAL_TEAM && (

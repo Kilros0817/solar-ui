@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { 
   LayoutDashboard, 
   FileText, 
@@ -56,7 +56,27 @@ interface SidebarProps {
 
 export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const { userRole, setUserRole } = useUser();
+
+  // Map routes to tab IDs
+  const routeToTabMap: Record<string, string> = {
+    '/dashboard': 'dashboard',
+    '/my-contracts': 'my-contracts',
+    '/pending': 'pending',
+    '/approved': 'approved',
+    '/templates': 'templates',
+    '/analytics': 'analytics',
+    '/incoming': 'incoming',
+    '/assigned-work': 'assigned-work',
+    '/team-assignments': 'team-assignments',
+    '/my-assignments': 'my-assignments',
+    '/settings': 'settings',
+    '/divisions': 'team',
+  };
+
+  // Get current tab from pathname
+  const currentTab = routeToTabMap[pathname] || activeTab;
 
   // Define menu items based on user role
   const getMenuItems = () => {
@@ -175,29 +195,54 @@ export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
       </div>
       
       <nav className="flex-1 p-4 space-y-1">
-        {menuItems.map((item) => (
-          <Button
-            key={item.id}
-            variant={activeTab === item.id ? "secondary" : "ghost"}
-            className={`w-full justify-start h-10 ${activeTab === item.id ? 'bg-brand-primary/20 border-brand-secondary/60' : 'brand-hover'}`}
-            onClick={() => {
-              // Navigate to /divisions route for team tab if legal team
-              if (item.id === 'team' && userRole === USER_ROLE.LEGAL_TEAM) {
-                router.push('/divisions');
-              } else {
-                onTabChange(item.id);
-              }
-            }}
-          >
-            <item.icon className="h-4 w-4 mr-3" />
-            <span className="flex-1 text-left">{item.label}</span>
-            {item.count && (
-              <Badge variant="secondary" className="ml-auto">
-                {item.count}
-              </Badge>
-            )}
-          </Button>
-        ))}
+        {menuItems.map((item) => {
+          const isActive = currentTab === item.id;
+          const handleClick = () => {
+            // Navigate to /divisions route for team tab if legal team
+            if (item.id === 'team' && userRole === USER_ROLE.LEGAL_TEAM) {
+              router.push('/divisions');
+              return;
+            }
+            // Navigate to routes for other tabs
+            const routeMap: Record<string, string> = {
+              'dashboard': '/dashboard',
+              'my-contracts': '/my-contracts',
+              'pending': '/pending',
+              'approved': '/approved',
+              'templates': '/templates',
+              'analytics': '/analytics',
+              'incoming': '/incoming',
+              'assigned-work': '/assigned-work',
+              'team-assignments': '/team-assignments',
+              'my-assignments': '/my-assignments',
+              'settings': '/settings',
+            };
+            const route = routeMap[item.id];
+            if (route) {
+              router.push(route);
+            } else {
+              // Fallback to onTabChange for backward compatibility
+              onTabChange(item.id);
+            }
+          };
+
+          return (
+            <Button
+              key={item.id}
+              variant={isActive ? "secondary" : "ghost"}
+              className={`w-full justify-start h-10 ${isActive ? 'bg-brand-primary/20 border-brand-secondary/60' : 'brand-hover'}`}
+              onClick={handleClick}
+            >
+              <item.icon className="h-4 w-4 mr-3" />
+              <span className="flex-1 text-left">{item.label}</span>
+              {item.count && (
+                <Badge variant="secondary" className="ml-auto">
+                  {item.count}
+                </Badge>
+              )}
+            </Button>
+          );
+        })}
       </nav>
 
       {/* Role Switcher for Testing */}

@@ -4,26 +4,20 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react'
 import { useUser } from '../contexts/UserContext'
-import { RegistrationPage } from '../components/RegistrationPage'
 import { ContractHeader } from '../components/ContractHeader'
 import { ContractSidebar } from '../components/ContractSidebar'
 import { Dashboard } from '../components/Dashboard'
-import { ContractList } from '../components/ContractList'
 import { ContractDetails } from '../components/ContractDetails'
 import { ContractCreation } from '../components/ContractCreation'
-import { TemplateLibrary } from '../components/TemplateLibrary'
 import { NewContractChoice } from '../components/NewContractChoice'
-import { AssignedWork } from '../components/AssignedWork'
-import { TeamAssignments } from '../components/TeamAssignments'
-import { MyAssignments } from '../components/MyAssignments'
-import { IncomingAssignments } from '../components/IncomingAssignments'
+import { TemplateLibrary } from '../components/TemplateLibrary'
 import { ContractTemplate } from '../data/templates'
 import { FileText } from 'lucide-react'
 import { USER_ROLE } from '@/utils/constants'
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { userRole, setUserRole } = useUser()
+  const { userRole } = useUser()
   const [activeTab, setActiveTab] = useState('dashboard')
   const [selectedContract, setSelectedContract] = useState<number | null>(null)
   const [showContractCreation, setShowContractCreation] = useState(false)
@@ -59,6 +53,30 @@ export default function DashboardPage() {
     setSelectedTemplate(template)
     setShowContractCreation(true)
   }
+
+  const handleTabChange = (tab: string) => {
+    if (tab === 'team' && userRole === USER_ROLE.LEGAL_TEAM) {
+      router.push('/divisions');
+      return;
+    }
+    const routeMap: Record<string, string> = {
+      'dashboard': '/dashboard',
+      'my-contracts': '/my-contracts',
+      'pending': '/pending',
+      'approved': '/approved',
+      'templates': '/templates',
+      'analytics': '/analytics',
+      'incoming': '/incoming',
+      'assigned-work': '/assigned-work',
+      'team-assignments': '/team-assignments',
+      'my-assignments': '/my-assignments',
+      'settings': '/settings',
+    };
+    const route = routeMap[tab];
+    if (route) {
+      router.push(route);
+    }
+  };
 
   const renderMainContent = () => {
     // Show new contract choice screen
@@ -126,57 +144,11 @@ export default function DashboardPage() {
 
     // Show contract details
     if (selectedContract) {
-      return <ContractDetails />
+      return <ContractDetails contractId={selectedContract} onBack={() => setSelectedContract(null)} />
     }
 
-    // Main navigation based on active tab and user role
-    switch (activeTab) {
-      case 'dashboard':
-        return <Dashboard onCreateContract={() => userRole === USER_ROLE.LEGAL_TEAM ? setShowNewContractChoice(true) : null} />
-      case 'my-contracts':
-        return <ContractList title={userRole === USER_ROLE.PROJECT_OWNER || userRole === USER_ROLE.ADMIN ? 'All Contracts' : 'My Contracts'} onCreateContract={() => userRole === USER_ROLE.LEGAL_TEAM ? setShowNewContractChoice(true) : null} />
-      case 'pending':
-        return <ContractList title="Pending Review" filterStatus="pending" onCreateContract={() => userRole === USER_ROLE.LEGAL_TEAM ? setShowNewContractChoice(true) : null} />
-      case 'approved':
-        return <ContractList title="Approved Contracts" filterStatus="approved" onCreateContract={() => userRole === USER_ROLE.LEGAL_TEAM ? setShowNewContractChoice(true) : null} />
-      case 'templates':
-        return (
-          <TemplateLibrary />
-        )
-      case 'assigned-work':
-        return <AssignedWork />
-      case 'team-assignments':
-        return <TeamAssignments />
-      case 'my-assignments':
-        return <MyAssignments />
-      case 'incoming':
-        return <IncomingAssignments />
-      case 'team':
-        // Team page is now at /divisions route for legal team
-        // Other roles can have different team views later
-        return (
-          <div className="p-6">
-            <h1>{userRole === USER_ROLE.DIVISION_LEADER ? 'My Team' : userRole === USER_ROLE.PROJECT_OWNER ? 'Organization' : userRole === USER_ROLE.ADMIN ? 'User Management' : 'Team'}</h1>
-            <p className="text-muted-foreground">Team management interface will be displayed here</p>
-          </div>
-        )
-      case 'analytics':
-        return (
-          <div className="p-6">
-            <h1>{userRole === USER_ROLE.ADMIN ? 'System Analytics' : 'Analytics'}</h1>
-            <p className="text-muted-foreground">Contract analytics will be displayed here</p>
-          </div>
-        )
-      case 'settings':
-        return (
-          <div className="p-6">
-            <h1>Settings</h1>
-            <p className="text-muted-foreground">System settings will be displayed here</p>
-          </div>
-        )
-      default:
-        return <Dashboard onCreateContract={() => userRole === USER_ROLE.LEGAL_TEAM ? setActiveTab('my-contracts') : null} />
-    }
+    // Main dashboard view
+    return <Dashboard onCreateContract={() => userRole === USER_ROLE.LEGAL_TEAM ? setShowNewContractChoice(true) : null} />
   }
 
   return (
@@ -185,14 +157,7 @@ export default function DashboardPage() {
       <div className="flex-1 flex">
         <ContractSidebar 
           activeTab={activeTab} 
-          onTabChange={(tab) => {
-            setActiveTab(tab)
-            setSelectedContract(null)
-            setShowContractCreation(false)
-            setSelectedTemplate(null)
-            setShowNewContractChoice(false)
-            setShowTemplateSelection(false)
-          }} 
+          onTabChange={handleTabChange} 
         />
         <main className="flex-1 overflow-auto">
           {renderMainContent()}

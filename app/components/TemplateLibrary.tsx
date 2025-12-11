@@ -65,7 +65,15 @@ export function TemplateLibrary({ onSelectContractTemplate }: TemplateLibraryPro
       category: 'General',
       icon: FileText,
       usageCount: 0,
-      isBlank: true
+      isBlank: true,
+      lastUsed: null,
+      createdDate: new Date().toISOString(),
+      lastModified: new Date().toISOString(),
+      createdBy: 'System',
+      tags: [],
+      estimatedTime: '30-60 min',
+      complexity: 'simple',
+      status: 'active'
     },
     {
       id: 'service-agreement',
@@ -74,7 +82,15 @@ export function TemplateLibrary({ onSelectContractTemplate }: TemplateLibraryPro
       category: 'Services',
       icon: FileText,
       usageCount: 234,
-      lastUsed: '2 days ago'
+      lastUsed: '2 days ago',
+      isBlank: false,
+      createdDate: '2024-01-15',
+      lastModified: '2024-12-01',
+      createdBy: 'System',
+      tags: ['services', 'agreement'],
+      estimatedTime: '45-90 min',
+      complexity: 'moderate',
+      status: 'active'
     },
     {
       id: 'nda',
@@ -83,7 +99,15 @@ export function TemplateLibrary({ onSelectContractTemplate }: TemplateLibraryPro
       category: 'Legal',
       icon: FileText,
       usageCount: 189,
-      lastUsed: '1 week ago'
+      lastUsed: '1 week ago',
+      isBlank: false,
+      createdDate: '2024-01-10',
+      lastModified: '2024-11-25',
+      createdBy: 'System',
+      tags: ['legal', 'nda', 'confidentiality'],
+      estimatedTime: '30-60 min',
+      complexity: 'simple',
+      status: 'active'
     },
     {
       id: 'employment',
@@ -92,7 +116,15 @@ export function TemplateLibrary({ onSelectContractTemplate }: TemplateLibraryPro
       category: 'HR',
       icon: FileText,
       usageCount: 156,
-      lastUsed: '3 days ago'
+      lastUsed: '3 days ago',
+      isBlank: false,
+      createdDate: '2024-01-20',
+      lastModified: '2024-11-28',
+      createdBy: 'System',
+      tags: ['hr', 'employment'],
+      estimatedTime: '60-120 min',
+      complexity: 'complex',
+      status: 'active'
     },
     {
       id: 'saas-agreement',
@@ -101,7 +133,15 @@ export function TemplateLibrary({ onSelectContractTemplate }: TemplateLibraryPro
       category: 'Technology',
       icon: FileText,
       usageCount: 143,
-      lastUsed: '5 days ago'
+      lastUsed: '5 days ago',
+      isBlank: false,
+      createdDate: '2024-02-01',
+      lastModified: '2024-11-26',
+      createdBy: 'System',
+      tags: ['saas', 'technology', 'subscription'],
+      estimatedTime: '45-90 min',
+      complexity: 'moderate',
+      status: 'active'
     },
     {
       id: 'vendor-agreement',
@@ -110,7 +150,15 @@ export function TemplateLibrary({ onSelectContractTemplate }: TemplateLibraryPro
       category: 'Procurement',
       icon: FileText,
       usageCount: 127,
-      lastUsed: '1 week ago'
+      lastUsed: '1 week ago',
+      isBlank: false,
+      createdDate: '2024-02-10',
+      lastModified: '2024-11-24',
+      createdBy: 'System',
+      tags: ['procurement', 'vendor', 'supplier'],
+      estimatedTime: '45-90 min',
+      complexity: 'moderate',
+      status: 'active'
     },
     {
       id: 'partnership',
@@ -119,7 +167,15 @@ export function TemplateLibrary({ onSelectContractTemplate }: TemplateLibraryPro
       category: 'Business',
       icon: FileText,
       usageCount: 98,
-      lastUsed: '2 weeks ago'
+      lastUsed: '2 weeks ago',
+      isBlank: false,
+      createdDate: '2024-02-15',
+      lastModified: '2024-11-20',
+      createdBy: 'System',
+      tags: ['partnership', 'business'],
+      estimatedTime: '60-120 min',
+      complexity: 'complex',
+      status: 'active'
     },
     {
       id: 'consulting',
@@ -128,7 +184,15 @@ export function TemplateLibrary({ onSelectContractTemplate }: TemplateLibraryPro
       category: 'Services',
       icon: FileText,
       usageCount: 176,
-      lastUsed: '4 days ago'
+      lastUsed: '4 days ago',
+      isBlank: false,
+      createdDate: '2024-02-20',
+      lastModified: '2024-11-27',
+      createdBy: 'System',
+      tags: ['consulting', 'contractor', 'services'],
+      estimatedTime: '30-60 min',
+      complexity: 'simple',
+      status: 'active'
     },
     {
       id: 'lease',
@@ -137,7 +201,15 @@ export function TemplateLibrary({ onSelectContractTemplate }: TemplateLibraryPro
       category: 'Real Estate',
       icon: FileText,
       usageCount: 87,
-      lastUsed: '1 week ago'
+      lastUsed: '1 week ago',
+      isBlank: false,
+      createdDate: '2024-03-01',
+      lastModified: '2024-11-24',
+      createdBy: 'System',
+      tags: ['lease', 'real-estate', 'commercial'],
+      estimatedTime: '60-120 min',
+      complexity: 'complex',
+      status: 'active'
     },
     {
       id: 'license',
@@ -146,7 +218,15 @@ export function TemplateLibrary({ onSelectContractTemplate }: TemplateLibraryPro
       category: 'Technology',
       icon: FileText,
       usageCount: 134,
-      lastUsed: '6 days ago'
+      lastUsed: '6 days ago',
+      isBlank: false,
+      createdDate: '2024-03-15',
+      lastModified: '2024-11-25',
+      createdBy: 'System',
+      tags: ['license', 'technology', 'ip'],
+      estimatedTime: '45-90 min',
+      complexity: 'moderate',
+      status: 'active'
     }
   ]);
 
@@ -480,10 +560,10 @@ export function TemplateLibrary({ onSelectContractTemplate }: TemplateLibraryPro
       return matchesSearch && matchesCategory;
     });
     if (filteredVersions.length > 0) {
-      acc[sectionName] = filteredVersions;
+      (acc as Record<string, typeof versions>)[sectionName] = filteredVersions;
     }
     return acc;
-  }, {} as typeof sectionTemplates);
+  }, {} as Record<string, typeof sectionTemplates[keyof typeof sectionTemplates]>);
 
   const filteredClauseTemplates = clauseTemplates.filter(clause => {
     const matchesSearch = clause.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -494,10 +574,10 @@ export function TemplateLibrary({ onSelectContractTemplate }: TemplateLibraryPro
   });
 
   // Prepare section data for contract creator
-  const sectionDataForContractCreator = Object.entries(sectionTemplates).map(([sectionName, versions]) => ({
-    sectionName,
-    versions: versions.map(v => ({ id: v.id, name: v.name, description: v.description, category: v.category }))
-  }));
+      const sectionDataForContractCreator = Object.entries(sectionTemplates).map(([sectionName, versions]) => ({
+        sectionName,
+        versions: versions.map((v: typeof versions[0]) => ({ id: v.id, name: v.name, description: v.description, category: v.category }))
+      }));
 
   const handleSaveClause = (clause: any) => {
     console.log('New clause template:', clause);
@@ -517,10 +597,10 @@ export function TemplateLibrary({ onSelectContractTemplate }: TemplateLibraryPro
       setSectionTemplates(prev => {
         const sectionName = section.sectionName || editingSection.sectionName || 'Custom Section';
         
-        if (prev[sectionName]) {
+        if ((prev as Record<string, any>)[sectionName]) {
           return {
             ...prev,
-            [sectionName]: prev[sectionName].map(v => 
+            [sectionName]: ((prev as Record<string, any>)[sectionName] as typeof prev[keyof typeof prev]).map((v: any) => 
               v.id === editingSection.id 
                 ? {
                     ...v,
@@ -555,11 +635,11 @@ export function TemplateLibrary({ onSelectContractTemplate }: TemplateLibraryPro
       setSectionTemplates(prev => {
         const sectionName = section.sectionName || 'Custom Section';
         
-        if (prev[sectionName]) {
+        if ((prev as Record<string, any>)[sectionName]) {
           // Add to existing section group
           return {
             ...prev,
-            [sectionName]: [...prev[sectionName], newSectionVersion]
+            [sectionName]: [...((prev as Record<string, any>)[sectionName] as typeof prev[keyof typeof prev]), newSectionVersion]
           };
         } else {
           // Create new section group
