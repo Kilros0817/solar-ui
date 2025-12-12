@@ -2,49 +2,154 @@
 
 import { useConnection, useConfig } from 'wagmi';
 import { useRouter } from 'next/navigation';
-import { FileText, Copy, CheckCircle2, AlertCircle, Wallet } from 'lucide-react';
+import { FileText, AlertCircle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
-import { useState } from 'react';
+import { Input } from './ui/input';
+import { Label } from './ui/label';
+import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { getUserRole } from '@/utils/interact';
 import { USER_ROLE } from '@/utils/constants';
 import { UserRole } from '../contexts/UserContext';
 import { useUser } from '../contexts/UserContext';
+import { getWeb3AuthInstance } from '@/utils/Web3AuthStore';
 
 interface RegistrationPageProps {
   onComplete?: (role: UserRole) => void;
 }
+
+const isValidEmail = (email: string): boolean => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+};
 
 export function RegistrationPage({ onComplete }: RegistrationPageProps) {
   const router = useRouter();
   const { address, isConnected } = useConnection();
   const config = useConfig();
   const { logout } = useUser();
-  const [copied, setCopied] = useState(false);
   const [isChecking, setIsChecking] = useState(false);
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [email, setEmail] = useState('');
+  const [errors, setErrors] = useState({
+    firstName: '',
+    lastName: '',
+    email: ''
+  });
+  const [touched, setTouched] = useState({
+    firstName: false,
+    lastName: false,
+    email: false
+  });
 
-  const copyToClipboard = () => {
-    if (address) {
-      navigator.clipboard.writeText(address);
-      setCopied(true);
-      toast.success('Address copied to clipboard');
-      setTimeout(() => setCopied(false), 2000);
+  const validateField = (field: 'firstName' | 'lastName' | 'email', value: string) => {
+    const newErrors = { ...errors };
+    
+    if (field === 'firstName') {
+      if (!value.trim()) {
+        newErrors.firstName = 'First name is required';
+      } else {
+        newErrors.firstName = '';
+      }
+    } else if (field === 'lastName') {
+      if (!value.trim()) {
+        newErrors.lastName = 'Last name is required';
+      } else {
+        newErrors.lastName = '';
+      }
+    } else if (field === 'email') {
+      if (!value.trim()) {
+        newErrors.email = 'Email is required';
+      } else if (!isValidEmail(value)) {
+        newErrors.email = 'Please enter a valid email address';
+      } else {
+        newErrors.email = '';
+      }
+    }
+    
+    setErrors(newErrors);
+  };
+
+  const handleFirstNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setFirstName(value);
+    if (touched.firstName) {
+      validateField('firstName', value);
     }
   };
 
-  const formatAddress = (addr: string | undefined) => {
-    if (!addr) return '';
-    return `${addr.slice(0, 6)}...${addr.slice(-6)}`;
+  const handleLastNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setLastName(value);
+    if (touched.lastName) {
+      validateField('lastName', value);
+    }
+  };
+
+  // Fetch email from Web3Auth when component mounts
+  useEffect(() => {
+    const fetchEmail = async () => {
+      try {
+        const web3Auth = getWeb3AuthInstance();
+        if (web3Auth?.connected) {
+          const userInfo = await web3Auth.getUserInfo();
+          if (userInfo?.email) {
+            const userEmail = userInfo.email;
+            setEmail(userEmail);
+            // Validate email immediately since it's pre-filled
+            setTouched(prev => ({ ...prev, email: true }));
+            if (!userEmail.trim()) {
+              setErrors(prev => ({ ...prev, email: 'Email is required' }));
+            } else if (!isValidEmail(userEmail)) {
+              setErrors(prev => ({ ...prev, email: 'Please enter a valid email address' }));
+            } else {
+              setErrors(prev => ({ ...prev, email: '' }));
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching user email:', error);
+      }
+    };
+
+    if (isConnected && address) {
+      fetchEmail();
+    }
+  }, [isConnected, address]);
+
+  const handleBlur = (field: 'firstName' | 'lastName' | 'email') => {
+    setTouched(prev => ({ ...prev, [field]: true }));
+    if (field === 'firstName') {
+      validateField('firstName', firstName);
+    } else if (field === 'lastName') {
+      validateField('lastName', lastName);
+    } else if (field === 'email') {
+      validateField('email', email);
+    }
   };
 
   const handleCompleteRegistration = async () => {
     if (!address || !config) return;
     
+    // Mark all fields as touched
+    setTouched({ firstName: true, lastName: true, email: true });
+    
+    // Validate all fields
+    validateField('firstName', firstName);
+    validateField('lastName', lastName);
+    validateField('email', email);
+    
+    // Check if form is valid
+    if (!firstName.trim() || !lastName.trim() || !email.trim() || !isValidEmail(email)) {
+      toast.error('Please fill in all fields correctly');
+      return;
+    }
+    
     setIsChecking(true);
     try {
       const memberInfo = await getUserRole(config, address);
-      console.log('memberInfo', memberInfo);
       // memberInfo returns [role, dCategory, ...] - role is the first element
       const memberInfoArray = memberInfo as any;
       const role = Number(memberInfoArray?.[0] ?? USER_ROLE.NO_ROLE);
@@ -105,41 +210,67 @@ export function RegistrationPage({ onComplete }: RegistrationPageProps) {
           </div>
           <CardTitle className="text-2xl font-bold">Complete Your Registration</CardTitle>
           <CardDescription className="text-base">
-            Your wallet address is not registered yet. Please complete the registration process to continue.
+            Please provide your information to complete the registration process.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Wallet Address Display */}
-          <div className="space-y-3">
-            <label className="text-sm font-medium text-foreground">
-              Connected Wallet Address
-            </label>
-            <div className="flex items-center gap-3 p-4 bg-muted/50 rounded-lg border-2 border-border">
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <Wallet className="h-5 w-5 text-muted-foreground shrink-0" />
-                  <span className="font-mono text-sm truncate">{formatAddress(address)}</span>
-                </div>
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={copyToClipboard}
-                className="shrink-0"
-              >
-                {copied ? (
-                  <>
-                    <CheckCircle2 className="h-4 w-4 mr-2" />
-                    Copied
-                  </>
-                ) : (
-                  <>
-                    <Copy className="h-4 w-4 mr-2" />
-                    Copy
-                  </>
-                )}
-              </Button>
-            </div>
+          {/* First Name Field */}
+          <div className="space-y-2">
+            <Label htmlFor="firstName" className="text-sm font-medium">
+              First Name <span className="text-destructive">*</span>
+            </Label>
+            <Input
+              id="firstName"
+              type="text"
+              placeholder="Enter your first name"
+              value={firstName}
+              onChange={handleFirstNameChange}
+              onBlur={() => handleBlur('firstName')}
+              aria-invalid={touched.firstName && !!errors.firstName}
+              className={touched.firstName && errors.firstName ? 'border-destructive' : ''}
+            />
+            {touched.firstName && errors.firstName && (
+              <p className="text-sm text-destructive">{errors.firstName}</p>
+            )}
+          </div>
+
+          {/* Last Name Field */}
+          <div className="space-y-2">
+            <Label htmlFor="lastName" className="text-sm font-medium">
+              Last Name <span className="text-destructive">*</span>
+            </Label>
+            <Input
+              id="lastName"
+              type="text"
+              placeholder="Enter your last name"
+              value={lastName}
+              onChange={handleLastNameChange}
+              onBlur={() => handleBlur('lastName')}
+              aria-invalid={touched.lastName && !!errors.lastName}
+              className={touched.lastName && errors.lastName ? 'border-destructive' : ''}
+            />
+            {touched.lastName && errors.lastName && (
+              <p className="text-sm text-destructive">{errors.lastName}</p>
+            )}
+          </div>
+
+          {/* Email Field */}
+          <div className="space-y-2">
+            <Label htmlFor="email" className="text-sm font-medium">
+              Email <span className="text-destructive">*</span>
+            </Label>
+            <Input
+              id="email"
+              type="email"
+              placeholder="Enter your email address"
+              value={email}
+              disabled
+              aria-invalid={touched.email && !!errors.email}
+              className={touched.email && errors.email ? 'border-destructive' : 'bg-muted/50 cursor-not-allowed'}
+            />
+            {touched.email && errors.email && (
+              <p className="text-sm text-destructive">{errors.email}</p>
+            )}
           </div>
 
           {/* Info Section */}

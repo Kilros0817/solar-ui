@@ -10,6 +10,7 @@ import { baseSepolia } from "viem/chains";
 import { privateKeyToAccount } from "viem/accounts";
 import { getWeb3AuthInstance } from "@/utils/Web3AuthStore";
 import { encodeFunctionData } from "viem";
+import { URLs } from "./constants";
 
 export const getUserRole = async (config, address) => {
   const res = await readContract(config, {
@@ -21,7 +22,6 @@ export const getUserRole = async (config, address) => {
   return res;
 }
 
-
 export const getUserStatus = async (config, address) => {
   const res = await readContract(config, {
     ...SDMSContract,
@@ -32,15 +32,128 @@ export const getUserStatus = async (config, address) => {
   return res[6];
 }
 
-export const getSubscribe = async (config, address) => {
-  const res = await readContract(config, {
-    ...SDMSContract,
-    functionName: "deadline",
-    args: [address]
-  })
+export const getAuthorization = async (config: any) => {
+  const web3Auth = getWeb3AuthInstance();
+  if (!web3Auth) throw new Error("Web3Auth not initialized");
+  const pk = await web3Auth.provider.request({ method: "eth_private_key" });
+  const account = privateKeyToAccount(`0x${pk}`);
+  const walletClient = await getWalletClient(config);
+  const authorization = await walletClient.signAuthorization({
+    account,
+    contractAddress: TBDelegator,
+    executor: TBSponsor,
+  });
+  return { account: account.address, authorization };
+}
 
-  const now = Math.floor((new Date()).getTime() / 1000);
-  return Number(res) > now;
+export const delegate = async (config) => {
+  try {
+    const { account, authorization } = await getAuthorization(config);
+
+    const payload = { account, authorization };
+    const safePayload = JSON.parse(
+      JSON.stringify(payload, (_, v) => (typeof v === 'bigint' ? v.toString() : v))
+    );
+
+    const response = await axios.post(`${URLs.SDMSAPI}/delegate`,
+      safePayload,
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    return response.data.isSuccess;
+  } catch (e) {
+    return false;
+  }
+}
+
+const runSponsorTx = async (
+  config: any,
+  account: string,
+  functionName: string,
+  args: any[],
+): boolean => {
+  try {
+
+    const walletClient = await getWalletClient(config);
+    const publicClient = createPublicClient({
+      chain: baseSepolia,
+      transport: http(BaseRPC1)
+    });
+
+    // Get the contract ABI from TBDMSContract
+    const contractABI = TBDMSContract.abi;
+
+    // Encode the function call data
+    const encodedData = encodeFunctionData({
+      abi: contractABI,
+      functionName: functionName,
+      args: args
+    });
+
+    const calls = [{
+      to: TBDMSContract.address,
+      value: 0n,
+      data: encodedData,
+    }];
+
+    let encodedCallBytes = '0x';
+    for (const call of calls) {
+      const callEncoded = encodePacked(
+        ["address", "uint256", "bytes"],
+        [call.to, call.value, call.data]
+      );
+      encodedCallBytes = encodePacked(
+        ["bytes", "bytes"],
+        [encodedCallBytes, callEncoded]
+      );
+    };
+
+    const nonce = await publicClient.readContract({
+      address: account,
+      abi: TBDelegatorABI,
+      functionName: "nonce",
+    });
+
+    const digest = keccak256(
+      encodePacked(["uint256", "bytes"], [BigInt(nonce), encodedCallBytes])
+    );
+
+    const signature = await walletClient.signMessage({
+      account,
+      message: { raw: digest },
+    });
+
+    const encodedCallData = encodeFunctionData({
+      abi: TBDelegatorABI,
+      functionName: 'execute',
+      args: [calls, signature],
+    });
+
+    try {
+      const response = await axios.post(`${URLs.SDMSAPI}/sponsor-tx`,
+        {
+          address: account,
+          callData: encodedCallData
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error run EIP-7702 sponsor tx:', error);
+      return { isSuccess: false }
+    }
+  } catch (error) {
+    console.error('Error generating EIP-7702 sponsor call data:', error);
+    return { isSuccess: false };
+  }
 }
 
 
