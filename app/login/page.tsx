@@ -113,10 +113,6 @@ export default function LoginPage() {
   const handleContinue = async () => {
     setIsTouched(true);
 
-    console.log('web3Auth?.connected', web3Auth?.connected);
-    console.log('isConnected', isConnected);
-    console.log('address', address);
-    console.log('userRole', userRole);
     if (web3Auth?.connected) return;
 
     if (validateEmail(email)) {
@@ -157,10 +153,7 @@ export default function LoginPage() {
         }
         
         try {
-          const memberInfo = await getUserRole(config, address);
-          // memberInfo returns [role, dCategory, ...] - role is the first element
-          const memberInfoArray = memberInfo as any;
-          const role = Number(memberInfoArray?.[0] ?? USER_ROLE.NO_ROLE);
+          const role = await getUserRole(config, address);
           setUserRole(role);
           
           // Redirect based on role

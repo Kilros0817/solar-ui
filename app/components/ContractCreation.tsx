@@ -24,7 +24,7 @@ import {
 import { ContractTemplate } from '../data/templates';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collapsible';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from './ui/hover-card';
-import { DIVISION_CATEGORY } from '@/utils/constants';
+import { DIVISION_CATEGORY, DIVISION_LABELS } from '@/utils/constants';
 
 interface ContractCreationProps {
   onBack: () => void;
@@ -71,22 +71,10 @@ export function ContractCreation({ onBack, onCreateContract, selectedTemplate }:
   };
 
   // Division labels mapping
-  const divisionLabels: Record<number, string> = {
-    [DIVISION_CATEGORY.LEGAL]: 'Legal',
-    [DIVISION_CATEGORY.PROJECT_MANAGEMENT]: 'Project Management',
-    [DIVISION_CATEGORY.PRECONSTRUCTION]: 'Preconstruction',
-    [DIVISION_CATEGORY.ESTIMATING]: 'Estimating',
-    [DIVISION_CATEGORY.FINANCE]: 'Finance',
-    [DIVISION_CATEGORY.ACCOUNTING]: 'Accounting',
-    [DIVISION_CATEGORY.RISK_MANAGEMENT]: 'Risk Management',
-    [DIVISION_CATEGORY.INSURANCE]: 'Insurance',
-    [DIVISION_CATEGORY.SAFETY]: 'Safety',
-  };
-
   // Get all divisions except NO_DIVISION
   const availableDivisions = Object.entries(DIVISION_CATEGORY)
     .filter(([_, value]) => value !== DIVISION_CATEGORY.NO_DIVISION)
-    .map(([_, value]) => divisionLabels[value as number])
+    .map(([_, value]) => DIVISION_LABELS[value as number])
     .filter(Boolean); // Remove any undefined values
 
   const defaultContractSections = [

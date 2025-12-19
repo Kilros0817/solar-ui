@@ -23,7 +23,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from './ui/dropdown-menu';
-import { DIVISION_CATEGORY } from '@/utils/constants';
+import { DIVISION_CATEGORY, DIVISION_LABELS } from '@/utils/constants';
 
 // Mock data for current division leaders (will be replaced with actual data later)
 const mockDivisionLeaders: Record<number, { name: string; email: string; address: string } | null> = {
@@ -60,17 +60,6 @@ const mockDivisionMembers: Record<number, { name: string; email: string; address
   [DIVISION_CATEGORY.SAFETY]: [],
 };
 
-const divisionLabels: Record<number, string> = {
-  [DIVISION_CATEGORY.LEGAL]: 'Legal',
-  [DIVISION_CATEGORY.PROJECT_MANAGEMENT]: 'Project Management',
-  [DIVISION_CATEGORY.PRECONSTRUCTION]: 'Preconstruction',
-  [DIVISION_CATEGORY.ESTIMATING]: 'Estimating',
-  [DIVISION_CATEGORY.FINANCE]: 'Finance',
-  [DIVISION_CATEGORY.ACCOUNTING]: 'Accounting',
-  [DIVISION_CATEGORY.RISK_MANAGEMENT]: 'Risk Management',
-  [DIVISION_CATEGORY.INSURANCE]: 'Insurance',
-  [DIVISION_CATEGORY.SAFETY]: 'Safety',
-};
 
 const getInitials = (name: string) => {
   return name
@@ -94,7 +83,7 @@ export function TeamManagement() {
   // Filter divisions based on search
   const filteredDivisions = divisions.filter((division) => {
     if (!searchQuery) return true;
-    const label = divisionLabels[division];
+    const label = DIVISION_LABELS[division];
     const leader = mockDivisionLeaders[division];
     return (
       label.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -150,7 +139,7 @@ export function TeamManagement() {
                       <Building2 className="h-6 w-6 text-brand-secondary" />
                     </div>
                     <div>
-                      <CardTitle className="text-lg">{divisionLabels[division]}</CardTitle>
+                      <CardTitle className="text-lg">{DIVISION_LABELS[division]}</CardTitle>
                       <CardDescription className="text-xs mt-1">
                         Division #{division}
                       </CardDescription>
@@ -254,7 +243,7 @@ export function TeamManagement() {
           <Card className="w-full max-w-md">
             <CardHeader>
               <CardTitle>
-                Assign Division Leader - {divisionLabels[selectedDivision]}
+                Assign Division Leader - {DIVISION_LABELS[selectedDivision]}
               </CardTitle>
               <CardDescription>
                 Select a user to assign as division leader for this division
@@ -291,7 +280,7 @@ export function TeamManagement() {
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle>
-                    {divisionLabels[viewingMembers]} - Team Members
+                    {DIVISION_LABELS[viewingMembers]} - Team Members
                   </CardTitle>
                   <CardDescription className="mt-1">
                     View all members in this division (Read-only)

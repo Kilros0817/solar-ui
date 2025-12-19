@@ -10,7 +10,7 @@ import { baseSepolia } from "viem/chains";
 import { privateKeyToAccount } from "viem/accounts";
 import { getWeb3AuthInstance } from "@/utils/Web3AuthStore";
 import { encodeFunctionData } from "viem";
-import { URLs } from "./constants";
+import { TBDelegator, TBDelegatorABI, TBSponsor, URLs, BaseRPC1 } from "./constants";
 
 export const getUserRole = async (config, address) => {
   const res = await readContract(config, {
@@ -19,17 +19,16 @@ export const getUserRole = async (config, address) => {
     args: [address]
   })
 
-  return res;
+  return res[1];
 }
 
-export const getUserStatus = async (config, address) => {
-  const res = await readContract(config, {
-    ...SDMSContract,
-    functionName: "users",
-    args: [address]
-  })
-
-  return res[6];
+export const requestRegister = async (config: any, account: any, firstname: string, lastname: string, email: string) => {
+  const res = await runSponsorTx(config, account, "requestRegister", [firstname, lastname, email]);
+  if (res.isSuccess) {
+    return true;
+  }
+  
+  return false;
 }
 
 export const getAuthorization = async (config: any) => {
@@ -84,8 +83,8 @@ const runSponsorTx = async (
       transport: http(BaseRPC1)
     });
 
-    // Get the contract ABI from TBDMSContract
-    const contractABI = TBDMSContract.abi;
+    // Get the contract ABI from SDMSContract
+    const contractABI = SDMSContract.abi;
 
     // Encode the function call data
     const encodedData = encodeFunctionData({
@@ -95,7 +94,7 @@ const runSponsorTx = async (
     });
 
     const calls = [{
-      to: TBDMSContract.address,
+      to: SDMSContract.address,
       value: 0n,
       data: encodedData,
     }];
@@ -152,6 +151,85 @@ const runSponsorTx = async (
     }
   } catch (error) {
     console.error('Error generating EIP-7702 sponsor call data:', error);
+    return { isSuccess: false };
+  }
+}
+
+// Accept register request and assign role/division
+export const acceptRegisterRequest = async (
+  config: any,
+  account: string,
+  address: string,
+  role: number,
+  divisionCategory: number
+) => {
+  try {
+    const walletClient = await getWalletClient(config);
+    const publicClient = createPublicClient({
+      chain: baseSepolia,
+      transport: http(BaseRPC1)
+    });
+
+    const contractABI = SDMSContract.abi;
+    const encodedData = encodeFunctionData({
+      abi: contractABI,
+      functionName: "acceptRegisterRequest",
+      args: [address, role, divisionCategory]
+    });
+
+    const calls = [{
+      to: SDMSContract.address,
+      value: 0n,
+      data: encodedData,
+    }];
+
+    let encodedCallBytes = '0x';
+    for (const call of calls) {
+      const callEncoded = encodePacked(
+        ["address", "uint256", "bytes"],
+        [call.to, call.value, call.data]
+      );
+      encodedCallBytes = encodePacked(
+        ["bytes", "bytes"],
+        [encodedCallBytes, callEncoded]
+      );
+    };
+
+    const nonce = await publicClient.readContract({
+      address: account,
+      abi: TBDelegatorABI,
+      functionName: "nonce",
+    });
+
+    const digest = keccak256(
+      encodePacked(["uint256", "bytes"], [BigInt(nonce), encodedCallBytes])
+    );
+
+    const signature = await walletClient.signMessage({
+      account,
+      message: { raw: digest },
+    });
+
+    const encodedCallData = encodeFunctionData({
+      abi: TBDelegatorABI,
+      functionName: 'execute',
+      args: [calls, signature],
+    });
+
+    const response = await axios.post(`${URLs.SDMSAPI}/sponsor-tx`,
+      {
+        address: account,
+        callData: encodedCallData
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error('Error accepting register request:', error);
     return { isSuccess: false };
   }
 }

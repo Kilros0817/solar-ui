@@ -1,5 +1,6 @@
 export const URLs = {
 	SDMSAPI: "http://localhost:8085/api",
+	SubgraphURL: "https://api.studio.thegraph.com/query/72239/solar-dms/version/latest"
 };
 
 export const BaseRPC1 = "https://base-sepolia.g.alchemy.com/v2/U6YPO8eU2p26wRrvGyI2OlC1BS4ipA5o";
@@ -27,6 +28,30 @@ export const DIVISION_CATEGORY = {
     INSURANCE: 8,
     SAFETY: 9
 }
+
+// Role labels for display
+export const ROLE_LABELS: Record<number, string> = {
+    [USER_ROLE.NO_ROLE]: 'No Role',
+    [USER_ROLE.DIVISION_MEMBER]: 'Division Member',
+    [USER_ROLE.DIVISION_LEADER]: 'Division Leader',
+    [USER_ROLE.LEGAL_TEAM]: 'Legal Team',
+    [USER_ROLE.ADMIN]: 'Administrator',
+    [USER_ROLE.PROJECT_OWNER]: 'Project Owner',
+};
+
+// Division labels for display
+export const DIVISION_LABELS: Record<number, string> = {
+    [DIVISION_CATEGORY.NO_DIVISION]: 'No Division',
+    [DIVISION_CATEGORY.LEGAL]: 'Legal',
+    [DIVISION_CATEGORY.PROJECT_MANAGEMENT]: 'Project Management',
+    [DIVISION_CATEGORY.PRECONSTRUCTION]: 'Preconstruction',
+    [DIVISION_CATEGORY.ESTIMATING]: 'Estimating',
+    [DIVISION_CATEGORY.FINANCE]: 'Finance',
+    [DIVISION_CATEGORY.ACCOUNTING]: 'Accounting',
+    [DIVISION_CATEGORY.RISK_MANAGEMENT]: 'Risk Management',
+    [DIVISION_CATEGORY.INSURANCE]: 'Insurance',
+    [DIVISION_CATEGORY.SAFETY]: 'Safety',
+};
 
 export const TBDelegator = "0xE28EcFec6dc61Bb1eA41A331db290A68807FF3C2";
 export const TBSponsor = "0x0d8e9E3Efa9DAD7Aa4b761c132ADF6ddEB7d16B4";

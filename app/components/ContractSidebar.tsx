@@ -73,6 +73,7 @@ export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
     '/my-assignments': 'my-assignments',
     '/settings': 'settings',
     '/divisions': 'team',
+    '/user-management': 'team',
   };
 
   // Get current tab from pathname
@@ -201,6 +202,11 @@ export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
             // Navigate to /divisions route for team tab if legal team
             if (item.id === 'team' && userRole === USER_ROLE.LEGAL_TEAM) {
               router.push('/divisions');
+              return;
+            }
+            // Navigate to /user-management route for team tab if admin
+            if (item.id === 'team' && userRole === USER_ROLE.ADMIN) {
+              router.push('/user-management');
               return;
             }
             // Navigate to routes for other tabs

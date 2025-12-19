@@ -1,6 +1,6 @@
 {
   "contractName": "SolarDMS",
-  "contractAddress": "0xecBea80c84a69E56c8E25317f8F24EDA67956f23",
+  "contractAddress": "0x830Ef34c9ad782eA7c70DF60aad592F368B3CDA0",
   "abi": [
     {
       "inputs": [],
@@ -34,6 +34,16 @@
     },
     {
       "inputs": [],
+      "name": "NoRequest",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "NotAdmin",
+      "type": "error"
+    },
+    {
+      "inputs": [],
       "name": "NotClient",
       "type": "error"
     },
@@ -50,6 +60,16 @@
     {
       "inputs": [],
       "name": "NotLegal",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "NotNewMember",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "OnPending",
       "type": "error"
     },
     {
@@ -73,51 +93,6 @@
       ],
       "name": "OwnableUnauthorizedAccount",
       "type": "error"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": false,
-          "internalType": "address",
-          "name": "divisionLeader",
-          "type": "address"
-        }
-      ],
-      "name": "AddDivsionLeader",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": false,
-          "internalType": "address",
-          "name": "divisionLeader",
-          "type": "address"
-        },
-        {
-          "indexed": false,
-          "internalType": "address",
-          "name": "divisionMember",
-          "type": "address"
-        }
-      ],
-      "name": "AddDivsionMember",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": false,
-          "internalType": "address",
-          "name": "legalTeam",
-          "type": "address"
-        }
-      ],
-      "name": "AddLegalTeam",
-      "type": "event"
     },
     {
       "anonymous": false,
@@ -331,6 +306,106 @@
       "anonymous": false,
       "inputs": [
         {
+          "indexed": false,
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "string",
+          "name": "firstname",
+          "type": "string"
+        },
+        {
+          "indexed": false,
+          "internalType": "string",
+          "name": "lastname",
+          "type": "string"
+        },
+        {
+          "indexed": false,
+          "internalType": "string",
+          "name": "email",
+          "type": "string"
+        }
+      ],
+      "name": "RegisterAdmin",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "string",
+          "name": "firstname",
+          "type": "string"
+        },
+        {
+          "indexed": false,
+          "internalType": "string",
+          "name": "lastname",
+          "type": "string"
+        },
+        {
+          "indexed": false,
+          "internalType": "string",
+          "name": "email",
+          "type": "string"
+        }
+      ],
+      "name": "RegisterRequest",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "enum SolarDMS.MemberRole",
+          "name": "role",
+          "type": "uint8"
+        },
+        {
+          "indexed": false,
+          "internalType": "enum SolarDMS.DivisionCategory",
+          "name": "dCategory",
+          "type": "uint8"
+        }
+      ],
+      "name": "RegisterRequestAccepted",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        }
+      ],
+      "name": "RegisterRequestDeclined",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
           "indexed": true,
           "internalType": "uint256",
           "name": "docId",
@@ -423,43 +498,17 @@
           "type": "address"
         },
         {
-          "internalType": "enum SolarDMS.DivisionCategory",
-          "name": "category",
+          "internalType": "enum SolarDMS.MemberRole",
+          "name": "role",
           "type": "uint8"
-        }
-      ],
-      "name": "addDivisionLeader",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "account",
-          "type": "address"
         },
         {
           "internalType": "enum SolarDMS.DivisionCategory",
-          "name": "category",
+          "name": "dCategory",
           "type": "uint8"
         }
       ],
-      "name": "addDivsionMember",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "account",
-          "type": "address"
-        }
-      ],
-      "name": "addLegal",
+      "name": "acceptRegisterRequest",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
@@ -646,6 +695,19 @@
       "type": "function"
     },
     {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        }
+      ],
+      "name": "declineRegisterRequest",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
       "inputs": [],
       "name": "docCount",
       "outputs": [
@@ -759,8 +821,32 @@
           "type": "address"
         }
       ],
+      "name": "memberIndexOfRequestList",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "member",
+          "type": "address"
+        }
+      ],
       "name": "memberInfo",
       "outputs": [
+        {
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        },
         {
           "internalType": "enum SolarDMS.MemberRole",
           "name": "role",
@@ -770,6 +856,65 @@
           "internalType": "enum SolarDMS.DivisionCategory",
           "name": "dCategory",
           "type": "uint8"
+        },
+        {
+          "internalType": "string",
+          "name": "firstname",
+          "type": "string"
+        },
+        {
+          "internalType": "string",
+          "name": "lastname",
+          "type": "string"
+        },
+        {
+          "internalType": "string",
+          "name": "email",
+          "type": "string"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "name": "memberRequestList",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        },
+        {
+          "internalType": "enum SolarDMS.MemberRole",
+          "name": "role",
+          "type": "uint8"
+        },
+        {
+          "internalType": "enum SolarDMS.DivisionCategory",
+          "name": "dCategory",
+          "type": "uint8"
+        },
+        {
+          "internalType": "string",
+          "name": "firstname",
+          "type": "string"
+        },
+        {
+          "internalType": "string",
+          "name": "lastname",
+          "type": "string"
+        },
+        {
+          "internalType": "string",
+          "name": "email",
+          "type": "string"
         }
       ],
       "stateMutability": "view",
@@ -815,8 +960,59 @@
       "type": "function"
     },
     {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        },
+        {
+          "internalType": "string",
+          "name": "firstname",
+          "type": "string"
+        },
+        {
+          "internalType": "string",
+          "name": "lastname",
+          "type": "string"
+        },
+        {
+          "internalType": "string",
+          "name": "email",
+          "type": "string"
+        }
+      ],
+      "name": "registerAdmin",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
       "inputs": [],
       "name": "renounceOwnership",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "firstname",
+          "type": "string"
+        },
+        {
+          "internalType": "string",
+          "name": "lastname",
+          "type": "string"
+        },
+        {
+          "internalType": "string",
+          "name": "email",
+          "type": "string"
+        }
+      ],
+      "name": "requestRegister",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
