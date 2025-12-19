@@ -1,8 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { UserRole } from '../contexts/UserContext';
 import { FileText, Mail, AlertCircle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader } from '../components/ui/card';
 import { Input } from '../components/ui/input';
@@ -13,70 +12,19 @@ import { WALLET_ADAPTERS } from '@web3auth/base';
 import { getUserRole } from '@/utils/interact';
 import { USER_ROLE } from '@/utils/constants';
 import { useUser } from '../contexts/UserContext';
+import { isValidEmail } from '@/utils/utility';
 
-// Email validation function
-const isValidEmail = (email: string): boolean => {
-  if (!email || !email.trim()) {
-    return false;
-  }
-
-  // RFC 5322 compliant email regex (simplified version)
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-  // Additional checks
-  if (email.length > 254) { // Max email length
-    return false;
-  }
-
-  // Check for valid domain structure
-  const parts = email.split('@');
-  if (parts.length !== 2) {
-    return false;
-  }
-
-  const [localPart, domain] = parts;
-
-  // Local part validation (before @)
-  if (localPart.length === 0 || localPart.length > 64) {
-    return false;
-  }
-
-  // Domain validation (after @)
-  if (domain.length === 0 || domain.length > 253) {
-    return false;
-  }
-
-  // Check domain has at least one dot
-  if (!domain.includes('.')) {
-    return false;
-  }
-
-  // Check domain doesn't start or end with dot or hyphen
-  if (domain.startsWith('.') || domain.endsWith('.') ||
-    domain.startsWith('-') || domain.endsWith('-')) {
-    return false;
-  }
-
-  return emailRegex.test(email);
-};
 
 export default function LoginPage() {
   const router = useRouter();
+  const hasSignedIn = useRef(false);
+
   const { setUserRole, userRole } = useUser();
   const [email, setEmail] = useState('');
   const [emailError, setEmailError] = useState('');
   const [isTouched, setIsTouched] = useState(false);
   const { address, isConnected } = useConnection();
   const config = useConfig();
-
-  // Redirect if already logged in
-  useEffect(() => {
-    if (userRole !== null && userRole !== USER_ROLE.NO_ROLE) {
-      router.push('/dashboard');
-    } else if (userRole === USER_ROLE.NO_ROLE) {
-      router.push('/register');
-    }
-  }, [userRole, router]);
 
   const validateEmail = (value: string) => {
     if (!value.trim()) {
@@ -138,24 +86,28 @@ export default function LoginPage() {
 
   const isEmailValid = email.trim() && !emailError;
 
+  // Redirect if already logged in
+  useEffect(() => {
+    if (userRole !== null && userRole !== USER_ROLE.NO_ROLE) {
+      router.push('/dashboard');
+    } else if (userRole === USER_ROLE.NO_ROLE) {
+      router.push('/register');
+    }
+  }, [userRole, router]);
+
   useEffect(() => {
     const fetchUserRole = async () => {
+
       // Only auto-login if BOTH Web3Auth AND wagmi are connected
       // This prevents auto-login right after logout
-      if (web3Auth?.connected && isConnected && address && config) {
-        // Wait longer to ensure both Web3Auth and wagmi states have updated after logout
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
-        // CRITICAL: Both must be connected. If either is disconnected, abort.
-        // This prevents auto-login after logout when wagmi might still show as connected
-        if (!web3Auth?.connected || !isConnected || !address) {
-          return;
-        }
-        
+      if (web3Auth?.connected && isConnected && !hasSignedIn.current) {
+
+        hasSignedIn.current = true;
         try {
           const role = await getUserRole(config, address);
+
           setUserRole(role);
-          
+
           // Redirect based on role
           if (role === USER_ROLE.NO_ROLE) {
             router.push('/register');

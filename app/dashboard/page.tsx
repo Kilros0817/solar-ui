@@ -1,11 +1,8 @@
 'use client'
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react'
 import { useUser } from '../contexts/UserContext'
-import { ContractHeader } from '../components/ContractHeader'
-import { ContractSidebar } from '../components/ContractSidebar'
 import { Dashboard } from '../components/Dashboard'
 import { ContractDetails } from '../components/ContractDetails'
 import { ContractCreation } from '../components/ContractCreation'
@@ -14,30 +11,47 @@ import { TemplateLibrary } from '../components/TemplateLibrary'
 import { ContractTemplate } from '../data/templates'
 import { FileText } from 'lucide-react'
 import { USER_ROLE } from '@/utils/constants'
+import { useConnection } from 'wagmi';
+import { getWeb3AuthInstance } from '@/utils/Web3AuthStore';
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { userRole } = useUser()
-  const [activeTab, setActiveTab] = useState('dashboard')
+  const { userRole } = useUser();
+  const { isConnected } = useConnection();
+  const web3Auth = getWeb3AuthInstance();
   const [selectedContract, setSelectedContract] = useState<number | null>(null)
   const [showContractCreation, setShowContractCreation] = useState(false)
   const [showNewContractChoice, setShowNewContractChoice] = useState(false)
   const [showTemplateSelection, setShowTemplateSelection] = useState(false)
   const [selectedTemplate, setSelectedTemplate] = useState<ContractTemplate | null>(null)
 
-  // Redirect if not logged in
+  // Check connection status and redirect only if not connected
   useEffect(() => {
-    if (userRole === null) {
+    // If both connections are not active, redirect to login
+    if (!web3Auth?.connected && !isConnected) {
       router.push('/login');
-    } else if (userRole === USER_ROLE.NO_ROLE) {
+      return;
+    }
+    
+    // Only redirect to register if role is explicitly NO_ROLE
+    if (userRole === USER_ROLE.NO_ROLE) {
       router.push('/register');
     }
-  }, [userRole, router]);
+  }, [userRole, isConnected, web3Auth?.connected, router]);
 
-  // Don't render if redirecting
-  if (userRole === null || userRole === USER_ROLE.NO_ROLE) {
+  // If connections are not active, don't render (will redirect)
+  if (!web3Auth?.connected && !isConnected) {
     return null;
   }
+  
+  // If role is NO_ROLE, don't render (will redirect to register)
+  if (userRole === USER_ROLE.NO_ROLE) {
+    return null;
+  }
+  
+  // If role is null but connections are active, render the page
+  // ContractHeader will fetch and set the role
+  // The page can render with userRole as null temporarily
 
   const handleCreateContract = (contractData: any) => {
     // In a real app, this would make an API call to create the contract
@@ -53,30 +67,6 @@ export default function DashboardPage() {
     setSelectedTemplate(template)
     setShowContractCreation(true)
   }
-
-  const handleTabChange = (tab: string) => {
-    if (tab === 'team' && userRole === USER_ROLE.LEGAL_TEAM) {
-      router.push('/divisions');
-      return;
-    }
-    const routeMap: Record<string, string> = {
-      'dashboard': '/dashboard',
-      'my-contracts': '/my-contracts',
-      'pending': '/pending',
-      'approved': '/approved',
-      'templates': '/templates',
-      'analytics': '/analytics',
-      'incoming': '/incoming',
-      'assigned-work': '/assigned-work',
-      'team-assignments': '/team-assignments',
-      'my-assignments': '/my-assignments',
-      'settings': '/settings',
-    };
-    const route = routeMap[tab];
-    if (route) {
-      router.push(route);
-    }
-  };
 
   const renderMainContent = () => {
     // Show new contract choice screen
@@ -148,22 +138,9 @@ export default function DashboardPage() {
     }
 
     // Main dashboard view
-    return <Dashboard onCreateContract={() => userRole === USER_ROLE.LEGAL_TEAM ? setShowNewContractChoice(true) : null} />
+    return <Dashboard onCreateContract={() => userRole === USER_ROLE.LEGAL_TEAM ? setShowNewContractChoice(true) : undefined} />
   }
 
-  return (
-    <div className="h-screen flex flex-col bg-background">
-      <ContractHeader />
-      <div className="flex-1 flex">
-        <ContractSidebar 
-          activeTab={activeTab} 
-          onTabChange={handleTabChange} 
-        />
-        <main className="flex-1 overflow-auto">
-          {renderMainContent()}
-        </main>
-      </div>
-    </div>
-  )
+  return renderMainContent()
 }
 

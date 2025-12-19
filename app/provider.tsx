@@ -27,7 +27,9 @@ const TBProvider: React.FC<TBProviderProps> = ({ children }: any) => {
     const init = async () => {
       try {
         const { connector, web3AuthInstance } = Web3AuthConnectorInstance([baseSepolia]);
+
         setWeb3AuthInstance(web3AuthInstance);
+
         const conf = createConfig({
           chains: [baseSepolia],
           cacheTime: 3_600_000,
@@ -44,13 +46,13 @@ const TBProvider: React.FC<TBProviderProps> = ({ children }: any) => {
         });
 
         setConfig(conf);
+
       } catch (error) {
         console.error('Failed to initialize Web3Auth:', error);
       }
     };
 
     init();
-
   }, []); // Empty dependency array to ensure this runs only once
 
   return (
@@ -59,9 +61,9 @@ const TBProvider: React.FC<TBProviderProps> = ({ children }: any) => {
         <WagmiProvider config={config}>
           <QueryClientProvider client={queryClient}>
             <div className="flex flex-col">
-                <UserProvider>
-                  {children}
-                </UserProvider>
+              <UserProvider>
+                {children}
+              </UserProvider>
             </div>
           </QueryClientProvider>
         </WagmiProvider>

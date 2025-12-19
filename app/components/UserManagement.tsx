@@ -9,6 +9,7 @@ import {
   Users, 
   CheckCircle2, 
   X,
+  XCircle,
   Search,
   Copy,
   Check,
@@ -30,10 +31,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from './ui/select';
-import { Label } from './ui/label';
 import { useConnection, useConfig } from 'wagmi';
 import { toast } from 'sonner';
-import { acceptRegisterRequest } from '@/utils/interact';
+import { acceptRegisterRequest, declineRegisterRequest } from '@/utils/interact';
 import { USER_ROLE, DIVISION_CATEGORY, ROLE_LABELS, DIVISION_LABELS } from '@/utils/constants';
 import { getWeb3AuthInstance } from '@/utils/Web3AuthStore';
 import { privateKeyToAccount } from 'viem/accounts';
@@ -123,7 +123,7 @@ export function UserManagement() {
     }
   };
 
-  const handleRegisterUser = async (userAddress: string) => {
+  const handleApprove = async (userAddress: string) => {
     if (!config || !address) {
       toast.error('Wallet not connected');
       return;
@@ -148,21 +148,16 @@ export function UserManagement() {
 
     setProcessingUser(userAddress);
     try {
-      const web3Auth = getWeb3AuthInstance();
-      if (!web3Auth) throw new Error('Web3Auth not initialized');
-      const pk = await web3Auth.provider.request({ method: 'eth_private_key' });
-      const account = privateKeyToAccount(`0x${pk}`);
-
       const result = await acceptRegisterRequest(
         config,
-        account.address,
+        address,
         userAddress,
         role,
         division || DIVISION_CATEGORY.NO_DIVISION
       );
 
-      if (result.isSuccess) {
-        toast.success('User registered successfully');
+      if (result) {
+        toast.success('User approved successfully');
         // Remove user from pending list
         setPendingUsers((prev) => prev.filter((u) => u.id !== userAddress));
         // Clear selections
@@ -177,11 +172,51 @@ export function UserManagement() {
           return newDivisions;
         });
       } else {
-        toast.error('Failed to register user');
+        toast.error('Failed to approve user');
       }
     } catch (error) {
-      console.error('Error registering user:', error);
-      toast.error('Failed to register user. Please try again.');
+      console.error('Error approving user:', error);
+      toast.error('Failed to approve user. Please try again.');
+    } finally {
+      setProcessingUser(null);
+    }
+  };
+
+  const handleDecline = async (userAddress: string) => {
+    if (!config || !address) {
+      toast.error('Wallet not connected');
+      return;
+    }
+
+    setProcessingUser(userAddress);
+    try {
+      const result = await declineRegisterRequest(
+        config,
+        address,
+        userAddress
+      );
+
+      if (result) {
+        toast.success('User declined successfully');
+        // Remove user from pending list
+        setPendingUsers((prev) => prev.filter((u) => u.id !== userAddress));
+        // Clear selections
+        setSelectedRoles((prev) => {
+          const newRoles = { ...prev };
+          delete newRoles[userAddress];
+          return newRoles;
+        });
+        setSelectedDivisions((prev) => {
+          const newDivisions = { ...prev };
+          delete newDivisions[userAddress];
+          return newDivisions;
+        });
+      } else {
+        toast.error('Failed to decline user');
+      }
+    } catch (error) {
+      console.error('Error declining user:', error);
+      toast.error('Failed to decline user. Please try again.');
     } finally {
       setProcessingUser(null);
     }
@@ -191,8 +226,6 @@ export function UserManagement() {
     { value: USER_ROLE.DIVISION_MEMBER, label: ROLE_LABELS[USER_ROLE.DIVISION_MEMBER] },
     { value: USER_ROLE.DIVISION_LEADER, label: ROLE_LABELS[USER_ROLE.DIVISION_LEADER] },
     { value: USER_ROLE.LEGAL_TEAM, label: ROLE_LABELS[USER_ROLE.LEGAL_TEAM] },
-    { value: USER_ROLE.ADMIN, label: ROLE_LABELS[USER_ROLE.ADMIN] },
-    { value: USER_ROLE.PROJECT_OWNER, label: ROLE_LABELS[USER_ROLE.PROJECT_OWNER] },
   ];
 
   const divisionOptions = Object.entries(DIVISION_CATEGORY)
@@ -328,12 +361,10 @@ export function UserManagement() {
                             [user.id]: Number(value),
                           }))
                         }
-                        disabled={
-                          !selectedRoles[user.id] ||
-                          selectedRoles[user.id] === USER_ROLE.LEGAL_TEAM ||
-                          selectedRoles[user.id] === USER_ROLE.ADMIN ||
-                          selectedRoles[user.id] === USER_ROLE.PROJECT_OWNER
-                        }
+                          disabled={
+                            !selectedRoles[user.id] ||
+                            selectedRoles[user.id] === USER_ROLE.LEGAL_TEAM
+                          }
                       >
                         <SelectTrigger className="w-[180px]">
                           <SelectValue placeholder="Select division" />
@@ -347,32 +378,45 @@ export function UserManagement() {
                         </SelectContent>
                       </Select>
                     </TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        onClick={() => handleRegisterUser(user.id)}
-                        disabled={
-                          processingUser === user.id ||
-                          !selectedRoles[user.id] ||
-                          selectedRoles[user.id] === USER_ROLE.NO_ROLE ||
-                          ((selectedRoles[user.id] === USER_ROLE.DIVISION_MEMBER ||
-                            selectedRoles[user.id] === USER_ROLE.DIVISION_LEADER) &&
-                            (!selectedDivisions[user.id] ||
-                              selectedDivisions[user.id] === DIVISION_CATEGORY.NO_DIVISION))
-                        }
-                        size="sm"
-                      >
-                        {processingUser === user.id ? (
-                          <>
-                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                            Processing...
-                          </>
-                        ) : (
-                          <>
-                            <CheckCircle2 className="h-4 w-4 mr-2" />
-                            Register
-                          </>
-                        )}
-                      </Button>
+                    <TableCell>
+                      <div className="flex items-center justify-center gap-2">
+                        <Button
+                          onClick={() => handleApprove(user.id)}
+                          disabled={
+                            processingUser === user.id ||
+                            !selectedRoles[user.id] ||
+                            selectedRoles[user.id] === USER_ROLE.NO_ROLE ||
+                            ((selectedRoles[user.id] === USER_ROLE.DIVISION_MEMBER ||
+                              selectedRoles[user.id] === USER_ROLE.DIVISION_LEADER) &&
+                              (!selectedDivisions[user.id] ||
+                                selectedDivisions[user.id] === DIVISION_CATEGORY.NO_DIVISION))
+                          }
+                          size="sm"
+                          variant="default"
+                          className="h-8 w-8 p-0"
+                          title="Approve"
+                        >
+                          {processingUser === user.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <CheckCircle2 className="h-4 w-4" />
+                          )}
+                        </Button>
+                        <Button
+                          onClick={() => handleDecline(user.id)}
+                          disabled={processingUser === user.id}
+                          size="sm"
+                          variant="destructive"
+                          className="h-8 w-8 p-0"
+                          title="Decline"
+                        >
+                          {processingUser === user.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <XCircle className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}

@@ -1,5 +1,7 @@
 'use client'
 
+import { useEffect } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
 import { Bell, Search, LogOut, UserCircle } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -7,6 +9,9 @@ import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Badge } from './ui/badge';
 import { useUser } from '../contexts/UserContext';
 import { USER_ROLE } from '@/utils/constants';
+import { useConnection, useConfig } from 'wagmi';
+import { getUserRole } from '@/utils/interact';
+import { getWeb3AuthInstance } from '@/utils/Web3AuthStore';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,7 +22,49 @@ import {
 } from './ui/dropdown-menu';
 
 export function ContractHeader() {
-  const { userName, userRole, logout } = useUser();
+  const router = useRouter();
+  const pathname = usePathname();
+  const { userName, userRole, setUserRole, logout } = useUser();
+  const { address, isConnected } = useConnection();
+  const config = useConfig();
+  const web3Auth = getWeb3AuthInstance();
+
+  // Fetch user role when connections are active
+  useEffect(() => {
+    const fetchUserRole = async () => {
+      const startTime = performance.now();
+      
+      // Check if both Web3Auth and wagmi are connected
+      if (web3Auth?.connected && isConnected && address && config) {
+        const connectionTime = performance.now() - startTime;
+        if (connectionTime > 100) {
+          console.log(`ContractHeader: Connections ready after ${connectionTime.toFixed(2)}ms`);
+        }
+        
+        // Only fetch if role is not already set to avoid unnecessary calls
+        if (userRole === null) {
+          try {
+            const roleStartTime = performance.now();
+            const role = await getUserRole(config, address);
+            const roleTime = performance.now() - roleStartTime;
+            console.log(`ContractHeader: getUserRole took ${roleTime.toFixed(2)}ms`);
+            
+            // memberInfo returns [role, dCategory, ...] - getUserRole returns res[1] which is the role
+            const roleValue = Number(role ?? USER_ROLE.NO_ROLE);
+            setUserRole(roleValue);
+          } catch (error) {
+            console.error('Error fetching user role:', error);
+            // On error, don't set role (keep current state) to avoid redirect loops
+          }
+        }
+      } else if (!web3Auth?.connected && !isConnected && pathname !== '/login' && pathname !== '/register') {
+        // If both connections are not active and not on login/register pages, redirect to login
+        router.push('/login');
+      }
+    };
+
+    fetchUserRole();
+  }, [web3Auth?.connected, isConnected, address, config, setUserRole, router, pathname, userRole]);
 
   const getRoleDisplay = () => {
     switch (userRole) {

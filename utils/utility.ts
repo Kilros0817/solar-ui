@@ -9,8 +9,8 @@ import { toast } from "sonner";
  * @returns Promise<boolean> - True if the address is delegated to TBDelegator
  */
 export const checkEIP7702Delegation = async (
-  address: string, 
-  publicClient: any, 
+  address: string,
+  publicClient: any,
 ): Promise<boolean> => {
   try {
     // Get the bytecode of the address
@@ -25,7 +25,7 @@ export const checkEIP7702Delegation = async (
     // EIP-7702 delegation bytecode format: 0xef0100 + 20-byte delegator address + 1-byte chainId + 1-byte version
     // The pattern should be: 0xef0100 + delegator address (20 bytes) + chainId (1 byte) + version (1 byte)
     const delegationPrefix = '0xef0100';
-    
+
     // Check if bytecode starts with EIP-7702 prefix
     if (!bytecode.startsWith(delegationPrefix)) {
       return false;
@@ -34,7 +34,7 @@ export const checkEIP7702Delegation = async (
     // Extract the delegator address from the bytecode
     // Skip the prefix (0xef0100 = 6 characters) and get the next 40 characters (20 bytes)
     const delegatorInBytecode = '0x' + bytecode.slice(8, 48);
-    
+
     // Compare with the expected TBDelegator address (case-insensitive)
     return delegatorInBytecode.toLowerCase() === TBDelegator.toLowerCase();
   } catch (error) {
@@ -64,3 +64,8 @@ export const copyAddressToClipboard = async (address: string): Promise<boolean> 
     return false;
   }
 }
+
+export const isValidEmail = (email: string): boolean => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+};

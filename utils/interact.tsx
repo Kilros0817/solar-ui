@@ -12,24 +12,7 @@ import { getWeb3AuthInstance } from "@/utils/Web3AuthStore";
 import { encodeFunctionData } from "viem";
 import { TBDelegator, TBDelegatorABI, TBSponsor, URLs, BaseRPC1 } from "./constants";
 
-export const getUserRole = async (config, address) => {
-  const res = await readContract(config, {
-    ...SDMSContract,
-    functionName: "memberInfo",
-    args: [address]
-  })
 
-  return res[1];
-}
-
-export const requestRegister = async (config: any, account: any, firstname: string, lastname: string, email: string) => {
-  const res = await runSponsorTx(config, account, "requestRegister", [firstname, lastname, email]);
-  if (res.isSuccess) {
-    return true;
-  }
-  
-  return false;
-}
 
 export const getAuthorization = async (config: any) => {
   const web3Auth = getWeb3AuthInstance();
@@ -155,6 +138,25 @@ const runSponsorTx = async (
   }
 }
 
+export const getUserRole = async (config, address) => {
+  const res = await readContract(config, {
+    ...SDMSContract,
+    functionName: "memberInfo",
+    args: [address]
+  })
+
+  return res[1];
+}
+
+export const requestRegister = async (config: any, account: any, firstname: string, lastname: string, email: string) => {
+  const res = await runSponsorTx(config, account, "requestRegister", [firstname, lastname, email]);
+  if (res.isSuccess) {
+    return true;
+  }
+
+  return false;
+}
+
 // Accept register request and assign role/division
 export const acceptRegisterRequest = async (
   config: any,
@@ -163,75 +165,24 @@ export const acceptRegisterRequest = async (
   role: number,
   divisionCategory: number
 ) => {
-  try {
-    const walletClient = await getWalletClient(config);
-    const publicClient = createPublicClient({
-      chain: baseSepolia,
-      transport: http(BaseRPC1)
-    });
-
-    const contractABI = SDMSContract.abi;
-    const encodedData = encodeFunctionData({
-      abi: contractABI,
-      functionName: "acceptRegisterRequest",
-      args: [address, role, divisionCategory]
-    });
-
-    const calls = [{
-      to: SDMSContract.address,
-      value: 0n,
-      data: encodedData,
-    }];
-
-    let encodedCallBytes = '0x';
-    for (const call of calls) {
-      const callEncoded = encodePacked(
-        ["address", "uint256", "bytes"],
-        [call.to, call.value, call.data]
-      );
-      encodedCallBytes = encodePacked(
-        ["bytes", "bytes"],
-        [encodedCallBytes, callEncoded]
-      );
-    };
-
-    const nonce = await publicClient.readContract({
-      address: account,
-      abi: TBDelegatorABI,
-      functionName: "nonce",
-    });
-
-    const digest = keccak256(
-      encodePacked(["uint256", "bytes"], [BigInt(nonce), encodedCallBytes])
-    );
-
-    const signature = await walletClient.signMessage({
-      account,
-      message: { raw: digest },
-    });
-
-    const encodedCallData = encodeFunctionData({
-      abi: TBDelegatorABI,
-      functionName: 'execute',
-      args: [calls, signature],
-    });
-
-    const response = await axios.post(`${URLs.SDMSAPI}/sponsor-tx`,
-      {
-        address: account,
-        callData: encodedCallData
-      },
-      {
-        headers: {
-          "Content-Type": "application/json",
-        },
-      }
-    );
-    return response.data;
-  } catch (error) {
-    console.error('Error accepting register request:', error);
-    return { isSuccess: false };
+  const res = await runSponsorTx(config, account, "acceptRegisterRequest", [address, role, divisionCategory]);
+  if (res.isSuccess) {
+    return true;
   }
+  return false;
+}
+
+// Decline register request
+export const declineRegisterRequest = async (
+  config: any,
+  account: string,
+  address: string
+) => {
+  const res = await runSponsorTx(config, account, "declineRegisterRequest", [address]);
+  if (res.isSuccess) {
+    return true;
+  }
+  return false;
 }
 
 

@@ -7,23 +7,22 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../co
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 import { delegate, requestRegister } from '@/utils/interact';
 import { useUser } from '../contexts/UserContext';
 import { getWeb3AuthInstance } from '@/utils/Web3AuthStore';
 import { getUserInfo } from '@/utils/subgraph';
-import { checkEIP7702Delegation, copyAddressToClipboard } from '@/utils/utility';
+import { checkEIP7702Delegation, copyAddressToClipboard, isValidEmail } from '@/utils/utility';
 
-const isValidEmail = (email: string): boolean => {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(email);
-};
+
 
 export default function RegistrationPage() {
   const router = useRouter();
   const { address, isConnected } = useConnection();
   const publicClient = usePublicClient();
+
+  const hasSignedIn = useRef(false);
 
   const config = useConfig();
   const { logout } = useUser();
@@ -143,9 +142,11 @@ export default function RegistrationPage() {
 
   // Fetch user info from subgraph and email from Web3Auth when component mounts
   useEffect(() => {
-    if (!isConnected || !address) return;
-    fetchUserData();
-  }, [isConnected, address]);
+    if (isConnected && !hasSignedIn.current) {
+      hasSignedIn.current = true;
+      fetchUserData();
+    }
+  }, [isConnected]);
 
   const handleBlur = (field: 'firstName' | 'lastName' | 'email') => {
     const value = field === 'firstName' ? firstName : field === 'lastName' ? lastName : email;
