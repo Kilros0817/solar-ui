@@ -73,7 +73,7 @@ export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
     '/my-assignments': 'my-assignments',
     '/settings': 'settings',
     '/divisions': 'team',
-    '/user-management': 'team',
+    '/pending-users': 'pending-users',
   };
 
   // Get current tab from pathname
@@ -142,7 +142,8 @@ export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
         { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, count: null },
         { id: 'my-contracts', label: 'All Contracts', icon: FileText, count: 42 },
         { id: 'templates', label: 'All Templates', icon: FolderOpen, count: null },
-        { id: 'team', label: 'User Management', icon: Users, count: null },
+        { id: 'pending-users', label: 'Pending Users', icon: Users, count: null },
+        { id: 'team', label: 'Team', icon: Users, count: null },
         { id: 'analytics', label: 'System Analytics', icon: BarChart3, count: null },
         { id: 'settings', label: 'Settings', icon: Settings, count: null },
       ];
@@ -199,17 +200,7 @@ export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
         {menuItems.map((item) => {
           const isActive = currentTab === item.id;
           const handleClick = () => {
-            // Navigate to /divisions route for team tab if legal team
-            if (item.id === 'team' && userRole === USER_ROLE.LEGAL_TEAM) {
-              router.push('/divisions');
-              return;
-            }
-            // Navigate to /user-management route for team tab if admin
-            if (item.id === 'team' && userRole === USER_ROLE.ADMIN) {
-              router.push('/user-management');
-              return;
-            }
-            // Navigate to routes for other tabs
+            // Navigate to routes for tabs
             const routeMap: Record<string, string> = {
               'dashboard': '/dashboard',
               'my-contracts': '/my-contracts',
@@ -222,6 +213,8 @@ export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
               'team-assignments': '/team-assignments',
               'my-assignments': '/my-assignments',
               'settings': '/settings',
+              'pending-users': '/pending-users',
+              'team': '/divisions',
             };
             const route = routeMap[item.id];
             if (route) {

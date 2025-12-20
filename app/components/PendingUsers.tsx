@@ -13,7 +13,8 @@ import {
   Search,
   Copy,
   Check,
-  Loader2
+  Loader2,
+  RefreshCw
 } from 'lucide-react';
 import { Input } from './ui/input';
 import {
@@ -35,8 +36,6 @@ import { useConnection, useConfig } from 'wagmi';
 import { toast } from 'sonner';
 import { acceptRegisterRequest, declineRegisterRequest } from '@/utils/interact';
 import { USER_ROLE, DIVISION_CATEGORY, ROLE_LABELS, DIVISION_LABELS } from '@/utils/constants';
-import { getWeb3AuthInstance } from '@/utils/Web3AuthStore';
-import { privateKeyToAccount } from 'viem/accounts';
 import { getPendingUsers } from '@/utils/subgraph';
 import { copyAddressToClipboard } from '@/utils/utility';
 
@@ -57,7 +56,7 @@ const formatAddress = (addr: string): string => {
   return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
 };
 
-export function UserManagement() {
+export function PendingUsers() {
   const { address, isConnected } = useConnection();
   const config = useConfig();
   const [searchQuery, setSearchQuery] = useState('');
@@ -67,41 +66,55 @@ export function UserManagement() {
   const [selectedRoles, setSelectedRoles] = useState<Record<string, number>>({});
   const [selectedDivisions, setSelectedDivisions] = useState<Record<string, number>>({});
   const [copiedAddress, setCopiedAddress] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
 
-  // Fetch pending users
+  // Fetch pending users function
+  const fetchPendingUsers = async () => {
+    setLoading(true);
+    try {
+      const requests = await getPendingUsers();
+      setPendingUsers(requests);
+    } catch (error) {
+      console.error('Error fetching pending users:', error);
+      toast.error('Failed to load pending users');
+      // For development, use mock data
+      setPendingUsers([
+        {
+          id: '0x1234567890123456789012345678901234567890',
+          firstName: 'John',
+          lastName: 'Doe',
+          email: 'john.doe@example.com',
+        },
+        {
+          id: '0xabcdefabcdefabcdefabcdefabcdefabcdefabcd',
+          firstName: 'Jane',
+          lastName: 'Smith',
+          email: 'jane.smith@example.com',
+        },
+      ]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Initial fetch on mount
   useEffect(() => {
-    const fetchPendingUsers = async () => {
-      setLoading(true);
-      try {
-        const requests = await getPendingUsers();
-        setPendingUsers(requests);
-      } catch (error) {
-        console.error('Error fetching pending users:', error);
-        toast.error('Failed to load pending users');
-        // For development, use mock data
-        setPendingUsers([
-          {
-            id: '0x1234567890123456789012345678901234567890',
-            firstName: 'John',
-            lastName: 'Doe',
-            email: 'john.doe@example.com',
-          },
-          {
-            id: '0xabcdefabcdefabcdefabcdefabcdefabcdefabcd',
-            firstName: 'Jane',
-            lastName: 'Smith',
-            email: 'jane.smith@example.com',
-          },
-        ]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     if (isConnected && config) {
       fetchPendingUsers();
     }
   }, [isConnected, config]);
+
+  // Handle manual refresh
+  const handleRefresh = async () => {
+    if (!isConnected || !config) {
+      toast.error('Wallet not connected');
+      return;
+    }
+    setRefreshing(true);
+    await fetchPendingUsers();
+    setRefreshing(false);
+    toast.success('Pending registrations refreshed');
+  };
 
   // Filter users based on search
   const filteredUsers = pendingUsers.filter((user) => {
@@ -239,7 +252,7 @@ export function UserManagement() {
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">User Management</h1>
+          <h1 className="text-3xl font-bold">Pending Users</h1>
           <p className="text-muted-foreground mt-1">
             Manage pending user registrations and assign roles
           </p>
@@ -258,14 +271,26 @@ export function UserManagement() {
                 Review and approve user registration requests
               </CardDescription>
             </div>
-            <div className="relative w-64">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search users..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
-              />
+            <div className="flex items-center gap-3">
+              <div className="relative w-64">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search users..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              <Button
+                onClick={handleRefresh}
+                disabled={refreshing || loading}
+                variant="outline"
+                size="sm"
+                className="gap-2"
+              >
+                <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+                Refresh
+              </Button>
             </div>
           </div>
         </CardHeader>

@@ -1,12 +1,12 @@
 'use client'
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { UserManagement } from '../components/UserManagement';
+import { PendingUsers } from '../components/PendingUsers';
 import { useUser } from '../contexts/UserContext';
 import { USER_ROLE } from '@/utils/constants';
 
-export default function UserManagementPage() {
+export default function PendingUsersPage() {
   const router = useRouter();
   const { userRole } = useUser();
 
@@ -26,6 +26,6 @@ export default function UserManagementPage() {
     return null;
   }
 
-  return <UserManagement />;
+  return <PendingUsers />;
 }
 

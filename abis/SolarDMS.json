@@ -1,6 +1,6 @@
 {
   "contractName": "SolarDMS",
-  "contractAddress": "0x830Ef34c9ad782eA7c70DF60aad592F368B3CDA0",
+  "contractAddress": "0xE74B59795A2634af63F1fc47add0b89aDEF5a74C",
   "abi": [
     {
       "inputs": [],
@@ -25,6 +25,11 @@
     {
       "inputs": [],
       "name": "InvalidDoc",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "InvalidParam",
       "type": "error"
     },
     {
@@ -112,7 +117,7 @@
         {
           "indexed": false,
           "internalType": "address",
-          "name": "memeber",
+          "name": "member",
           "type": "address"
         },
         {

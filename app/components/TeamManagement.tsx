@@ -23,7 +23,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from './ui/dropdown-menu';
-import { DIVISION_CATEGORY, DIVISION_LABELS } from '@/utils/constants';
+import { DIVISION_CATEGORY, DIVISION_LABELS, USER_ROLE } from '@/utils/constants';
 
 // Mock data for current division leaders (will be replaced with actual data later)
 const mockDivisionLeaders: Record<number, { name: string; email: string; address: string } | null> = {
@@ -69,10 +69,17 @@ const getInitials = (name: string) => {
     .toUpperCase();
 };
 
-export function TeamManagement() {
+interface TeamManagementProps {
+  userRole: number | null;
+}
+
+export function TeamManagement({ userRole }: TeamManagementProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDivision, setSelectedDivision] = useState<number | null>(null);
   const [viewingMembers, setViewingMembers] = useState<number | null>(null);
+
+  // Leader assignment is disabled for now (will be added later)
+  const canAssignLeaders = false;
 
   // Get all divisions except NO_DIVISION
   const divisions = Object.entries(DIVISION_CATEGORY)
@@ -152,10 +159,12 @@ export function TeamManagement() {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => setSelectedDivision(division)}>
-                        <UserPlus className="mr-2 h-4 w-4" />
-                        {hasLeader ? 'Change Leader' : 'Assign Leader'}
-                      </DropdownMenuItem>
+                      {canAssignLeaders && (
+                        <DropdownMenuItem onClick={() => setSelectedDivision(division)}>
+                          <UserPlus className="mr-2 h-4 w-4" />
+                          {hasLeader ? 'Change Leader' : 'Assign Leader'}
+                        </DropdownMenuItem>
+                      )}
                       <DropdownMenuItem onClick={() => setViewingMembers(division)}>
                         <Eye className="mr-2 h-4 w-4" />
                         View Members
@@ -183,20 +192,33 @@ export function TeamManagement() {
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
                       <span className="font-mono">{leader.address}</span>
                     </div>
-                    <div className="flex items-center justify-between gap-2">
-                      <Badge variant="outline" className="flex-1 justify-center py-1.5">
-                        <Users className="mr-2 h-3 w-3" />
-                        Leader Assigned
-                      </Badge>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setViewingMembers(division)}
-                        className="flex-1"
-                      >
-                        <Eye className="mr-2 h-3 w-3" />
-                        View Members ({mockDivisionMembers[division]?.length || 0})
-                      </Button>
+                    <div className={`flex items-center gap-2 ${canAssignLeaders ? 'flex-col' : ''}`}>
+                      <div className="flex items-center gap-2 w-full">
+                        <Badge variant="outline" className="flex-1 justify-center py-1.5">
+                          <Users className="mr-2 h-3 w-3" />
+                          Leader Assigned
+                        </Badge>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setViewingMembers(division)}
+                          className="flex-1"
+                        >
+                          <Eye className="mr-2 h-3 w-3" />
+                          View Members ({mockDivisionMembers[division]?.length || 0})
+                        </Button>
+                      </div>
+                      {canAssignLeaders && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setSelectedDivision(division)}
+                          className="w-full"
+                        >
+                          <UserPlus className="mr-2 h-3 w-3" />
+                          Change Leader
+                        </Button>
+                      )}
                     </div>
                   </>
                 ) : (
@@ -207,16 +229,20 @@ export function TeamManagement() {
                       </div>
                       <p className="text-sm font-medium mb-1">No Leader Assigned</p>
                       <p className="text-xs text-muted-foreground mb-4">
-                        Assign a division leader to manage this division
+                        {canAssignLeaders 
+                          ? 'Assign a division leader to manage this division'
+                          : 'Only administrators can assign division leaders'}
                       </p>
-                      <Button
-                        onClick={() => setSelectedDivision(division)}
-                        size="sm"
-                        className="w-full mb-2"
-                      >
-                        <UserPlus className="mr-2 h-4 w-4" />
-                        Assign Leader
-                      </Button>
+                      {canAssignLeaders && (
+                        <Button
+                          onClick={() => setSelectedDivision(division)}
+                          size="sm"
+                          className="w-full mb-2"
+                        >
+                          <UserPlus className="mr-2 h-4 w-4" />
+                          Assign Leader
+                        </Button>
+                      )}
                       {mockDivisionMembers[division] && mockDivisionMembers[division].length > 0 && (
                         <Button
                           variant="outline"
@@ -302,9 +328,6 @@ export function TeamManagement() {
                     <Badge variant="outline" className="px-3 py-1.5">
                       {mockDivisionMembers[viewingMembers].length} {mockDivisionMembers[viewingMembers].length === 1 ? 'Member' : 'Members'}
                     </Badge>
-                    <p className="text-xs text-muted-foreground">
-                      Only division leader can add members
-                    </p>
                   </div>
                   <div className="space-y-2">
                     {mockDivisionMembers[viewingMembers].map((member, index) => (

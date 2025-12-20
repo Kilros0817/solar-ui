@@ -132,22 +132,6 @@ export default function RegistrationPage() {
     }
   };
 
-  // Redirect to login if Web3Auth is not connected
-  useEffect(() => {
-    const web3Auth = getWeb3AuthInstance();
-    if (!web3Auth?.connected) {
-      router.push('/login');
-    }
-  }, [router]);
-
-  // Fetch user info from subgraph and email from Web3Auth when component mounts
-  useEffect(() => {
-    if (isConnected && !hasSignedIn.current) {
-      hasSignedIn.current = true;
-      fetchUserData();
-    }
-  }, [isConnected]);
-
   const handleBlur = (field: 'firstName' | 'lastName' | 'email') => {
     const value = field === 'firstName' ? firstName : field === 'lastName' ? lastName : email;
     validateField(field, value);
@@ -177,6 +161,10 @@ export default function RegistrationPage() {
       let res = true;
       if (!isDelegated) {
         res = await delegate(config);
+        // Wait a few seconds after delegation before proceeding
+        if (res) {
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        }
       }
 
       if (res) {
@@ -222,6 +210,22 @@ export default function RegistrationPage() {
       setTimeout(() => setCopied(false), 2000);
     }
   };
+
+  // Redirect to login if Web3Auth is not connected
+  useEffect(() => {
+    const web3Auth = getWeb3AuthInstance();
+    if (!web3Auth?.connected) {
+      router.push('/login');
+    }
+  }, [router]);
+
+  // Fetch user info from subgraph and email from Web3Auth when component mounts
+  useEffect(() => {
+    if (isConnected && !hasSignedIn.current) {
+      hasSignedIn.current = true;
+      fetchUserData();
+    }
+  }, [isConnected]);
 
   if (!isConnected || !address) {
     return (

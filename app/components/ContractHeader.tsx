@@ -36,18 +36,12 @@ export function ContractHeader() {
       
       // Check if both Web3Auth and wagmi are connected
       if (web3Auth?.connected && isConnected && address && config) {
-        const connectionTime = performance.now() - startTime;
-        if (connectionTime > 100) {
-          console.log(`ContractHeader: Connections ready after ${connectionTime.toFixed(2)}ms`);
-        }
+
         
         // Only fetch if role is not already set to avoid unnecessary calls
         if (userRole === null) {
           try {
-            const roleStartTime = performance.now();
             const role = await getUserRole(config, address);
-            const roleTime = performance.now() - roleStartTime;
-            console.log(`ContractHeader: getUserRole took ${roleTime.toFixed(2)}ms`);
             
             // memberInfo returns [role, dCategory, ...] - getUserRole returns res[1] which is the role
             const roleValue = Number(role ?? USER_ROLE.NO_ROLE);

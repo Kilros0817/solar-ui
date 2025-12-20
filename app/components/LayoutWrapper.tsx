@@ -1,10 +1,13 @@
 'use client'
 
 import { usePathname, useRouter } from 'next/navigation';
+import { useConnection } from 'wagmi';
 import { ContractHeader } from './ContractHeader';
 import { ContractSidebar } from './ContractSidebar';
+import { PagePreloader } from './PagePreloader';
 import { useUser } from '../contexts/UserContext';
 import { USER_ROLE } from '@/utils/constants';
+import { getWeb3AuthInstance } from '@/utils/Web3AuthStore';
 
 interface LayoutWrapperProps {
   children: React.ReactNode;
@@ -14,6 +17,8 @@ export function LayoutWrapper({ children }: LayoutWrapperProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { userRole } = useUser();
+  const { isConnected, address } = useConnection();
+  const web3Auth = getWeb3AuthInstance();
   
   // Pages that don't need header and sidebar
   const noLayoutPages = ['/login', '/register'];
@@ -22,6 +27,9 @@ export function LayoutWrapper({ children }: LayoutWrapperProps) {
   if (!shouldShowLayout) {
     return <>{children}</>;
   }
+
+  // Show preloader if connections are active but userRole is still being fetched
+  const isLoading = (web3Auth?.connected || isConnected) && userRole === null && address;
 
   // Handle sidebar tab changes
   const handleTabChange = (tab: string) => {
@@ -37,7 +45,8 @@ export function LayoutWrapper({ children }: LayoutWrapperProps) {
       'team-assignments': '/team-assignments',
       'my-assignments': '/my-assignments',
       'settings': '/settings',
-      'team': userRole === USER_ROLE.ADMIN ? '/user-management' : '/divisions',
+      'pending-users': '/pending-users',
+      'team': '/divisions',
     };
 
     const route = routeMap[tab];
@@ -47,16 +56,19 @@ export function LayoutWrapper({ children }: LayoutWrapperProps) {
   };
 
   return (
-    <div className="h-screen flex flex-col bg-background">
-      <ContractHeader />
-      <div className="flex-1 flex">
-        <ContractSidebar 
-          activeTab=""
-          onTabChange={handleTabChange} 
-        />
-        <main className="flex-1 overflow-auto">
-          {children}
-        </main>
+    <div className="h-screen flex flex-col bg-background relative">
+      {isLoading && <PagePreloader />}
+      <div className={isLoading ? 'blur-sm pointer-events-none' : ''}>
+        <ContractHeader />
+        <div className="flex-1 flex">
+          <ContractSidebar 
+            activeTab=""
+            onTabChange={handleTabChange} 
+          />
+          <main className="flex-1 overflow-auto">
+            {children}
+          </main>
+        </div>
       </div>
     </div>
   );

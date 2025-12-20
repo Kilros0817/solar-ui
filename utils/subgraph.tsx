@@ -13,6 +13,27 @@ const getDataFromSubgraph = async (query: any) => {
   }
 };
 
+export const getUserRole = async (account: any) => {
+  let query = `{
+    user(id: "${account}") {
+      firstName
+      lastName
+      email
+      onPending
+    }
+  }`;
+
+  try {
+    const res = await getDataFromSubgraph(query);
+    const user = (res.data as any).user;
+
+    return user;
+  } catch (e) {
+    console.log(e, "============error in get user pending list from subgraph============");
+    return null;
+  }
+}
+
 export const getUserInfo = async (account: any) => {
   let query = `{
     user(id: "${account}") {
@@ -52,4 +73,105 @@ export const getPendingUsers = async () => {
     return [];
   }
 };
+
+export const getAllMemebers = async () => {
+  let query = `{
+    users(where: {role_gt: 0}) {
+      id
+      firstName
+      lastName
+      email
+      dcategory
+      role
+    }
+  }`;
+  try {
+    const res = await getDataFromSubgraph(query);
+    const users = (res.data as any).users || [];
+    const grouped = groupUsersByDivision(users);
+    
+    // Add legal team members (role 3) to Legal division (dcategory 1)
+    // Legal division users have dcategory = 0, add them as leader
+    users.forEach((user: User) => {
+      const role = Number(user.role);
+      if (role === 3) { // Legal Team
+          grouped[0] = { leader: user, members: [] };
+      }
+    });
+    
+    return grouped;
+  } catch (e) {
+    console.log(e, "============error in get all users from subgraph============");
+    return {};
+  }
+};
+
+export const getAllDivisionLeadersAndMembers = async () => {
+  let query = `{
+    users(where: {dcategory_gt: 0}) {
+      id
+      firstName
+      lastName
+      email
+      dcategory
+      role
+    }
+  }`;
+  try {
+    const res = await getDataFromSubgraph(query);
+    const users = (res.data as any).users || [];
+    return groupUsersByDivision(users);
+  } catch (e) {
+    console.log(e, "============error in get all users from subgraph============");
+    return {};
+  }
+}
+
+interface User {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  dcategory?: number;
+  role?: number;
+}
+
+interface DivisionGroup {
+  leader: User | null;
+  members: User[];
+}
+
+export const groupUsersByDivision = (users: User[]): Record<number, DivisionGroup> => {
+  const grouped: Record<number, DivisionGroup> = {};
+
+  // Initialize all divisions with empty leader and members
+  // Division categories: 1-9 (excluding 0 which is NO_DIVISION)
+  for (let i = 1; i <= 9; i++) {
+    grouped[i] = {
+      leader: null,
+      members: []
+    };
+  }
+
+  // Group users by division category
+  users.forEach((user) => {
+    if (!user.dcategory || user.dcategory === 0) {
+      return; // Skip users without a division
+    }
+
+    const division = Number(user.dcategory);
+    const role = Number(user.role);
+
+    // Role 1 = Division Member, Role 2 = Division Leader
+    if (role === 1) {
+      // Division Member
+      grouped[division].members.push(user);
+    } else if (role === 2) {
+      // Division Leader
+      grouped[division].leader = user;
+    }
+  });
+
+  return grouped;
+}
 
