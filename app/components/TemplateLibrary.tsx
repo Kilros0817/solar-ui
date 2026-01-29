@@ -1,7 +1,11 @@
 import { ClauseTemplateCreator } from './ClauseTemplateCreator';
 import { SectionTemplateCreator } from './SectionTemplateCreator';
 import { ContractTemplateCreator } from './ContractTemplateCreator';
-import { TemplatePreviewModal } from './TemplatePreviewModal';
+import {
+  ContractTemplatePreviewModal,
+  SectionTemplatePreviewModal,
+  ClauseTemplatePreviewModal,
+} from './TemplatePreviewModals';
 import { ConfirmDialog } from './ConfirmDialog';
 import { toast } from 'sonner';
 import { useState, useEffect } from 'react';
@@ -885,11 +889,22 @@ export function TemplateLibrary({ onSelectContractTemplate }: TemplateLibraryPro
       </div>
     </TooltipProvider>
 
-    {/* Template Preview Modal */}
-    {previewTemplate && (
-      <TemplatePreviewModal
-        template={previewTemplate}
-        type={previewType}
+    {/* Template Preview Modals */}
+    {previewTemplate && previewType === 'contract' && (
+      <ContractTemplatePreviewModal
+        template={previewTemplate as ContractTemplate}
+        onClose={() => setPreviewTemplate(null)}
+      />
+    )}
+    {previewTemplate && previewType === 'section' && (
+      <SectionTemplatePreviewModal
+        template={previewTemplate as { id: string; name: string; sectionName?: string; description?: string; content?: string; clauseIds?: string[] }}
+        onClose={() => setPreviewTemplate(null)}
+      />
+    )}
+    {previewTemplate && previewType === 'clause' && (
+      <ClauseTemplatePreviewModal
+        template={previewTemplate as { id: string; name: string; description?: string; content?: string; category?: string }}
         onClose={() => setPreviewTemplate(null)}
       />
     )}
