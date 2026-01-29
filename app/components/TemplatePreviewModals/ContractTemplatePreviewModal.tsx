@@ -1,4 +1,4 @@
-import { X, FileText, Layers, FileCheck } from 'lucide-react';
+import { X, FileText, Layers } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Badge } from '../ui/badge';
@@ -60,7 +60,7 @@ export function ContractTemplatePreviewModal({ template, onClose, onUse }: Contr
   const sections = getSampleSections(template.category);
 
   return (
-    <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4">
       <Card className="w-full max-w-4xl max-h-[90vh] flex flex-col">
         <CardHeader className="flex flex-row items-center justify-between border-b pb-4">
           <div className="flex items-center gap-3">
@@ -80,15 +80,14 @@ export function ContractTemplatePreviewModal({ template, onClose, onUse }: Contr
             <X className="h-4 w-4" />
           </Button>
         </CardHeader>
-        <CardContent className="flex-1 min-h-0 overflow-hidden">
-          <div className="h-full overflow-y-auto overflow-x-hidden pr-4">
+        <CardContent className="min-h-0 overflow-y-auto">
+          <div className="pr-4">
             <div className="space-y-6">
               <div className="flex flex-wrap items-center gap-4">
                 <Badge variant="outline" className="text-sm px-3 py-1">
                   {template.category}
                 </Badge>
               </div>
-
               {/* Overview */}
               <div className="space-y-3">
                 <div>
@@ -135,8 +134,7 @@ export function ContractTemplatePreviewModal({ template, onClose, onUse }: Contr
                       Included Sections ({sections.length})
                     </h4>
                     <div
-                      className="min-h-0 overflow-y-auto overflow-x-hidden rounded-lg border p-2 shrink-0"
-                      style={{ height: 200 }}
+                      className="h-64 overflow-y-auto rounded-lg border p-2 shrink-0"
                     >
                       <div className="space-y-2 pr-1">
                         {sections.map((section, index) => (
@@ -160,42 +158,6 @@ export function ContractTemplatePreviewModal({ template, onClose, onUse }: Contr
                   </div>
                 </div>
               )}
-
-              {/* Key Features */}
-              <div className="space-y-3">
-                <div>
-                  <h4 className="font-medium mb-3 flex items-center gap-2">
-                    <FileCheck className="h-4 w-4 text-brand-secondary" />
-                    Key Features
-                  </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <div className="p-3 rounded-lg bg-brand-primary/5 border border-brand-secondary/10">
-                      <p className="text-sm font-medium mb-1">✓ Multiple Section Versions</p>
-                      <p className="text-xs text-muted-foreground">
-                        Choose from different versions of each section to match your specific requirements
-                      </p>
-                    </div>
-                    <div className="p-3 rounded-lg bg-brand-primary/5 border border-brand-secondary/10">
-                      <p className="text-sm font-medium mb-1">✓ Pre-Built Clauses</p>
-                      <p className="text-xs text-muted-foreground">
-                        Industry-standard clauses vetted for common use cases
-                      </p>
-                    </div>
-                    <div className="p-3 rounded-lg bg-brand-primary/5 border border-brand-secondary/10">
-                      <p className="text-sm font-medium mb-1">✓ Customizable Structure</p>
-                      <p className="text-xs text-muted-foreground">
-                        Add, remove, or reorder sections to fit your needs
-                      </p>
-                    </div>
-                    <div className="p-3 rounded-lg bg-brand-primary/5 border border-brand-secondary/10">
-                      <p className="text-sm font-medium mb-1">✓ Collaboration Ready</p>
-                      <p className="text-xs text-muted-foreground">
-                        Built-in commenting and version control for team collaboration
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
         </CardContent>
