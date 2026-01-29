@@ -81,15 +81,11 @@ export default function DashboardPage() {
               name: 'Blank Contract',
               description: 'Start from scratch',
               category: 'Custom',
-              tags: [],
-              lastModified: new Date().toISOString(),
               icon: FileText,
-              isBlank: true,
               createdDate: new Date().toISOString(),
+              lastModified: new Date().toISOString(),
               createdBy: 'System',
-              estimatedTime: '30-60 min',
-              complexity: 'simple',
-              status: 'active'
+              sectionIds: []
             }
             handleCreateFromTemplate(blankTemplate)
           }}

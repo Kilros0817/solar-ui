@@ -40,6 +40,8 @@ interface TemplateLibraryProps {
   onSelectContractTemplate?: (template: ContractTemplate) => void;
 }
 
+type EditingContract = ContractTemplate & { selectedSections?: { sectionName: string; versionId: string }[] };
+
 export function TemplateLibrary({ onSelectContractTemplate }: TemplateLibraryProps) {
   const { userRole } = useUser();
   const [searchQuery, setSearchQuery] = useState('');
@@ -57,146 +59,10 @@ export function TemplateLibrary({ onSelectContractTemplate }: TemplateLibraryPro
   const [deleteSectionToConfirm, setDeleteSectionToConfirm] = useState<{ id: string; name: string; sectionName: string } | null>(null);
   const [editingClause, setEditingClause] = useState<any>(null);
   const [editingSection, setEditingSection] = useState<any>(null);
-  const [editingContract, setEditingContract] = useState<ContractTemplate | null>(null);
+  const [editingContract, setEditingContract] = useState<EditingContract | null>(null);
 
-  // Contract Templates
-  const [contractTemplates, setContractTemplates] = useState<ContractTemplate[]>([
-    {
-      id: 'service-agreement',
-      name: 'Service Agreement',
-      description: 'Standard service agreement for professional services',
-      category: 'Services',
-      icon: FileText,
-      isBlank: false,
-      createdDate: '2024-01-15',
-      lastModified: '2024-12-01',
-      createdBy: 'System',
-      tags: ['services', 'agreement'],
-      estimatedTime: '45-90 min',
-      complexity: 'moderate',
-      status: 'active'
-    },
-    {
-      id: 'nda',
-      name: 'Non-Disclosure Agreement',
-      description: 'Protect confidential information and trade secrets',
-      category: 'Legal',
-      icon: FileText,
-      isBlank: false,
-      createdDate: '2024-01-10',
-      lastModified: '2024-11-25',
-      createdBy: 'System',
-      tags: ['legal', 'nda', 'confidentiality'],
-      estimatedTime: '30-60 min',
-      complexity: 'simple',
-      status: 'active'
-    },
-    {
-      id: 'employment',
-      name: 'Employment Contract',
-      description: 'Comprehensive employment agreement template',
-      category: 'HR',
-      icon: FileText,
-      isBlank: false,
-      createdDate: '2024-01-20',
-      lastModified: '2024-11-28',
-      createdBy: 'System',
-      tags: ['hr', 'employment'],
-      estimatedTime: '60-120 min',
-      complexity: 'complex',
-      status: 'active'
-    },
-    {
-      id: 'saas-agreement',
-      name: 'SaaS Agreement',
-      description: 'Software as a Service subscription agreement',
-      category: 'Technology',
-      icon: FileText,
-      isBlank: false,
-      createdDate: '2024-02-01',
-      lastModified: '2024-11-26',
-      createdBy: 'System',
-      tags: ['saas', 'technology', 'subscription'],
-      estimatedTime: '45-90 min',
-      complexity: 'moderate',
-      status: 'active'
-    },
-    {
-      id: 'vendor-agreement',
-      name: 'Vendor Agreement',
-      description: 'Agreement with suppliers and vendors',
-      category: 'Procurement',
-      icon: FileText,
-      isBlank: false,
-      createdDate: '2024-02-10',
-      lastModified: '2024-11-24',
-      createdBy: 'System',
-      tags: ['procurement', 'vendor', 'supplier'],
-      estimatedTime: '45-90 min',
-      complexity: 'moderate',
-      status: 'active'
-    },
-    {
-      id: 'partnership',
-      name: 'Partnership Agreement',
-      description: 'Business partnership and collaboration agreement',
-      category: 'Business',
-      icon: FileText,
-      isBlank: false,
-      createdDate: '2024-02-15',
-      lastModified: '2024-11-20',
-      createdBy: 'System',
-      tags: ['partnership', 'business'],
-      estimatedTime: '60-120 min',
-      complexity: 'complex',
-      status: 'active'
-    },
-    {
-      id: 'consulting',
-      name: 'Consulting Agreement',
-      description: 'Independent contractor and consulting services',
-      category: 'Services',
-      icon: FileText,
-      isBlank: false,
-      createdDate: '2024-02-20',
-      lastModified: '2024-11-27',
-      createdBy: 'System',
-      tags: ['consulting', 'contractor', 'services'],
-      estimatedTime: '30-60 min',
-      complexity: 'simple',
-      status: 'active'
-    },
-    {
-      id: 'lease',
-      name: 'Commercial Lease',
-      description: 'Commercial property lease agreement',
-      category: 'Real Estate',
-      icon: FileText,
-      isBlank: false,
-      createdDate: '2024-03-01',
-      lastModified: '2024-11-24',
-      createdBy: 'System',
-      tags: ['lease', 'real-estate', 'commercial'],
-      estimatedTime: '60-120 min',
-      complexity: 'complex',
-      status: 'active'
-    },
-    {
-      id: 'license',
-      name: 'License Agreement',
-      description: 'Software or IP licensing agreement',
-      category: 'Technology',
-      icon: FileText,
-      isBlank: false,
-      createdDate: '2024-03-15',
-      lastModified: '2024-11-25',
-      createdBy: 'System',
-      tags: ['license', 'technology', 'ip'],
-      estimatedTime: '45-90 min',
-      complexity: 'moderate',
-      status: 'active'
-    }
-  ]);
+  // Contract Templates (fetched from solar-server)
+  const [contractTemplates, setContractTemplates] = useState<ContractTemplate[]>([]);
 
   // Section Templates (fetched from solar-server)
   const [sectionTemplates, setSectionTemplates] = useState<Record<string, Array<{ id: string; sectionName?: string; name: string; description: string; content: string; category: string; clauseIds?: string[] }>>>({});
@@ -226,6 +92,35 @@ export function TemplateLibrary({ onSelectContractTemplate }: TemplateLibraryPro
       }
     };
     fetchClauseTemplates();
+  }, []);
+
+  const fetchContractTemplates = async () => {
+    try {
+      const res = await fetch(`${URLs.ContractAPI}?limit=200`);
+      const data = await res.json();
+      if (res.ok && data.items) {
+        setContractTemplates(
+          data.items.map((item: { id?: string; templateId?: string; name: string; description: string; category: string; createdDate?: string; lastModified?: string; createdBy?: string; sectionIds?: string[] }) => ({
+            id: item.id ?? item.templateId ?? '',
+            name: item.name,
+            description: item.description,
+            category: item.category,
+            icon: FileText,
+            createdDate: item.createdDate ?? new Date().toISOString(),
+            lastModified: item.lastModified ?? new Date().toISOString(),
+            createdBy: item.createdBy ?? 'System',
+            sectionIds: item.sectionIds ?? [],
+          }))
+        );
+      }
+    } catch (err) {
+      console.error('Failed to fetch contract templates:', err);
+      toast.error('Failed to load contract templates');
+    }
+  };
+
+  useEffect(() => {
+    fetchContractTemplates();
   }, []);
 
   const fetchSectionTemplates = async () => {
@@ -401,49 +296,53 @@ export function TemplateLibrary({ onSelectContractTemplate }: TemplateLibraryPro
     }
   };
 
-  const handleSaveContract = (contract: any) => {
-    console.log('New contract template:', contract);
-    
-    if (editingContract) {
-      // Update existing contract
-      setContractTemplates(prev => 
-        prev.map(t => t.id === editingContract.id 
-          ? {
-              ...t,
-              name: contract.name,
-              description: contract.description,
-              category: contract.category,
-              icon: FileText,
-              lastModified: new Date().toISOString(),
-            }
-          : t
-        )
-      );
-      toast.success(`Contract template "${contract.name}" updated successfully.`);
-      setEditingContract(null);
-    } else {
-      // Create new contract template
-      const newContract: ContractTemplate = {
-        id: `contract-${Date.now()}`,
-        name: contract.name,
-        description: contract.description,
-        category: contract.category,
-        icon: FileText,
-        isBlank: false,
-        createdDate: new Date().toISOString(),
-        lastModified: new Date().toISOString(),
-        createdBy: 'System',
-        tags: [],
-        estimatedTime: '30-60 min',
-        complexity: 'simple',
-        status: 'active'
-      };
-      
-      setContractTemplates(prev => [...prev, newContract]);
-      toast.success(`Contract template "${contract.name}" created successfully.`);
+  const handleSaveContract = async (contract: any) => {
+    try {
+      const sectionIds = (contract.selectedSections ?? []).map((s: { versionId: string }) => s.versionId);
+      if (editingContract) {
+        const res = await fetch(`${URLs.ContractAPI}/${editingContract.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: contract.name,
+            description: contract.description,
+            category: contract.category,
+            sectionIds,
+          }),
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.error || 'Failed to update contract template');
+        }
+        await fetchContractTemplates();
+        toast.success(`Contract template "${contract.name}" updated successfully.`);
+        setEditingContract(null);
+      } else {
+        const templateId = `contract-${Date.now()}`;
+        const res = await fetch(`${URLs.ContractAPI}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            templateId,
+            name: contract.name,
+            description: contract.description,
+            category: contract.category,
+            createdBy: 'System',
+            sectionIds,
+          }),
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.error || 'Failed to create contract template');
+        }
+        await fetchContractTemplates();
+        toast.success(`Contract template "${contract.name}" created successfully.`);
+      }
+    } catch (err) {
+      console.error('Save contract error:', err);
+      toast.error(err instanceof Error ? err.message : 'Failed to save contract template');
+      throw err;
     }
-    
-    setShowContractCreator(false);
   };
 
   const handlePreviewTemplate = (template: ContractTemplate) => {
@@ -455,10 +354,20 @@ export function TemplateLibrary({ onSelectContractTemplate }: TemplateLibraryPro
     setDeleteTemplate(template);
   };
 
-  const handleConfirmDelete = () => {
-    if (deleteTemplate) {
-      // In a real app, this would delete from a database
+  const handleConfirmDelete = async () => {
+    if (!deleteTemplate) return;
+    try {
+      const res = await fetch(`${URLs.ContractAPI}/${deleteTemplate.id}`, { method: 'DELETE' });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || 'Failed to delete contract template');
+      }
+      await fetchContractTemplates();
       toast.success(`Template "${deleteTemplate.name}" deleted successfully.`);
+    } catch (err) {
+      console.error('Delete contract error:', err);
+      toast.error(err instanceof Error ? err.message : 'Failed to delete contract template');
+    } finally {
       setDeleteTemplate(null);
     }
   };
@@ -552,11 +461,17 @@ export function TemplateLibrary({ onSelectContractTemplate }: TemplateLibraryPro
   };
 
   const handleEditContract = (contract: ContractTemplate) => {
-    console.log('Edit contract:', contract);
-    setEditingContract(contract);
+    // Convert sectionIds to selectedSections for the creator
+    const selectedSections = (contract.sectionIds ?? []).map((sectionId) => {
+      for (const [sectionName, versions] of Object.entries(sectionTemplates)) {
+        const version = versions.find((v) => v.id === sectionId);
+        if (version) return { sectionName, versionId: sectionId };
+      }
+      return null;
+    }).filter((s): s is { sectionName: string; versionId: string } => s !== null);
+    setEditingContract({ ...contract, selectedSections });
     setShowContractCreator(true);
     toast.info(`Editing: ${contract.name}`);
-    // In a real app, this would open an edit modal
   };
 
   return (
@@ -691,19 +606,7 @@ export function TemplateLibrary({ onSelectContractTemplate }: TemplateLibraryPro
                           className="flex-1"
                           onClick={() => {
                             if (onSelectContractTemplate) {
-                              // Convert to full ContractTemplate format
-                              const fullTemplate: ContractTemplate = {
-                                ...template,
-                                isBlank: template.isBlank || false,
-                                createdDate: new Date().toISOString(),
-                                lastModified: new Date().toISOString(),
-                                createdBy: 'System',
-                                tags: [],
-                                estimatedTime: '30-60 min',
-                                complexity: 'simple',
-                                status: 'active'
-                              };
-                              onSelectContractTemplate(fullTemplate);
+                              onSelectContractTemplate(template);
                             } else {
                               handlePreviewTemplate(template);
                             }
@@ -893,6 +796,7 @@ export function TemplateLibrary({ onSelectContractTemplate }: TemplateLibraryPro
     {previewTemplate && previewType === 'contract' && (
       <ContractTemplatePreviewModal
         template={previewTemplate as ContractTemplate}
+        sectionTemplates={sectionTemplates}
         onClose={() => setPreviewTemplate(null)}
       />
     )}

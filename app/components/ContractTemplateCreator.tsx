@@ -31,7 +31,7 @@ interface ContractTemplateCreatorProps {
     description: string;
     category: string;
     selectedSections: { sectionName: string; versionId: string }[];
-  }) => void;
+  }) => void | Promise<void>;
   availableSections: SectionTemplate[];
   editingContract?: any;
 }
@@ -40,7 +40,7 @@ export function ContractTemplateCreator({ onClose, onSave, availableSections, ed
   const [name, setName] = useState(editingContract?.name || '');
   const [description, setDescription] = useState(editingContract?.description || '');
   const [category, setCategory] = useState(editingContract?.category || '');
-  const [selectedSections, setSelectedSections] = useState<{ sectionName: string; versionId: string }[]>(editingContract?.selectedSections || []);
+  const [selectedSections, setSelectedSections] = useState<{ sectionName: string; versionId: string }[]>(editingContract?.selectedSections ?? []);
   const [expandedPreview, setExpandedPreview] = useState(false);
 
   const categories = ['Services', 'Legal', 'HR', 'Technology', 'Procurement', 'Business', 'Real Estate'];
@@ -75,15 +75,21 @@ export function ContractTemplateCreator({ onClose, onSave, availableSections, ed
     return selectedSections.find(s => s.sectionName === sectionName)?.versionId;
   };
 
-  const handleSave = () => {
-    if (name && description && category && selectedSections.length > 0) {
-      onSave({
-        name,
-        description,
-        category,
-        selectedSections
-      });
-      onClose();
+  const handleSave = async () => {
+    const hasRequiredFields = name && description && category;
+    const hasSections = selectedSections.length > 0;
+    if (hasRequiredFields && (hasSections || editingContract)) {
+      try {
+        await onSave({
+          name,
+          description,
+          category,
+          selectedSections
+        });
+        onClose();
+      } catch {
+        // Error shown by parent; keep modal open for retry
+      }
     }
   };
 
@@ -266,7 +272,7 @@ export function ContractTemplateCreator({ onClose, onSave, availableSections, ed
           <div className="flex items-center gap-3 pt-4 border-t">
             <Button
               onClick={handleSave}
-              disabled={!name || !description || !category || selectedSections.length === 0}
+              disabled={!name || !description || !category || (!editingContract && selectedSections.length === 0)}
               className="bg-brand-secondary hover:bg-[var(--brand-secondary-hover)] text-white"
             >
               <Save className="h-4 w-4 mr-2" />
@@ -275,7 +281,7 @@ export function ContractTemplateCreator({ onClose, onSave, availableSections, ed
             <Button variant="outline" onClick={onClose}>
               Cancel
             </Button>
-            {selectedSections.length === 0 && (
+            {selectedSections.length === 0 && !editingContract && (
               <p className="text-sm text-muted-foreground ml-2">
                 Select at least one section to continue
               </p>
