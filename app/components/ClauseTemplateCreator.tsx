@@ -20,7 +20,8 @@ interface ClauseTemplateCreatorProps {
     description: string;
     content: string;
     category: string;
-  }) => void;
+    templateId?: string;
+  }) => void | Promise<void>;
   editingClause?: {
     id?: string;
     name: string;
@@ -38,10 +39,20 @@ export function ClauseTemplateCreator({ onClose, onSave, editingClause }: Clause
 
   const categories = ['Legal', 'Risk Management', 'Compliance', 'Administrative'];
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (name && description && content && category) {
-      onSave({ name, description, content, category });
-      onClose();
+      try {
+        await onSave({
+          name,
+          description,
+          content,
+          category,
+          ...(editingClause?.id && { templateId: editingClause.id }),
+        });
+        onClose();
+      } catch {
+        // Error shown by parent; keep modal open for retry
+      }
     }
   };
 

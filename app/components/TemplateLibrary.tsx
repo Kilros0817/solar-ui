@@ -4,7 +4,7 @@ import { ContractTemplateCreator } from './ContractTemplateCreator';
 import { TemplatePreviewModal } from './TemplatePreviewModal';
 import { ConfirmDialog } from './ConfirmDialog';
 import { toast } from 'sonner';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   FileText, 
   Search, 
@@ -33,7 +33,7 @@ import {
   DropdownMenuSeparator
 } from './ui/dropdown-menu';
 import { useUser } from '../contexts/UserContext';
-import { USER_ROLE } from '@/utils/constants';
+import { USER_ROLE, URLs } from '@/utils/constants';
 import { ContractTemplate } from '../data/templates';
 
 interface TemplateLibraryProps {
@@ -51,6 +51,7 @@ export function TemplateLibrary({ onSelectContractTemplate }: TemplateLibraryPro
   const [showSectionCreator, setShowSectionCreator] = useState(false);
   const [showContractCreator, setShowContractCreator] = useState(false);
   const [previewTemplate, setPreviewTemplate] = useState<ContractTemplate | null>(null);
+  const [previewType, setPreviewType] = useState<'contract' | 'section' | 'clause'>('contract');
   const [deleteTemplate, setDeleteTemplate] = useState<ContractTemplate | null>(null);
   const [editingClause, setEditingClause] = useState<any>(null);
   const [editingSection, setEditingSection] = useState<any>(null);
@@ -416,129 +417,32 @@ export function TemplateLibrary({ onSelectContractTemplate }: TemplateLibraryPro
     ]
   });
 
-  // Clause Templates
-  const clauseTemplates = [
-    {
-      id: 'c1',
-      name: 'Force Majeure',
-      description: 'Protection for unforeseeable circumstances',
-      content: 'Neither party shall be liable for any failure or delay in performing its obligations under this Agreement where such failure or delay results from any cause beyond the reasonable control of that party.',
-      category: 'Risk Management',
-      usageCount: 312
-    },
-    {
-      id: 'c2',
-      name: 'Confidentiality Obligation',
-      description: 'Standard confidentiality requirements',
-      content: 'Each party agrees to maintain the confidentiality of all Confidential Information disclosed by the other party and to use such information solely for the purposes of this Agreement.',
-      category: 'Legal',
-      usageCount: 289
-    },
-    {
-      id: 'c3',
-      name: 'Non-Solicitation',
-      description: 'Prevent employee poaching',
-      content: 'During the term of this Agreement and for a period of twelve (12) months thereafter, neither party shall directly or indirectly solicit for employment any employee of the other party.',
-      category: 'Legal',
-      usageCount: 156
-    },
-    {
-      id: 'c4',
-      name: 'Limitation of Liability',
-      description: 'Cap on liability exposure',
-      content: 'In no event shall either party\'s aggregate liability exceed the total amount paid under this Agreement in the twelve (12) months preceding the claim.',
-      category: 'Risk Management',
-      usageCount: 267
-    },
-    {
-      id: 'c5',
-      name: 'Governing Law',
-      description: 'Jurisdiction and applicable law',
-      content: 'This Agreement shall be governed by and construed in accordance with the laws of [Jurisdiction], without regard to its conflict of law provisions.',
-      category: 'Legal',
-      usageCount: 401
-    },
-    {
-      id: 'c6',
-      name: 'Assignment Rights',
-      description: 'Control over contract assignment',
-      content: 'Neither party may assign this Agreement without the prior written consent of the other party, except in the case of a merger or acquisition.',
-      category: 'Legal',
-      usageCount: 198
-    },
-    {
-      id: 'c7',
-      name: 'Audit Rights',
-      description: 'Right to audit compliance',
-      content: 'Customer shall have the right, upon reasonable notice, to audit Vendor\'s compliance with the terms of this Agreement, including security and data protection measures.',
-      category: 'Compliance',
-      usageCount: 134
-    },
-    {
-      id: 'c8',
-      name: 'Warranties & Representations',
-      description: 'Standard business warranties',
-      content: 'Each party represents and warrants that it has full power and authority to enter into this Agreement and that its performance will not violate any other agreement.',
-      category: 'Legal',
-      usageCount: 356
-    },
-    {
-      id: 'c9',
-      name: 'Indemnification',
-      description: 'Mutual indemnification provisions',
-      content: 'Each party agrees to indemnify and hold harmless the other party from any claims, damages, or expenses arising from its breach of this Agreement or negligent acts.',
-      category: 'Risk Management',
-      usageCount: 278
-    },
-    {
-      id: 'c10',
-      name: 'Data Protection',
-      description: 'GDPR-compliant data handling',
-      content: 'Vendor shall process personal data only in accordance with Customer\'s written instructions and comply with all applicable data protection laws including GDPR.',
-      category: 'Compliance',
-      usageCount: 223
-    },
-    {
-      id: 'c11',
-      name: 'Dispute Resolution',
-      description: 'Escalation and arbitration process',
-      content: 'Any disputes shall first be subject to good-faith negotiation. If unresolved within 30 days, disputes shall be resolved through binding arbitration.',
-      category: 'Legal',
-      usageCount: 187
-    },
-    {
-      id: 'c12',
-      name: 'Amendment Process',
-      description: 'How to modify the agreement',
-      content: 'This Agreement may only be amended by written agreement signed by authorized representatives of both parties.',
-      category: 'Legal',
-      usageCount: 245
-    },
-    {
-      id: 'c13',
-      name: 'Severability',
-      description: 'Invalid provisions don\'t void contract',
-      content: 'If any provision of this Agreement is held to be invalid or unenforceable, the remaining provisions shall continue in full force and effect.',
-      category: 'Legal',
-      usageCount: 298
-    },
-    {
-      id: 'c14',
-      name: 'Entire Agreement',
-      description: 'Supersedes prior agreements',
-      content: 'This Agreement constitutes the entire agreement between the parties and supersedes all prior negotiations, representations, or agreements.',
-      category: 'Legal',
-      usageCount: 334
-    },
-    {
-      id: 'c15',
-      name: 'Notice Provisions',
-      description: 'How to provide official notices',
-      content: 'All notices under this Agreement shall be in writing and sent to the addresses specified herein via email or certified mail.',
-      category: 'Administrative',
-      usageCount: 267
-    }
-  ];
+  // Clause Templates (fetched from solar-server)
+  const [clauseTemplates, setClauseTemplates] = useState<Array<{ id: string; name: string; description: string; content: string; category: string }>>([]);
+
+  useEffect(() => {
+    const fetchClauseTemplates = async () => {
+      try {
+        const res = await fetch(`${URLs.ClauseAPI}?limit=200`);
+        const data = await res.json();
+        if (res.ok && data.items) {
+          setClauseTemplates(
+            data.items.map((item: { templateId: string; name: string; description: string; content: string; category: string }) => ({
+              id: item.templateId,
+              name: item.name,
+              description: item.description,
+              content: item.content,
+              category: item.category,
+            }))
+          );
+        }
+      } catch (err) {
+        console.error('Failed to fetch clause templates:', err);
+        toast.error('Failed to load clause templates');
+      }
+    };
+    fetchClauseTemplates();
+  }, []);
 
   const contractCategories = ['all', 'Services', 'Legal', 'HR', 'Technology', 'Procurement', 'Business', 'Real Estate'];
   const sectionCategories = ['all', 'General', 'Enterprise', 'SMB', 'Pricing', 'Legal', 'Compliance', 'Service'];
@@ -579,9 +483,57 @@ export function TemplateLibrary({ onSelectContractTemplate }: TemplateLibraryPro
         versions: versions.map((v: typeof versions[0]) => ({ id: v.id, name: v.name, description: v.description, category: v.category }))
       }));
 
-  const handleSaveClause = (clause: any) => {
-    console.log('New clause template:', clause);
-    // In a real app, this would save to a database
+  const handleSaveClause = async (clause: { name: string; description: string; content: string; category: string; templateId?: string }) => {
+    if (clause.templateId) {
+      // Edit: call solar-server PUT API
+      const res = await fetch(`${URLs.ClauseAPI}/${clause.templateId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: clause.name, description: clause.description, content: clause.content, category: clause.category }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || 'Failed to update clause template');
+      }
+      const data = await res.json();
+      setClauseTemplates((prev) =>
+        prev.map((c) => (c.id === clause.templateId ? { ...c, name: data.item.name, description: data.item.description, content: data.item.content, category: data.item.category } : c))
+      );
+      toast.success(`Clause template "${clause.name}" updated successfully`);
+      setEditingClause(null);
+      setShowClauseCreator(false);
+    } else {
+      // Create: call solar-server POST API
+      const templateId = `c-${Date.now()}`;
+      const res = await fetch(`${URLs.ClauseAPI}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          templateId,
+          name: clause.name,
+          description: clause.description,
+          content: clause.content,
+          category: clause.category,
+        }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || 'Failed to create clause template');
+      }
+      const data = await res.json();
+      setClauseTemplates((prev) => [
+        ...prev,
+        {
+          id: data.item.templateId,
+          name: data.item.name,
+          description: data.item.description,
+          content: data.item.content,
+          category: data.item.category,
+        },
+      ]);
+      toast.success(`Clause template "${clause.name}" created successfully`);
+      setShowClauseCreator(false);
+    }
   };
 
   const handleSaveSection = (section: any) => {
@@ -705,6 +657,7 @@ export function TemplateLibrary({ onSelectContractTemplate }: TemplateLibraryPro
 
   const handlePreviewTemplate = (template: ContractTemplate) => {
     setPreviewTemplate(template);
+    setPreviewType('contract');
   };
 
   const handleDeleteTemplate = (template: ContractTemplate) => {
@@ -754,9 +707,8 @@ export function TemplateLibrary({ onSelectContractTemplate }: TemplateLibraryPro
   };
 
   const handlePreviewClause = (clause: any) => {
-    console.log('Preview clause:', clause);
-    toast.info(`Previewing: ${clause.name}`);
-    // In a real app, this would open a preview modal
+    setPreviewTemplate(clause);
+    setPreviewType('clause');
   };
 
   const handleEditClause = (clause: any) => {
@@ -765,12 +717,6 @@ export function TemplateLibrary({ onSelectContractTemplate }: TemplateLibraryPro
     setShowClauseCreator(true);
     toast.info(`Editing: ${clause.name}`);
     // In a real app, this would open an edit modal
-  };
-
-  const handleCopyClause = (clause: any) => {
-    console.log('Copy clause:', clause);
-    toast.success(`Created copy of "${clause.name}"`);
-    // In a real app, this would create a copy of the clause
   };
 
   const handleDeleteClause = (clause: any) => {
@@ -1094,7 +1040,7 @@ export function TemplateLibrary({ onSelectContractTemplate }: TemplateLibraryPro
             {/* Clause Templates Tab */}
             <TabsContent value="clauses" className="space-y-4 mt-6">
               <div className="flex justify-end mb-4">
-                <Button onClick={() => setShowClauseCreator(true)} className="bg-brand-secondary hover:bg-[var(--brand-secondary-hover)] text-white border-brand-secondary">
+                <Button onClick={() => { setEditingClause(null); setShowClauseCreator(true); }} className="bg-brand-secondary hover:bg-[var(--brand-secondary-hover)] text-white border-brand-secondary">
                   <Plus className="h-4 w-4 mr-2" />
                   New Clause Template
                 </Button>
@@ -1125,34 +1071,10 @@ export function TemplateLibrary({ onSelectContractTemplate }: TemplateLibraryPro
                         </Badge>
                       </div>
                       <div className="flex gap-2 pt-2 border-t">
-                        <HoverCard openDelay={200}>
-                          <HoverCardTrigger asChild>
-                            <Button size="sm" variant="outline" className="flex-1 text-xs h-8" onClick={() => handlePreviewClause(clause)}>
-                              <Eye className="h-3 w-3 mr-1" />
-                              Preview
-                            </Button>
-                          </HoverCardTrigger>
-                          <HoverCardContent className="w-[500px]" side="right">
-                            <div className="space-y-3">
-                              <div>
-                                <h4 className="font-medium flex items-center gap-2">
-                                  <Text className="h-4 w-4" />
-                                  {clause.name}
-                                </h4>
-                                <p className="text-sm text-muted-foreground mt-1">{clause.description}</p>
-                              </div>
-                              <div className="pt-2 border-t">
-                                <p className="text-xs font-medium text-muted-foreground mb-2">Full Clause Text:</p>
-                                <p className="text-sm text-foreground leading-relaxed bg-muted/50 p-3 rounded">
-                                  {clause.content}
-                                </p>
-                              </div>
-                              <div className="pt-2 border-t">
-                                <Badge variant="outline">{clause.category}</Badge>
-                              </div>
-                            </div>
-                          </HoverCardContent>
-                        </HoverCard>
+                        <Button size="sm" variant="outline" className="flex-1 text-xs h-8" onClick={() => handlePreviewClause(clause)}>
+                          <Eye className="h-3 w-3 mr-1" />
+                          Preview
+                        </Button>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button size="sm" variant="outline" className="text-xs h-8">
@@ -1163,10 +1085,6 @@ export function TemplateLibrary({ onSelectContractTemplate }: TemplateLibraryPro
                             <DropdownMenuItem onClick={() => handleEditClause(clause)}>
                               <Edit className="h-4 w-4 mr-2" />
                               Edit
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleCopyClause(clause)}>
-                              <Copy className="h-4 w-4 mr-2" />
-                              Copy
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem variant="destructive" onClick={() => handleDeleteClause(clause)}>
@@ -1190,7 +1108,7 @@ export function TemplateLibrary({ onSelectContractTemplate }: TemplateLibraryPro
     {previewTemplate && (
       <TemplatePreviewModal
         template={previewTemplate}
-        type="contract"
+        type={previewType}
         onClose={() => setPreviewTemplate(null)}
       />
     )}
