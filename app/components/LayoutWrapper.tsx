@@ -39,12 +39,10 @@ export function LayoutWrapper({ children }: LayoutWrapperProps) {
       'pending': '/pending',
       'approved': '/approved',
       'templates': '/templates',
-      'analytics': '/analytics',
       'incoming': '/incoming',
       'assigned-work': '/assigned-work',
       'team-assignments': '/team-assignments',
       'my-assignments': '/my-assignments',
-      'settings': '/settings',
       'pending-users': '/pending-users',
       'team': '/divisions',
     };

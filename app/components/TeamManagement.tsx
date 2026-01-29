@@ -268,7 +268,7 @@ export function TeamManagement({ userRole }: TeamManagementProps) {
                     </>
                   ) : (
                     <div className="flex flex-col items-center justify-center py-6 text-center">
-                      <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-3">
+                      <div className="bg-muted rounded-full flex items-center justify-center mb-3">
                         <AlertCircle className="h-8 w-8 text-muted-foreground" />
                       </div>
                       <p className="text-sm font-medium mb-1">No Leader Assigned</p>

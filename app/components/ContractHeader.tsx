@@ -109,7 +109,6 @@ export function ContractHeader() {
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="flex items-center gap-3 hover:bg-accent">
               <Avatar className="h-8 w-8 ring-1 ring-border">
-                <AvatarImage src="/placeholder-avatar.jpg" />
                 <AvatarFallback>
                   {getInitials(userName)}
                 </AvatarFallback>

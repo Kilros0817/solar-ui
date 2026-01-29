@@ -1123,10 +1123,6 @@ export function TemplateLibrary({ onSelectContractTemplate }: TemplateLibraryPro
                         <Badge variant="outline" className="text-xs">
                           {clause.category}
                         </Badge>
-                        <span className="text-xs text-muted-foreground flex items-center gap-1">
-                          <TrendingUp className="h-3 w-3" />
-                          {clause.usageCount} uses
-                        </span>
                       </div>
                       <div className="flex gap-2 pt-2 border-t">
                         <HoverCard openDelay={200}>
@@ -1151,11 +1147,8 @@ export function TemplateLibrary({ onSelectContractTemplate }: TemplateLibraryPro
                                   {clause.content}
                                 </p>
                               </div>
-                              <div className="pt-2 border-t flex items-center justify-between">
+                              <div className="pt-2 border-t">
                                 <Badge variant="outline">{clause.category}</Badge>
-                                <span className="text-xs text-muted-foreground">
-                                  Used in {clause.usageCount} contracts
-                                </span>
                               </div>
                             </div>
                           </HoverCardContent>

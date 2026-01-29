@@ -144,7 +144,6 @@ export const getUserRole = async (config, address) => {
     functionName: "memberInfo",
     args: [address]
   })
-
   return res[1];
 }
 

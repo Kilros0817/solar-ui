@@ -16,7 +16,6 @@ import {
   UserCheck,
   FileEdit,
   BarChart3,
-  Settings,
   RefreshCw,
 } from 'lucide-react';
 import { cn } from '../lib/utils';
@@ -66,12 +65,10 @@ export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
     '/pending': 'pending',
     '/approved': 'approved',
     '/templates': 'templates',
-    '/analytics': 'analytics',
     '/incoming': 'incoming',
     '/assigned-work': 'assigned-work',
     '/team-assignments': 'team-assignments',
     '/my-assignments': 'my-assignments',
-    '/settings': 'settings',
     '/divisions': 'team',
     '/pending-users': 'pending-users',
   };
@@ -91,7 +88,6 @@ export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
         { id: 'approved', label: 'Approved', icon: CheckCircle, count: counts.approved },
         { id: 'templates', label: 'Template Library', icon: FolderOpen, count: null },
         { id: 'team', label: 'Team', icon: Users, count: null },
-        { id: 'analytics', label: 'Analytics', icon: BarChart3, count: null },
       ];
     }
 
@@ -144,8 +140,6 @@ export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
         { id: 'templates', label: 'All Templates', icon: FolderOpen, count: null },
         { id: 'pending-users', label: 'Pending Users', icon: Users, count: null },
         { id: 'team', label: 'Team', icon: Users, count: null },
-        { id: 'analytics', label: 'System Analytics', icon: BarChart3, count: null },
-        { id: 'settings', label: 'Settings', icon: Settings, count: null },
       ];
     }
 
@@ -207,12 +201,10 @@ export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
               'pending': '/pending',
               'approved': '/approved',
               'templates': '/templates',
-              'analytics': '/analytics',
               'incoming': '/incoming',
               'assigned-work': '/assigned-work',
               'team-assignments': '/team-assignments',
               'my-assignments': '/my-assignments',
-              'settings': '/settings',
               'pending-users': '/pending-users',
               'team': '/divisions',
             };

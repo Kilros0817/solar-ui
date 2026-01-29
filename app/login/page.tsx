@@ -97,7 +97,6 @@ export default function LoginPage() {
 
   useEffect(() => {
     const fetchUserRole = async () => {
-
       // Only auto-login if BOTH Web3Auth AND wagmi are connected
       // This prevents auto-login right after logout
       if (web3Auth?.connected && isConnected && !hasSignedIn.current) {
@@ -105,7 +104,6 @@ export default function LoginPage() {
         hasSignedIn.current = true;
         try {
           const role = await getUserRole(config, address);
-
           setUserRole(role);
 
           // Redirect based on role
@@ -173,7 +171,7 @@ export default function LoginPage() {
             <Button
               onClick={handleContinue}
               disabled={!isEmailValid}
-              className="w-full h-12 text-base font-semibold"
+              className="w-full h-12 text-base font-semibold cursor-pointer"
               size="lg"
             >
               Continue

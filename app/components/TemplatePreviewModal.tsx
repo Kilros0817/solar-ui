@@ -93,7 +93,7 @@ export function TemplatePreviewModal({ template, type, onClose, onUse }: Templat
                 <Badge variant="outline" className="text-sm px-3 py-1">
                   {template.category}
                 </Badge>
-                {template.usageCount !== undefined && (
+                {template.usageCount !== undefined && type !== 'clause' && (
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <TrendingUp className="h-4 w-4" />
                     <span>Used {template.usageCount} times</span>
