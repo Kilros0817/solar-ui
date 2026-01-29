@@ -8,14 +8,11 @@ import { useState, useEffect } from 'react';
 import { 
   FileText, 
   Search, 
-  Clock, 
-  TrendingUp,
   Eye,
   Plus,
   Layers,
   Text,
   Edit,
-  Copy,
   Trash2,
 } from 'lucide-react';
 import { Button } from './ui/button';
@@ -61,30 +58,11 @@ export function TemplateLibrary({ onSelectContractTemplate }: TemplateLibraryPro
   // Contract Templates
   const [contractTemplates, setContractTemplates] = useState<ContractTemplate[]>([
     {
-      id: 'blank',
-      name: 'Blank Contract',
-      description: 'Start from scratch with a blank document',
-      category: 'General',
-      icon: FileText,
-      usageCount: 0,
-      isBlank: true,
-      lastUsed: null,
-      createdDate: new Date().toISOString(),
-      lastModified: new Date().toISOString(),
-      createdBy: 'System',
-      tags: [],
-      estimatedTime: '30-60 min',
-      complexity: 'simple',
-      status: 'active'
-    },
-    {
       id: 'service-agreement',
       name: 'Service Agreement',
       description: 'Standard service agreement for professional services',
       category: 'Services',
       icon: FileText,
-      usageCount: 234,
-      lastUsed: '2 days ago',
       isBlank: false,
       createdDate: '2024-01-15',
       lastModified: '2024-12-01',
@@ -100,8 +78,6 @@ export function TemplateLibrary({ onSelectContractTemplate }: TemplateLibraryPro
       description: 'Protect confidential information and trade secrets',
       category: 'Legal',
       icon: FileText,
-      usageCount: 189,
-      lastUsed: '1 week ago',
       isBlank: false,
       createdDate: '2024-01-10',
       lastModified: '2024-11-25',
@@ -117,8 +93,6 @@ export function TemplateLibrary({ onSelectContractTemplate }: TemplateLibraryPro
       description: 'Comprehensive employment agreement template',
       category: 'HR',
       icon: FileText,
-      usageCount: 156,
-      lastUsed: '3 days ago',
       isBlank: false,
       createdDate: '2024-01-20',
       lastModified: '2024-11-28',
@@ -134,8 +108,6 @@ export function TemplateLibrary({ onSelectContractTemplate }: TemplateLibraryPro
       description: 'Software as a Service subscription agreement',
       category: 'Technology',
       icon: FileText,
-      usageCount: 143,
-      lastUsed: '5 days ago',
       isBlank: false,
       createdDate: '2024-02-01',
       lastModified: '2024-11-26',
@@ -151,8 +123,6 @@ export function TemplateLibrary({ onSelectContractTemplate }: TemplateLibraryPro
       description: 'Agreement with suppliers and vendors',
       category: 'Procurement',
       icon: FileText,
-      usageCount: 127,
-      lastUsed: '1 week ago',
       isBlank: false,
       createdDate: '2024-02-10',
       lastModified: '2024-11-24',
@@ -168,8 +138,6 @@ export function TemplateLibrary({ onSelectContractTemplate }: TemplateLibraryPro
       description: 'Business partnership and collaboration agreement',
       category: 'Business',
       icon: FileText,
-      usageCount: 98,
-      lastUsed: '2 weeks ago',
       isBlank: false,
       createdDate: '2024-02-15',
       lastModified: '2024-11-20',
@@ -185,8 +153,6 @@ export function TemplateLibrary({ onSelectContractTemplate }: TemplateLibraryPro
       description: 'Independent contractor and consulting services',
       category: 'Services',
       icon: FileText,
-      usageCount: 176,
-      lastUsed: '4 days ago',
       isBlank: false,
       createdDate: '2024-02-20',
       lastModified: '2024-11-27',
@@ -202,8 +168,6 @@ export function TemplateLibrary({ onSelectContractTemplate }: TemplateLibraryPro
       description: 'Commercial property lease agreement',
       category: 'Real Estate',
       icon: FileText,
-      usageCount: 87,
-      lastUsed: '1 week ago',
       isBlank: false,
       createdDate: '2024-03-01',
       lastModified: '2024-11-24',
@@ -219,8 +183,6 @@ export function TemplateLibrary({ onSelectContractTemplate }: TemplateLibraryPro
       description: 'Software or IP licensing agreement',
       category: 'Technology',
       icon: FileText,
-      usageCount: 134,
-      lastUsed: '6 days ago',
       isBlank: false,
       createdDate: '2024-03-15',
       lastModified: '2024-11-25',
@@ -463,8 +425,6 @@ export function TemplateLibrary({ onSelectContractTemplate }: TemplateLibraryPro
         description: contract.description,
         category: contract.category,
         icon: FileText,
-        usageCount: 0,
-        lastUsed: null,
         isBlank: false,
         createdDate: new Date().toISOString(),
         lastModified: new Date().toISOString(),
@@ -720,18 +680,6 @@ export function TemplateLibrary({ onSelectContractTemplate }: TemplateLibraryPro
                       <p className="text-sm text-muted-foreground mb-4">
                         {template.description}
                       </p>
-                      {!template.isBlank && (
-                        <div className="flex items-center gap-4 text-xs text-muted-foreground mb-4">
-                          <div className="flex items-center gap-1">
-                            <Clock className="h-3 w-3" />
-                            <span>{template.lastUsed}</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <TrendingUp className="h-3 w-3" />
-                            <span>{template.usageCount} uses</span>
-                          </div>
-                        </div>
-                      )}
                       <div className="flex gap-2">
                         <Button 
                           size="sm" 
@@ -742,7 +690,6 @@ export function TemplateLibrary({ onSelectContractTemplate }: TemplateLibraryPro
                               // Convert to full ContractTemplate format
                               const fullTemplate: ContractTemplate = {
                                 ...template,
-                                lastUsed: template.lastUsed || null,
                                 isBlank: template.isBlank || false,
                                 createdDate: new Date().toISOString(),
                                 lastModified: new Date().toISOString(),
@@ -771,10 +718,6 @@ export function TemplateLibrary({ onSelectContractTemplate }: TemplateLibraryPro
                             <DropdownMenuItem onClick={() => handleEditContract(template)}>
                               <Edit className="h-4 w-4 mr-2" />
                               Edit
-                            </DropdownMenuItem>
-                            <DropdownMenuItem>
-                              <Copy className="h-4 w-4 mr-2" />
-                              Copy
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem variant="destructive" onClick={() => handleDeleteTemplate(template)}>

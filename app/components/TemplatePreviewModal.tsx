@@ -1,8 +1,7 @@
-import { X, FileText, Layers, Text, FileCheck, Users, Calendar, TrendingUp } from 'lucide-react';
+import { X, FileText, Layers, Text, FileCheck, Users } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
-import { ScrollArea } from './ui/scroll-area';
 import { Separator } from './ui/separator';
 
 interface TemplatePreviewModalProps {
@@ -85,26 +84,14 @@ export function TemplatePreviewModal({ template, type, onClose, onUse }: Templat
             <X className="h-4 w-4" />
           </Button>
         </CardHeader>
-        <CardContent className="flex-1 overflow-hidden pt-6">
-          <ScrollArea className="h-full pr-4">
+        <CardContent className="flex-1 min-h-0 overflow-hidden pt-6">
+          <div className="h-full overflow-y-auto overflow-x-hidden pr-4">
             <div className="space-y-6">
               {/* Metadata Section */}
               <div className="flex flex-wrap items-center gap-4">
                 <Badge variant="outline" className="text-sm px-3 py-1">
                   {template.category}
                 </Badge>
-                {template.usageCount !== undefined && type === 'contract' && (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <TrendingUp className="h-4 w-4" />
-                    <span>Used {template.usageCount} times</span>
-                  </div>
-                )}
-                {template.lastUsed && (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Calendar className="h-4 w-4" />
-                    <span>Last used {template.lastUsed}</span>
-                  </div>
-                )}
               </div>
 
               {type === 'clause' && (
@@ -213,8 +200,12 @@ export function TemplatePreviewModal({ template, type, onClose, onUse }: Templat
                           <Layers className="h-4 w-4 text-brand-secondary" />
                           Included Sections ({getSampleSections().length})
                         </h4>
-                        <div className="space-y-2">
-                          {getSampleSections().map((section, index) => (
+                        <div 
+                          className="min-h-0 overflow-y-auto overflow-x-hidden rounded-lg border p-2 shrink-0"
+                          style={{ height: 200 }}
+                        >
+                          <div className="space-y-2 pr-1">
+                            {getSampleSections().map((section, index) => (
                             <div
                               key={index}
                               className="flex items-start gap-3 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors border border-transparent hover:border-brand-secondary/20"
@@ -230,6 +221,7 @@ export function TemplatePreviewModal({ template, type, onClose, onUse }: Templat
                               </div>
                             </div>
                           ))}
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -273,7 +265,7 @@ export function TemplatePreviewModal({ template, type, onClose, onUse }: Templat
                 </>
               )}
             </div>
-          </ScrollArea>
+          </div>
         </CardContent>
         <div className="border-t p-4 flex items-center gap-3">
           {onUse && (

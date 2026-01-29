@@ -57,8 +57,6 @@ export default function PendingPage() {
               description: 'Start from scratch',
               category: 'Custom',
               tags: [],
-              usageCount: 0,
-              lastUsed: null,
               lastModified: new Date().toISOString(),
               icon: FileText,
               isBlank: true,

@@ -7,8 +7,6 @@ export interface ContractTemplate {
   name: string;
   description: string;
   category: string;
-  lastUsed: string | null;
-  usageCount: number;
   icon: any;
   isBlank: boolean;
   createdDate: string;
@@ -26,8 +24,6 @@ export const contractTemplates: ContractTemplate[] = [
     name: 'Blank Document',
     description: 'Start with a completely blank contract document',
     category: 'Custom',
-    lastUsed: null,
-    usageCount: 0,
     icon: FileText,
     isBlank: true,
     createdDate: '2024-01-01',
@@ -43,8 +39,6 @@ export const contractTemplates: ContractTemplate[] = [
     name: 'Software License Agreement',
     description: 'Standard software licensing terms for enterprise clients',
     category: 'Technology',
-    lastUsed: '2024-12-01',
-    usageCount: 15,
     icon: FileText,
     isBlank: false,
     createdDate: '2024-03-15',
@@ -60,8 +54,6 @@ export const contractTemplates: ContractTemplate[] = [
     name: 'Service Level Agreement',
     description: 'Professional services agreement with SLA terms',
     category: 'Services',
-    lastUsed: '2024-11-28',
-    usageCount: 8,
     icon: FileText,
     isBlank: false,
     createdDate: '2024-02-20',
@@ -77,8 +69,6 @@ export const contractTemplates: ContractTemplate[] = [
     name: 'Partnership Agreement',
     description: 'Business partnership and collaboration agreement',
     category: 'Business',
-    lastUsed: '2024-11-25',
-    usageCount: 12,
     icon: FileText,
     isBlank: false,
     createdDate: '2024-01-10',
@@ -94,8 +84,6 @@ export const contractTemplates: ContractTemplate[] = [
     name: 'Consulting Agreement',
     description: 'Independent contractor and consulting services',
     category: 'Services',
-    lastUsed: '2024-11-20',
-    usageCount: 22,
     icon: FileText,
     isBlank: false,
     createdDate: '2024-02-05',
@@ -111,8 +99,6 @@ export const contractTemplates: ContractTemplate[] = [
     name: 'Vendor Agreement',
     description: 'Supply chain and vendor relationship contract',
     category: 'Procurement',
-    lastUsed: '2024-11-15',
-    usageCount: 6,
     icon: FileText,
     isBlank: false,
     createdDate: '2024-04-12',
@@ -128,8 +114,6 @@ export const contractTemplates: ContractTemplate[] = [
     name: 'Employment Contract',
     description: 'Standard employment agreement template',
     category: 'HR',
-    lastUsed: '2024-11-10',
-    usageCount: 18,
     icon: FileText,
     isBlank: false,
     createdDate: '2024-01-20',
@@ -145,8 +129,6 @@ export const contractTemplates: ContractTemplate[] = [
     name: 'Non-Disclosure Agreement',
     description: 'Confidentiality and non-disclosure terms',
     category: 'Legal',
-    lastUsed: '2024-12-05',
-    usageCount: 31,
     icon: FileText,
     isBlank: false,
     createdDate: '2024-01-05',
@@ -162,8 +144,6 @@ export const contractTemplates: ContractTemplate[] = [
     name: 'International Sales Agreement',
     description: 'Cross-border sales and distribution contract',
     category: 'Sales',
-    lastUsed: '2024-10-28',
-    usageCount: 4,
     icon: FileText,
     isBlank: false,
     createdDate: '2024-06-15',
@@ -179,8 +159,6 @@ export const contractTemplates: ContractTemplate[] = [
     name: 'Maintenance & Support Agreement',
     description: 'Ongoing maintenance and technical support contract',
     category: 'Technology',
-    lastUsed: '2024-11-12',
-    usageCount: 9,
     icon: FileText,
     isBlank: false,
     createdDate: '2024-05-08',

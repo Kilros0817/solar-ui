@@ -10,8 +10,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Badge } from './ui/badge';
 import { 
   ArrowLeft,
-  Clock,
-  CheckCircle,
   Building,
   X,
   FileText,
@@ -96,29 +94,25 @@ export function ContractCreation({ onBack, onCreateContract, selectedTemplate }:
     name: string;
     description: string;
     content: string;
-    usageCount: number;
   }>> = {
     'Terms & Conditions': [
       {
         id: 'tc-v1',
         name: 'Standard Terms',
         description: 'General terms for standard business agreements',
-        content: 'This version includes standard terms and conditions covering general business agreements, including payment terms, delivery obligations, and basic warranties. Suitable for most commercial contracts.',
-        usageCount: 145
+        content: 'This version includes standard terms and conditions covering general business agreements, including payment terms, delivery obligations, and basic warranties. Suitable for most commercial contracts.'
       },
       {
         id: 'tc-v2',
         name: 'Enterprise Terms',
         description: 'Comprehensive terms for enterprise-level deals',
-        content: 'Enhanced terms designed for large enterprise agreements with extended warranty provisions, detailed service levels, escalation procedures, and comprehensive liability clauses. Includes performance guarantees and audit rights.',
-        usageCount: 89
+        content: 'Enhanced terms designed for large enterprise agreements with extended warranty provisions, detailed service levels, escalation procedures, and comprehensive liability clauses. Includes performance guarantees and audit rights.'
       },
       {
         id: 'tc-v3',
         name: 'Simplified Terms',
         description: 'Streamlined terms for quick agreements',
-        content: 'A concise version with essential terms only, ideal for straightforward transactions, small-value contracts, or recurring agreements with established partners. Minimizes legal complexity while maintaining protection.',
-        usageCount: 67
+        content: 'A concise version with essential terms only, ideal for straightforward transactions, small-value contracts, or recurring agreements with established partners. Minimizes legal complexity while maintaining protection.'
       }
     ],
     'Pricing & Payment Terms': [
@@ -126,22 +120,19 @@ export function ContractCreation({ onBack, onCreateContract, selectedTemplate }:
         id: 'pp-v1',
         name: 'Fixed Price',
         description: 'Single upfront or milestone-based payments',
-        content: 'Fixed pricing structure with defined payment schedule. Includes provisions for milestone-based payments, late payment penalties, and early payment discounts. Clear pricing breakdown and invoicing requirements.',
-        usageCount: 203
+        content: 'Fixed pricing structure with defined payment schedule. Includes provisions for milestone-based payments, late payment penalties, and early payment discounts. Clear pricing breakdown and invoicing requirements.'
       },
       {
         id: 'pp-v2',
         name: 'Subscription Model',
         description: 'Recurring payments with auto-renewal',
-        content: 'Subscription-based pricing with monthly or annual billing cycles. Includes automatic renewal clauses, price adjustment mechanisms, usage-based pricing tiers, and cancellation policies with notice periods.',
-        usageCount: 124
+        content: 'Subscription-based pricing with monthly or annual billing cycles. Includes automatic renewal clauses, price adjustment mechanisms, usage-based pricing tiers, and cancellation policies with notice periods.'
       },
       {
         id: 'pp-v3',
         name: 'Performance-Based',
         description: 'Variable pricing tied to outcomes',
-        content: 'Performance-based pricing with variable components tied to specific KPIs and deliverables. Includes bonus structures, penalty clauses for underperformance, and detailed measurement criteria.',
-        usageCount: 56
+        content: 'Performance-based pricing with variable components tied to specific KPIs and deliverables. Includes bonus structures, penalty clauses for underperformance, and detailed measurement criteria.'
       }
     ],
     'Technical Specifications': [
@@ -149,22 +140,19 @@ export function ContractCreation({ onBack, onCreateContract, selectedTemplate }:
         id: 'ts-v1',
         name: 'High-Level Requirements',
         description: 'General technical requirements and standards',
-        content: 'Broad technical specifications covering system requirements, compatibility standards, integration points, and general performance criteria. Suitable for service-based agreements.',
-        usageCount: 112
+        content: 'Broad technical specifications covering system requirements, compatibility standards, integration points, and general performance criteria. Suitable for service-based agreements.'
       },
       {
         id: 'ts-v2',
         name: 'Detailed Specifications',
         description: 'Comprehensive technical documentation',
-        content: 'Detailed technical requirements including architecture diagrams, API specifications, data formats, security protocols, performance benchmarks, and testing criteria. Ideal for complex technical implementations.',
-        usageCount: 78
+        content: 'Detailed technical requirements including architecture diagrams, API specifications, data formats, security protocols, performance benchmarks, and testing criteria. Ideal for complex technical implementations.'
       },
       {
         id: 'ts-v3',
         name: 'SaaS Platform Specs',
         description: 'Cloud platform and SaaS requirements',
-        content: 'Technical specifications tailored for SaaS platforms, including uptime guarantees, scalability requirements, data residency, backup procedures, and disaster recovery plans.',
-        usageCount: 94
+        content: 'Technical specifications tailored for SaaS platforms, including uptime guarantees, scalability requirements, data residency, backup procedures, and disaster recovery plans.'
       }
     ],
     'Legal Compliance': [
@@ -172,22 +160,19 @@ export function ContractCreation({ onBack, onCreateContract, selectedTemplate }:
         id: 'lc-v1',
         name: 'Standard Compliance',
         description: 'Basic regulatory compliance requirements',
-        content: 'Standard compliance provisions covering general business regulations, anti-corruption laws, export controls, and basic industry standards. Includes representation and warranty clauses.',
-        usageCount: 156
+        content: 'Standard compliance provisions covering general business regulations, anti-corruption laws, export controls, and basic industry standards. Includes representation and warranty clauses.'
       },
       {
         id: 'lc-v2',
         name: 'GDPR & Privacy',
         description: 'Enhanced data protection compliance',
-        content: 'Comprehensive data protection and privacy compliance including GDPR, CCPA, and other data protection regulations. Covers data processing agreements, subject rights, breach notification, and cross-border transfers.',
-        usageCount: 132
+        content: 'Comprehensive data protection and privacy compliance including GDPR, CCPA, and other data protection regulations. Covers data processing agreements, subject rights, breach notification, and cross-border transfers.'
       },
       {
         id: 'lc-v3',
         name: 'Industry-Specific',
         description: 'Specialized regulatory requirements',
-        content: 'Industry-specific compliance provisions tailored to regulated sectors (healthcare, finance, etc.). Includes HIPAA, SOX, PCI-DSS, and other sector-specific requirements with audit and reporting obligations.',
-        usageCount: 71
+        content: 'Industry-specific compliance provisions tailored to regulated sectors (healthcare, finance, etc.). Includes HIPAA, SOX, PCI-DSS, and other sector-specific requirements with audit and reporting obligations.'
       }
     ],
     'Delivery & Timeline': [
@@ -195,22 +180,19 @@ export function ContractCreation({ onBack, onCreateContract, selectedTemplate }:
         id: 'dt-v1',
         name: 'Fixed Timeline',
         description: 'Definite delivery dates and milestones',
-        content: 'Fixed delivery schedule with specific dates, milestones, and deadlines. Includes provisions for delays, force majeure, and remedies for late delivery. Clear acceptance criteria for each milestone.',
-        usageCount: 187
+        content: 'Fixed delivery schedule with specific dates, milestones, and deadlines. Includes provisions for delays, force majeure, and remedies for late delivery. Clear acceptance criteria for each milestone.'
       },
       {
         id: 'dt-v2',
         name: 'Agile/Iterative',
         description: 'Sprint-based delivery schedule',
-        content: 'Flexible, sprint-based delivery model with iterative releases. Includes sprint planning, review cycles, backlog management, and continuous delivery provisions. Suitable for software development projects.',
-        usageCount: 98
+        content: 'Flexible, sprint-based delivery model with iterative releases. Includes sprint planning, review cycles, backlog management, and continuous delivery provisions. Suitable for software development projects.'
       },
       {
         id: 'dt-v3',
         name: 'Best Efforts',
         description: 'Target dates with flexibility',
-        content: 'Target delivery dates with built-in flexibility. Emphasizes best efforts commitment with regular progress reporting. Includes provisions for scope changes and timeline adjustments based on circumstances.',
-        usageCount: 63
+        content: 'Target delivery dates with built-in flexibility. Emphasizes best efforts commitment with regular progress reporting. Includes provisions for scope changes and timeline adjustments based on circumstances.'
       }
     ],
     'Termination Clauses': [
@@ -218,22 +200,19 @@ export function ContractCreation({ onBack, onCreateContract, selectedTemplate }:
         id: 'term-v1',
         name: 'Standard Termination',
         description: 'Balanced termination rights',
-        content: 'Balanced termination provisions with notice periods, termination for cause, and convenience termination options. Includes wind-down procedures, transition assistance, and final payment terms.',
-        usageCount: 201
+        content: 'Balanced termination provisions with notice periods, termination for cause, and convenience termination options. Includes wind-down procedures, transition assistance, and final payment terms.'
       },
       {
         id: 'term-v2',
         name: 'Customer-Favorable',
         description: 'Enhanced customer exit rights',
-        content: 'Customer-favorable termination terms with shorter notice periods, liberal termination for convenience, and flexible exit provisions. Includes data portability and minimal termination fees.',
-        usageCount: 87
+        content: 'Customer-favorable termination terms with shorter notice periods, liberal termination for convenience, and flexible exit provisions. Includes data portability and minimal termination fees.'
       },
       {
         id: 'term-v3',
         name: 'Vendor-Favorable',
         description: 'Restrictive termination conditions',
-        content: 'Vendor-favorable terms with longer notice periods, limited termination rights, and substantial termination fees. Emphasizes commitment period and penalties for early termination.',
-        usageCount: 54
+        content: 'Vendor-favorable terms with longer notice periods, limited termination rights, and substantial termination fees. Emphasizes commitment period and penalties for early termination.'
       }
     ],
     'Intellectual Property': [
@@ -241,22 +220,19 @@ export function ContractCreation({ onBack, onCreateContract, selectedTemplate }:
         id: 'ip-v1',
         name: 'Customer Ownership',
         description: 'Customer owns all deliverables',
-        content: 'Full transfer of IP rights to customer for all work product and deliverables. Vendor retains only pre-existing IP and general methodologies. Includes work-for-hire provisions.',
-        usageCount: 143
+        content: 'Full transfer of IP rights to customer for all work product and deliverables. Vendor retains only pre-existing IP and general methodologies. Includes work-for-hire provisions.'
       },
       {
         id: 'ip-v2',
         name: 'Shared IP Rights',
         description: 'Joint ownership of developed IP',
-        content: 'Shared intellectual property rights with clear allocation between customer-specific and general use components. Includes cross-licensing provisions and rights to derivative works.',
-        usageCount: 76
+        content: 'Shared intellectual property rights with clear allocation between customer-specific and general use components. Includes cross-licensing provisions and rights to derivative works.'
       },
       {
         id: 'ip-v3',
         name: 'License Model',
         description: 'Vendor retains IP, customer gets license',
-        content: 'Vendor retains ownership of all IP with customer receiving a license to use. Defines scope of license (exclusive/non-exclusive), permitted uses, and any restrictions or limitations.',
-        usageCount: 119
+        content: 'Vendor retains ownership of all IP with customer receiving a license to use. Defines scope of license (exclusive/non-exclusive), permitted uses, and any restrictions or limitations.'
       }
     ],
     'Data Privacy & Security': [
@@ -264,22 +240,19 @@ export function ContractCreation({ onBack, onCreateContract, selectedTemplate }:
         id: 'dps-v1',
         name: 'Standard Security',
         description: 'Basic security and privacy requirements',
-        content: 'Standard security provisions including encryption, access controls, security incident procedures, and basic privacy protections. Suitable for non-sensitive business data.',
-        usageCount: 167
+        content: 'Standard security provisions including encryption, access controls, security incident procedures, and basic privacy protections. Suitable for non-sensitive business data.'
       },
       {
         id: 'dps-v2',
         name: 'Enhanced Security',
         description: 'Comprehensive security framework',
-        content: 'Comprehensive security requirements including ISO 27001 compliance, regular penetration testing, security audits, detailed incident response, and enhanced encryption standards. For handling sensitive data.',
-        usageCount: 112
+        content: 'Comprehensive security requirements including ISO 27001 compliance, regular penetration testing, security audits, detailed incident response, and enhanced encryption standards. For handling sensitive data.'
       },
       {
         id: 'dps-v3',
         name: 'Zero Trust Model',
         description: 'Advanced zero-trust security architecture',
-        content: 'Advanced security provisions based on zero-trust principles. Includes continuous verification, micro-segmentation, least privilege access, comprehensive logging, and real-time threat detection.',
-        usageCount: 45
+        content: 'Advanced security provisions based on zero-trust principles. Includes continuous verification, micro-segmentation, least privilege access, comprehensive logging, and real-time threat detection.'
       }
     ],
     'Service Level Agreements': [
@@ -287,22 +260,19 @@ export function ContractCreation({ onBack, onCreateContract, selectedTemplate }:
         id: 'sla-v1',
         name: 'Basic SLA',
         description: 'Standard availability and support',
-        content: 'Basic SLA with 99% uptime guarantee, business hours support, and standard response times. Includes basic performance metrics and service credits for downtime.',
-        usageCount: 178
+        content: 'Basic SLA with 99% uptime guarantee, business hours support, and standard response times. Includes basic performance metrics and service credits for downtime.'
       },
       {
         id: 'sla-v2',
         name: 'Enterprise SLA',
         description: 'Premium service levels with 24/7 support',
-        content: 'Enterprise-grade SLA with 99.9% uptime, 24/7 premium support, dedicated account management, priority response times, and comprehensive service credits. Includes escalation procedures.',
-        usageCount: 134
+        content: 'Enterprise-grade SLA with 99.9% uptime, 24/7 premium support, dedicated account management, priority response times, and comprehensive service credits. Includes escalation procedures.'
       },
       {
         id: 'sla-v3',
         name: 'Mission Critical',
         description: 'Maximum uptime and rapid response',
-        content: 'Mission-critical SLA with 99.99% uptime guarantee, instant response times, dedicated support team, proactive monitoring, and substantial penalties for service failures. For business-critical systems.',
-        usageCount: 61
+        content: 'Mission-critical SLA with 99.99% uptime guarantee, instant response times, dedicated support team, proactive monitoring, and substantial penalties for service failures. For business-critical systems.'
       }
     ],
     'Liability & Insurance': [
@@ -310,22 +280,19 @@ export function ContractCreation({ onBack, onCreateContract, selectedTemplate }:
         id: 'li-v1',
         name: 'Balanced Liability',
         description: 'Mutual liability caps and limitations',
-        content: 'Balanced liability provisions with reciprocal caps (typically 12 months fees), standard indemnification, and reasonable insurance requirements. Excludes liability for consequential damages.',
-        usageCount: 192
+        content: 'Balanced liability provisions with reciprocal caps (typically 12 months fees), standard indemnification, and reasonable insurance requirements. Excludes liability for consequential damages.'
       },
       {
         id: 'li-v2',
         name: 'Limited Liability',
         description: 'Vendor-favorable liability limitations',
-        content: 'Vendor-favorable liability caps (typically 3-6 months fees) with broad exclusions and limited indemnification. Minimal insurance requirements and extensive liability limitations.',
-        usageCount: 83
+        content: 'Vendor-favorable liability caps (typically 3-6 months fees) with broad exclusions and limited indemnification. Minimal insurance requirements and extensive liability limitations.'
       },
       {
         id: 'li-v3',
         name: 'Uncapped Liability',
         description: 'No caps for certain breach types',
-        content: 'Comprehensive liability with uncapped exposure for IP infringement, data breaches, confidentiality violations, and gross negligence. Substantial insurance requirements and broad indemnification.',
-        usageCount: 58
+        content: 'Comprehensive liability with uncapped exposure for IP infringement, data breaches, confidentiality violations, and gross negligence. Substantial insurance requirements and broad indemnification.'
       }
     ]
   };
@@ -670,11 +637,6 @@ export function ContractCreation({ onBack, onCreateContract, selectedTemplate }:
                                                 <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
                                                   {version.description}
                                                 </p>
-                                                <div className="flex items-center gap-2 mt-2">
-                                                  <Badge variant="outline" className="text-xs">
-                                                    Used {version.usageCount}x
-                                                  </Badge>
-                                                </div>
                                               </div>
                                               <Plus className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
                                             </div>
@@ -692,10 +654,7 @@ export function ContractCreation({ onBack, onCreateContract, selectedTemplate }:
                                                 {version.content}
                                               </p>
                                             </div>
-                                            <div className="pt-2 border-t flex items-center justify-between">
-                                              <span className="text-xs text-muted-foreground">
-                                                Used in {version.usageCount} contracts
-                                              </span>
+                                            <div className="pt-2 border-t flex justify-end">
                                               <span className="text-xs text-brand-secondary font-medium">
                                                 Hover to preview
                                               </span>
@@ -739,21 +698,6 @@ export function ContractCreation({ onBack, onCreateContract, selectedTemplate }:
                 <p className="text-sm text-muted-foreground">
                   {selectedTemplate.description}
                 </p>
-
-                {!selectedTemplate.isBlank && (
-                  <div className="space-y-2 text-sm">
-                    <div className="flex items-center gap-2">
-                      <Clock className="h-4 w-4 text-muted-foreground" />
-                      <span>Used {selectedTemplate.usageCount} times</span>
-                    </div>
-                    {selectedTemplate.lastUsed && (
-                      <div className="flex items-center gap-2">
-                        <CheckCircle className="h-4 w-4 text-muted-foreground" />
-                        <span>Last used {selectedTemplate.lastUsed}</span>
-                      </div>
-                    )}
-                  </div>
-                )}
               </div>
 
               <div className="pt-4 space-y-2">
