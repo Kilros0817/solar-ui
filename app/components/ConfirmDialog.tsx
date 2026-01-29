@@ -37,15 +37,15 @@ export function ConfirmDialog({
             </div>
           </div>
         </CardHeader>
-        <CardContent className="flex items-center gap-3">
+        <CardContent className="flex items-center justify-end gap-3">
           <Button
             variant={variant === 'destructive' ? 'destructive' : 'default'}
             onClick={onConfirm}
-            className={variant === 'default' ? 'bg-brand-secondary hover:bg-[var(--brand-secondary-hover)] text-white' : ''}
+            className={variant === 'default' ? 'cursor-pointer bg-brand-secondary hover:bg-[var(--brand-secondary-hover)] text-white' : 'cursor-pointer'}
           >
             {confirmLabel}
           </Button>
-          <Button variant="outline" onClick={onCancel}>
+          <Button variant="outline" onClick={onCancel} className="cursor-pointer">
             {cancelLabel}
           </Button>
         </CardContent>

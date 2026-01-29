@@ -23,7 +23,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/
 import { Input } from './ui/input';
 import { Badge } from './ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { HoverCard, HoverCardContent, HoverCardTrigger } from './ui/hover-card';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 import { 
   DropdownMenu, 
@@ -53,6 +52,8 @@ export function TemplateLibrary({ onSelectContractTemplate }: TemplateLibraryPro
   const [previewTemplate, setPreviewTemplate] = useState<ContractTemplate | null>(null);
   const [previewType, setPreviewType] = useState<'contract' | 'section' | 'clause'>('contract');
   const [deleteTemplate, setDeleteTemplate] = useState<ContractTemplate | null>(null);
+  const [deleteClauseToConfirm, setDeleteClauseToConfirm] = useState<{ id: string; name: string } | null>(null);
+  const [deleteSectionToConfirm, setDeleteSectionToConfirm] = useState<{ id: string; name: string; sectionName: string } | null>(null);
   const [editingClause, setEditingClause] = useState<any>(null);
   const [editingSection, setEditingSection] = useState<any>(null);
   const [editingContract, setEditingContract] = useState<ContractTemplate | null>(null);
@@ -231,191 +232,8 @@ export function TemplateLibrary({ onSelectContractTemplate }: TemplateLibraryPro
     }
   ]);
 
-  // Section Templates
-  const [sectionTemplates, setSectionTemplates] = useState({
-    'Terms & Conditions': [
-      {
-        id: 'tc-v1',
-        name: 'Standard Terms',
-        description: 'General terms for standard business agreements',
-        content: 'This version includes standard terms and conditions covering general business agreements, including payment terms, delivery obligations, and basic warranties. Suitable for most commercial contracts.',
-        usageCount: 145,
-        category: 'General'
-      },
-      {
-        id: 'tc-v2',
-        name: 'Enterprise Terms',
-        description: 'Comprehensive terms for enterprise-level deals',
-        content: 'Enhanced terms designed for large enterprise agreements with extended warranty provisions, detailed service levels, escalation procedures, and comprehensive liability clauses.',
-        usageCount: 89,
-        category: 'Enterprise'
-      },
-      {
-        id: 'tc-v3',
-        name: 'Simplified Terms',
-        description: 'Streamlined terms for quick agreements',
-        content: 'A concise version with essential terms only, ideal for straightforward transactions, small-value contracts, or recurring agreements with established partners.',
-        usageCount: 67,
-        category: 'SMB'
-      }
-    ],
-    'Pricing & Payment Terms': [
-      {
-        id: 'pp-v1',
-        name: 'Fixed Price',
-        description: 'Single upfront or milestone-based payments',
-        content: 'Fixed pricing structure with defined payment schedule. Includes provisions for milestone-based payments, late payment penalties, and early payment discounts.',
-        usageCount: 203,
-        category: 'Pricing'
-      },
-      {
-        id: 'pp-v2',
-        name: 'Subscription Model',
-        description: 'Recurring payments with auto-renewal',
-        content: 'Subscription-based pricing with monthly or annual billing cycles. Includes automatic renewal clauses, price adjustment mechanisms, and cancellation policies.',
-        usageCount: 124,
-        category: 'Pricing'
-      },
-      {
-        id: 'pp-v3',
-        name: 'Performance-Based',
-        description: 'Variable pricing tied to outcomes',
-        content: 'Performance-based pricing with variable components tied to specific KPIs and deliverables. Includes bonus structures and penalty clauses.',
-        usageCount: 56,
-        category: 'Pricing'
-      }
-    ],
-    'Termination Clauses': [
-      {
-        id: 'term-v1',
-        name: 'Standard Termination',
-        description: 'Balanced termination rights',
-        content: 'Balanced termination provisions with notice periods, termination for cause, and convenience termination options. Includes wind-down procedures and transition assistance.',
-        usageCount: 201,
-        category: 'Legal'
-      },
-      {
-        id: 'term-v2',
-        name: 'Customer-Favorable',
-        description: 'Enhanced customer exit rights',
-        content: 'Customer-favorable termination terms with shorter notice periods, liberal termination for convenience, and flexible exit provisions.',
-        usageCount: 87,
-        category: 'Legal'
-      },
-      {
-        id: 'term-v3',
-        name: 'Vendor-Favorable',
-        description: 'Restrictive termination conditions',
-        content: 'Vendor-favorable terms with longer notice periods, limited termination rights, and substantial termination fees.',
-        usageCount: 54,
-        category: 'Legal'
-      }
-    ],
-    'Intellectual Property': [
-      {
-        id: 'ip-v1',
-        name: 'Customer Ownership',
-        description: 'Customer owns all deliverables',
-        content: 'Full transfer of IP rights to customer for all work product and deliverables. Vendor retains only pre-existing IP and general methodologies.',
-        usageCount: 143,
-        category: 'Legal'
-      },
-      {
-        id: 'ip-v2',
-        name: 'Shared IP Rights',
-        description: 'Joint ownership of developed IP',
-        content: 'Shared intellectual property rights with clear allocation between customer-specific and general use components. Includes cross-licensing provisions.',
-        usageCount: 76,
-        category: 'Legal'
-      },
-      {
-        id: 'ip-v3',
-        name: 'License Model',
-        description: 'Vendor retains IP, customer gets license',
-        content: 'Vendor retains ownership of all IP with customer receiving a license to use. Defines scope of license and permitted uses.',
-        usageCount: 119,
-        category: 'Legal'
-      }
-    ],
-    'Data Privacy & Security': [
-      {
-        id: 'dps-v1',
-        name: 'Standard Security',
-        description: 'Basic security and privacy requirements',
-        content: 'Standard security provisions including encryption, access controls, security incident procedures, and basic privacy protections.',
-        usageCount: 167,
-        category: 'Compliance'
-      },
-      {
-        id: 'dps-v2',
-        name: 'Enhanced Security',
-        description: 'Comprehensive security framework',
-        content: 'Comprehensive security requirements including ISO 27001 compliance, penetration testing, security audits, and enhanced encryption standards.',
-        usageCount: 112,
-        category: 'Compliance'
-      },
-      {
-        id: 'dps-v3',
-        name: 'Zero Trust Model',
-        description: 'Advanced zero-trust security architecture',
-        content: 'Advanced security provisions based on zero-trust principles. Includes continuous verification, micro-segmentation, and least privilege access.',
-        usageCount: 45,
-        category: 'Compliance'
-      }
-    ],
-    'Service Level Agreements': [
-      {
-        id: 'sla-v1',
-        name: 'Basic SLA',
-        description: 'Standard availability and support',
-        content: 'Basic SLA with 99% uptime guarantee, business hours support, and standard response times. Includes basic performance metrics.',
-        usageCount: 178,
-        category: 'Service'
-      },
-      {
-        id: 'sla-v2',
-        name: 'Enterprise SLA',
-        description: 'Premium service levels with 24/7 support',
-        content: 'Enterprise-grade SLA with 99.9% uptime, 24/7 premium support, dedicated account management, and priority response times.',
-        usageCount: 134,
-        category: 'Service'
-      },
-      {
-        id: 'sla-v3',
-        name: 'Mission Critical',
-        description: 'Maximum uptime and rapid response',
-        content: 'Mission-critical SLA with 99.99% uptime guarantee, instant response times, dedicated support team, and proactive monitoring.',
-        usageCount: 61,
-        category: 'Service'
-      }
-    ],
-    'Liability & Insurance': [
-      {
-        id: 'li-v1',
-        name: 'Balanced Liability',
-        description: 'Mutual liability caps and limitations',
-        content: 'Balanced liability provisions with reciprocal caps, standard indemnification, and reasonable insurance requirements.',
-        usageCount: 192,
-        category: 'Legal'
-      },
-      {
-        id: 'li-v2',
-        name: 'Limited Liability',
-        description: 'Vendor-favorable liability limitations',
-        content: 'Vendor-favorable liability caps with broad exclusions and limited indemnification. Minimal insurance requirements.',
-        usageCount: 83,
-        category: 'Legal'
-      },
-      {
-        id: 'li-v3',
-        name: 'Uncapped Liability',
-        description: 'No caps for certain breach types',
-        content: 'Comprehensive liability with uncapped exposure for IP infringement, data breaches, and gross negligence. Substantial insurance requirements.',
-        usageCount: 58,
-        category: 'Legal'
-      }
-    ]
-  });
+  // Section Templates (fetched from solar-server)
+  const [sectionTemplates, setSectionTemplates] = useState<Record<string, Array<{ id: string; sectionName?: string; name: string; description: string; content: string; category: string; clauseIds?: string[] }>>>({});
 
   // Clause Templates (fetched from solar-server)
   const [clauseTemplates, setClauseTemplates] = useState<Array<{ id: string; name: string; description: string; content: string; category: string }>>([]);
@@ -444,6 +262,37 @@ export function TemplateLibrary({ onSelectContractTemplate }: TemplateLibraryPro
     fetchClauseTemplates();
   }, []);
 
+  const fetchSectionTemplates = async () => {
+    try {
+      const res = await fetch(`${URLs.SectionAPI}?limit=200`);
+      const data = await res.json();
+      if (res.ok && data.items) {
+        const grouped: Record<string, Array<{ id: string; sectionName: string; name: string; description: string; content: string; category: string; clauseIds: string[] }>> = {};
+        for (const item of data.items as Array<{ templateId: string; sectionName: string; name: string; description: string; content: string; category: string; clauseIds?: string[] }>) {
+          const version = {
+            id: item.templateId,
+            sectionName: item.sectionName,
+            name: item.name,
+            description: item.description,
+            content: item.content ?? '',
+            category: item.category,
+            clauseIds: item.clauseIds ?? [],
+          };
+          if (!grouped[item.sectionName]) grouped[item.sectionName] = [];
+          grouped[item.sectionName].push(version);
+        }
+        setSectionTemplates(grouped);
+      }
+    } catch (err) {
+      console.error('Failed to fetch section templates:', err);
+      toast.error('Failed to load section templates');
+    }
+  };
+
+  useEffect(() => {
+    fetchSectionTemplates();
+  }, []);
+
   const contractCategories = ['all', 'Services', 'Legal', 'HR', 'Technology', 'Procurement', 'Business', 'Real Estate'];
   const sectionCategories = ['all', 'General', 'Enterprise', 'SMB', 'Pricing', 'Legal', 'Compliance', 'Service'];
   const clauseCategories = ['all', 'Legal', 'Risk Management', 'Compliance', 'Administrative'];
@@ -459,7 +308,8 @@ export function TemplateLibrary({ onSelectContractTemplate }: TemplateLibraryPro
     const filteredVersions = versions.filter(version => {
       const matchesSearch = sectionName.toLowerCase().includes(searchQuery.toLowerCase()) ||
                            version.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                           version.description.toLowerCase().includes(searchQuery.toLowerCase());
+                           version.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                           (version.content ?? '').toLowerCase().includes(searchQuery.toLowerCase());
       const matchesCategory = selectedCategory === 'all' || version.category === selectedCategory;
       return matchesSearch && matchesCategory;
     });
@@ -536,76 +386,53 @@ export function TemplateLibrary({ onSelectContractTemplate }: TemplateLibraryPro
     }
   };
 
-  const handleSaveSection = (section: any) => {
-    console.log('New section template:', section);
-    
-    // Generate content from selected clauses
-    const content = section.selectedClauses
-      .map((clause: any) => clause.content)
-      .join('\n\n');
-    
-    if (editingSection) {
-      // Update existing section version
-      setSectionTemplates(prev => {
-        const sectionName = section.sectionName || editingSection.sectionName || 'Custom Section';
-        
-        if ((prev as Record<string, any>)[sectionName]) {
-          return {
-            ...prev,
-            [sectionName]: ((prev as Record<string, any>)[sectionName] as typeof prev[keyof typeof prev]).map((v: any) => 
-              v.id === editingSection.id 
-                ? {
-                    ...v,
-                    name: section.versionName,
-                    description: section.description,
-                    content: content || 'No content provided',
-                    category: section.category,
-                    selectedClauses: section.selectedClauses,
-                  }
-                : v
-            )
-          };
-        }
-        return prev;
+  const handleSaveSection = async (section: { sectionName: string; versionName: string; description: string; category: string; selectedClauses: Array<{ id: string }> }) => {
+    const sectionName = section.sectionName || editingSection?.sectionName || 'Custom Section';
+    const clauseIds = section.selectedClauses.map((c) => c.id);
+
+    if (editingSection?.id) {
+      const res = await fetch(`${URLs.SectionAPI}/${editingSection.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sectionName,
+          name: section.versionName,
+          description: section.description,
+          category: section.category,
+          clauseIds,
+        }),
       });
-      
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || 'Failed to update section template');
+      }
+      await fetchSectionTemplates();
       toast.success(`Section template "${section.versionName}" updated successfully!`);
       setEditingSection(null);
+      setShowSectionCreator(false);
     } else {
-      // Create new section version
-      const newSectionVersion = {
-        id: `section-${Date.now()}`,
-        name: section.versionName,
-        description: section.description,
-        content: content || 'No content provided',
-        usageCount: 0,
-        category: section.category,
-        selectedClauses: section.selectedClauses,
-      };
-      
-      // Add to existing section or create new section group
-      setSectionTemplates(prev => {
-        const sectionName = section.sectionName || 'Custom Section';
-        
-        if ((prev as Record<string, any>)[sectionName]) {
-          // Add to existing section group
-          return {
-            ...prev,
-            [sectionName]: [...((prev as Record<string, any>)[sectionName] as typeof prev[keyof typeof prev]), newSectionVersion]
-          };
-        } else {
-          // Create new section group
-          return {
-            ...prev,
-            [sectionName]: [newSectionVersion]
-          };
-        }
+      const templateId = `section-${Date.now()}`;
+      const res = await fetch(`${URLs.SectionAPI}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          templateId,
+          sectionName,
+          name: section.versionName,
+          description: section.description,
+          category: section.category,
+          clauseIds,
+        }),
       });
-      
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || 'Failed to create section template');
+      }
+      await fetchSectionTemplates();
       toast.success(`Section template "${section.versionName}" created successfully!`);
+      setEditingSection(null);
+      setShowSectionCreator(false);
     }
-    
-    setShowSectionCreator(false);
   };
 
   const handleSaveContract = (contract: any) => {
@@ -674,36 +501,73 @@ export function TemplateLibrary({ onSelectContractTemplate }: TemplateLibraryPro
 
   const handleCancelDelete = () => {
     setDeleteTemplate(null);
+    setDeleteClauseToConfirm(null);
+    setDeleteSectionToConfirm(null);
+  };
+
+  const handleConfirmDeleteClause = async () => {
+    if (!deleteClauseToConfirm) return;
+    try {
+      const res = await fetch(`${URLs.ClauseAPI}/${deleteClauseToConfirm.id}`, { method: 'DELETE' });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || 'Failed to delete clause template');
+      }
+      setClauseTemplates((prev) => prev.filter((c) => c.id !== deleteClauseToConfirm.id));
+      toast.success(`Clause template "${deleteClauseToConfirm.name}" deleted successfully`);
+    } catch (err) {
+      console.error('Delete clause error:', err);
+      toast.error(err instanceof Error ? err.message : 'Failed to delete clause template');
+    } finally {
+      setDeleteClauseToConfirm(null);
+    }
+  };
+
+  const handleConfirmDeleteSection = async () => {
+    if (!deleteSectionToConfirm) return;
+    try {
+      const res = await fetch(`${URLs.SectionAPI}/${deleteSectionToConfirm.id}`, { method: 'DELETE' });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || 'Failed to delete section template');
+      }
+      setSectionTemplates((prev) => {
+        const versions = (prev[deleteSectionToConfirm.sectionName] ?? []).filter((v) => v.id !== deleteSectionToConfirm.id);
+        if (versions.length === 0) {
+          const next = { ...prev };
+          delete next[deleteSectionToConfirm.sectionName];
+          return next;
+        }
+        return { ...prev, [deleteSectionToConfirm.sectionName]: versions };
+      });
+      toast.success(`Section template "${deleteSectionToConfirm.name}" deleted successfully`);
+    } catch (err) {
+      console.error('Delete section error:', err);
+      toast.error(err instanceof Error ? err.message : 'Failed to delete section template');
+    } finally {
+      setDeleteSectionToConfirm(null);
+    }
   };
 
   const handlePreviewSection = (section: any) => {
-    console.log('Preview section:', section);
-    // In a real app, this would open a preview modal
+    setPreviewTemplate(section);
+    setPreviewType('section');
   };
 
   const handleEditSection = (section: any) => {
-    console.log('Edit section:', section);
-    // Find which section name this version belongs to
-    const sectionName = Object.entries(sectionTemplates).find(([name, versions]) => 
-      versions.some(v => v.id === section.id)
-    )?.[0];
-    
+    const sectionName = section.sectionName ?? Object.entries(sectionTemplates).find(([, versions]) => versions.some((v) => v.id === section.id))?.[0];
+    const selectedClauses = (section.clauseIds ?? []).map((cid: string) => clauseTemplates.find((c) => c.id === cid)).filter(Boolean);
     setEditingSection({
       ...section,
-      sectionName: sectionName,
+      sectionName,
+      selectedClauses,
     });
     setShowSectionCreator(true);
     toast.info(`Editing: ${section.name}`);
   };
 
-  const handleCopySection = (section: any) => {
-    console.log('Copy section:', section);
-    // In a real app, this would create a copy of the section
-  };
-
   const handleDeleteSection = (section: any) => {
-    console.log('Delete section:', section);
-    // In a real app, this would delete the section
+    setDeleteSectionToConfirm({ id: section.id, name: section.name, sectionName: section.sectionName ?? '' });
   };
 
   const handlePreviewClause = (clause: any) => {
@@ -720,9 +584,7 @@ export function TemplateLibrary({ onSelectContractTemplate }: TemplateLibraryPro
   };
 
   const handleDeleteClause = (clause: any) => {
-    console.log('Delete clause:', clause);
-    toast.success(`Deleted "${clause.name}"`);
-    // In a real app, this would delete the clause
+    setDeleteClauseToConfirm({ id: clause.id, name: clause.name });
   };
 
   const handleEditContract = (contract: ContractTemplate) => {
@@ -931,7 +793,7 @@ export function TemplateLibrary({ onSelectContractTemplate }: TemplateLibraryPro
             {/* Section Templates Tab */}
             <TabsContent value="sections" className="space-y-6 mt-6">
               <div className="flex justify-end mb-4">
-                <Button onClick={() => setShowSectionCreator(true)} className="bg-brand-secondary hover:bg-[var(--brand-secondary-hover)] text-white border-brand-secondary">
+                <Button onClick={() => { setEditingSection(null); setShowSectionCreator(true); }} className="bg-brand-secondary hover:bg-[var(--brand-secondary-hover)] text-white border-brand-secondary">
                   <Plus className="h-4 w-4 mr-2" />
                   New Section Template
                 </Button>
@@ -951,7 +813,14 @@ export function TemplateLibrary({ onSelectContractTemplate }: TemplateLibraryPro
                           </p>
                         </div>
                       </div>
-                      <Button size="sm" variant="outline">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setEditingSection({ sectionName });
+                          setShowSectionCreator(true);
+                        }}
+                      >
                         <Plus className="h-4 w-4 mr-1" />
                         Add Version
                       </Button>
@@ -969,43 +838,16 @@ export function TemplateLibrary({ onSelectContractTemplate }: TemplateLibraryPro
                               </p>
                             </div>
                           </div>
-                          <div className="flex items-center justify-between mt-3 mb-3">
+                          <div className="flex items-center mt-3 mb-3">
                             <Badge variant="outline" className="text-xs">
                               {version.category}
                             </Badge>
-                            <span className="text-xs text-muted-foreground">
-                              {version.usageCount} uses
-                            </span>
                           </div>
                           <div className="flex gap-2 pt-2 border-t">
-                            <HoverCard openDelay={200}>
-                              <HoverCardTrigger asChild>
-                                <Button size="sm" variant="outline" className="flex-1 text-xs h-8" onClick={() => handlePreviewSection(version)}>
-                                  <Eye className="h-3 w-3 mr-1" />
-                                  Preview
-                                </Button>
-                              </HoverCardTrigger>
-                              <HoverCardContent className="w-96" side="right">
-                                <div className="space-y-3">
-                                  <div>
-                                    <h4 className="font-medium">{version.name}</h4>
-                                    <p className="text-sm text-muted-foreground">{version.description}</p>
-                                  </div>
-                                  <div className="pt-2 border-t">
-                                    <p className="text-xs font-medium text-muted-foreground mb-1">Content Preview:</p>
-                                    <p className="text-xs text-muted-foreground leading-relaxed">
-                                      {version.content}
-                                    </p>
-                                  </div>
-                                  <div className="pt-2 border-t flex items-center justify-between">
-                                    <Badge variant="outline" className="text-xs">{version.category}</Badge>
-                                    <span className="text-xs text-muted-foreground">
-                                      Used in {version.usageCount} contracts
-                                    </span>
-                                  </div>
-                                </div>
-                              </HoverCardContent>
-                            </HoverCard>
+                            <Button size="sm" variant="outline" className="flex-1 text-xs h-8" onClick={() => handlePreviewSection(version)}>
+                              <Eye className="h-3 w-3 mr-1" />
+                              Preview
+                            </Button>
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
                                 <Button size="sm" variant="outline" className="text-xs h-8">
@@ -1016,10 +858,6 @@ export function TemplateLibrary({ onSelectContractTemplate }: TemplateLibraryPro
                                 <DropdownMenuItem onClick={() => handleEditSection(version)}>
                                   <Edit className="h-4 w-4 mr-2" />
                                   Edit
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleCopySection(version)}>
-                                  <Copy className="h-4 w-4 mr-2" />
-                                  Copy
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem variant="destructive" onClick={() => handleDeleteSection(version)}>
@@ -1113,7 +951,7 @@ export function TemplateLibrary({ onSelectContractTemplate }: TemplateLibraryPro
       />
     )}
 
-    {/* Confirm Delete Dialog */}
+    {/* Confirm Delete Dialogs */}
     {deleteTemplate && (
       <ConfirmDialog
         title="Delete Template"
@@ -1121,6 +959,26 @@ export function TemplateLibrary({ onSelectContractTemplate }: TemplateLibraryPro
         confirmLabel="Delete"
         variant="destructive"
         onConfirm={handleConfirmDelete}
+        onCancel={handleCancelDelete}
+      />
+    )}
+    {deleteClauseToConfirm && (
+      <ConfirmDialog
+        title="Delete Clause Template"
+        description={`Are you sure you want to delete the clause template "${deleteClauseToConfirm.name}"? This action cannot be undone.`}
+        confirmLabel="Delete"
+        variant="destructive"
+        onConfirm={handleConfirmDeleteClause}
+        onCancel={handleCancelDelete}
+      />
+    )}
+    {deleteSectionToConfirm && (
+      <ConfirmDialog
+        title="Delete Section Template"
+        description={`Are you sure you want to delete the section version "${deleteSectionToConfirm.name}"? This action cannot be undone.`}
+        confirmLabel="Delete"
+        variant="destructive"
+        onConfirm={handleConfirmDeleteSection}
         onCancel={handleCancelDelete}
       />
     )}

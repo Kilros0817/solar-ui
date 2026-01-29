@@ -30,7 +30,7 @@ interface SectionTemplateCreatorProps {
     description: string;
     category: string;
     selectedClauses: ClauseTemplate[];
-  }) => void;
+  }) => void | Promise<void>;
   availableClauses: ClauseTemplate[];
   editingSection?: any;
 }
@@ -63,16 +63,20 @@ export function SectionTemplateCreator({ onClose, onSave, availableClauses, edit
     );
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (sectionName && versionName && description && category && selectedClauses.length > 0) {
-      onSave({
-        sectionName,
-        versionName,
-        description,
-        category,
-        selectedClauses
-      });
-      onClose();
+      try {
+        await onSave({
+          sectionName,
+          versionName,
+          description,
+          category,
+          selectedClauses
+        });
+        onClose();
+      } catch {
+        // Error shown by parent; keep modal open for retry
+      }
     }
   };
 
@@ -81,7 +85,7 @@ export function SectionTemplateCreator({ onClose, onSave, availableClauses, edit
       <Card className="w-full max-w-5xl mx-4">
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
-            <CardTitle>Create New Section Template</CardTitle>
+            <CardTitle>{editingSection?.id ? 'Edit Section Template' : editingSection?.sectionName ? 'Add Version' : 'Create New Section Template'}</CardTitle>
             <CardDescription>
               Build a section by selecting and combining clause templates
             </CardDescription>
@@ -101,6 +105,8 @@ export function SectionTemplateCreator({ onClose, onSave, availableClauses, edit
                   placeholder="e.g., Terms & Conditions, Pricing & Payment"
                   value={sectionName}
                   onChange={(e) => setSectionName(e.target.value)}
+                  readOnly={!!(editingSection?.sectionName && !editingSection?.id)}
+                  className={editingSection?.sectionName && !editingSection?.id ? 'bg-muted' : ''}
                 />
               </div>
 

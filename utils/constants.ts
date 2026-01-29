@@ -1,6 +1,7 @@
 export const URLs = {
 	SDMSAPI: "http://localhost:8085/api",
 	ClauseAPI: "http://localhost:8085/clause",
+	SectionAPI: "http://localhost:8085/section",
 	SubgraphURL: "https://api.studio.thegraph.com/query/72239/solar-dms/version/latest"
 };
 

@@ -93,7 +93,7 @@ export function TemplatePreviewModal({ template, type, onClose, onUse }: Templat
                 <Badge variant="outline" className="text-sm px-3 py-1">
                   {template.category}
                 </Badge>
-                {template.usageCount !== undefined && type !== 'clause' && (
+                {template.usageCount !== undefined && type === 'contract' && (
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <TrendingUp className="h-4 w-4" />
                     <span>Used {template.usageCount} times</span>
@@ -129,7 +129,37 @@ export function TemplatePreviewModal({ template, type, onClose, onUse }: Templat
                       Section Content
                     </h4>
                     <div className="bg-muted/50 p-4 rounded-lg border">
-                      <p className="text-sm leading-relaxed">{template.content}</p>
+                      <div className="space-y-4 max-w-3xl">
+                        {(() => {
+                          const blocks = template.content
+                            ?.split(/\n\n+/)
+                            .filter((b: string) => b.trim()) ?? [];
+                          const hasMultipleClauses = blocks.length > 1;
+                          return blocks.length > 0 ? (
+                            blocks.map((block: string, index: number) => (
+                              <div
+                                key={index}
+                                className={
+                                  hasMultipleClauses
+                                    ? 'flex flex-rowborder-l-2 border-brand-secondary/20'
+                                    : ''
+                                }
+                              >
+                                {hasMultipleClauses && (
+                                  <div className="flex h-5 w-5 items-center justify-center rounded-full bg-brand-primary/20 text-xs font-medium text-brand-secondary">
+                                    {index + 1}
+                                  </div>
+                                )}
+                                <div className="text-sm leading-[1.7] text-foreground whitespace-pre-line">
+                                  {block.trim()}
+                                </div>
+                              </div>
+                            ))
+                          ) : (
+                            <p className="text-sm leading-relaxed text-muted-foreground">No content</p>
+                          );
+                        })()}
+                      </div>
                     </div>
                   </div>
                 </div>
