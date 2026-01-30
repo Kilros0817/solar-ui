@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -20,9 +20,8 @@ import {
   Eye
 } from 'lucide-react';
 import { ContractTemplate } from '../data/templates';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collapsible';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from './ui/hover-card';
-import { DIVISION_LABELS } from '@/utils/constants';
+import { DIVISION_LABELS, URLs } from '@/utils/constants';
 import { getAllDivisionLeaders } from '@/utils/subgraph';
 
 interface ContractCreationProps {
@@ -49,11 +48,42 @@ export function ContractCreation({ onBack, onCreateContract, selectedTemplate }:
 
   const [openSectionType, setOpenSectionType] = useState<string | null>(null);
   const [availableDivisions, setAvailableDivisions] = useState<{id: string, dcategory: number}[]>([]);
+  const [sectionLibrary, setSectionLibrary] = useState<Record<string, Array<{ id: string; name: string; description: string; content: string }>>>({});
+  const [sectionsLoaded, setSectionsLoaded] = useState(false);
 
   useEffect(() => {
     getAllDivisionLeaders().then((leaders) => {
       setAvailableDivisions(leaders);
     });
+  }, []);
+
+  useEffect(() => {
+    const fetchSections = async () => {
+      try {
+        const res = await fetch(`${URLs.SectionAPI}?limit=200`);
+        const data = await res.json();
+        if (res.ok && data.items) {
+          const grouped: Record<string, Array<{ id: string; name: string; description: string; content: string }>> = {};
+          for (const item of data.items as Array<{ templateId: string; sectionName: string; name: string; description: string; content?: string }>) {
+            const version = {
+              id: item.templateId,
+              name: item.name,
+              description: item.description ?? '',
+              content: item.content ?? '',
+            };
+            const key = item.sectionName;
+            if (!grouped[key]) grouped[key] = [];
+            grouped[key].push(version);
+          }
+          setSectionLibrary(grouped);
+        }
+      } catch (err) {
+        console.error('Failed to fetch section templates:', err);
+      } finally {
+        setSectionsLoaded(true);
+      }
+    };
+    fetchSections();
   }, []);
 
   const formatCurrency = (value: string) => {
@@ -74,227 +104,7 @@ export function ContractCreation({ onBack, onCreateContract, selectedTemplate }:
     setContractDetails({...contractDetails, value: formattedValue});
   };
 
-  const defaultContractSections = [
-    'Terms & Conditions',
-    'Pricing & Payment Terms',
-    'Technical Specifications',
-    'Legal Compliance',
-    'Delivery & Timeline',
-    'Termination Clauses',
-    'Intellectual Property',
-    'Data Privacy & Security',
-    'Service Level Agreements',
-    'Liability & Insurance'
-  ];
-
-  // Section library with different versions for each section type
-  const sectionLibrary: Record<string, Array<{
-    id: string;
-    name: string;
-    description: string;
-    content: string;
-  }>> = {
-    'Terms & Conditions': [
-      {
-        id: 'tc-v1',
-        name: 'Standard Terms',
-        description: 'General terms for standard business agreements',
-        content: 'This version includes standard terms and conditions covering general business agreements, including payment terms, delivery obligations, and basic warranties. Suitable for most commercial contracts.'
-      },
-      {
-        id: 'tc-v2',
-        name: 'Enterprise Terms',
-        description: 'Comprehensive terms for enterprise-level deals',
-        content: 'Enhanced terms designed for large enterprise agreements with extended warranty provisions, detailed service levels, escalation procedures, and comprehensive liability clauses. Includes performance guarantees and audit rights.'
-      },
-      {
-        id: 'tc-v3',
-        name: 'Simplified Terms',
-        description: 'Streamlined terms for quick agreements',
-        content: 'A concise version with essential terms only, ideal for straightforward transactions, small-value contracts, or recurring agreements with established partners. Minimizes legal complexity while maintaining protection.'
-      }
-    ],
-    'Pricing & Payment Terms': [
-      {
-        id: 'pp-v1',
-        name: 'Fixed Price',
-        description: 'Single upfront or milestone-based payments',
-        content: 'Fixed pricing structure with defined payment schedule. Includes provisions for milestone-based payments, late payment penalties, and early payment discounts. Clear pricing breakdown and invoicing requirements.'
-      },
-      {
-        id: 'pp-v2',
-        name: 'Subscription Model',
-        description: 'Recurring payments with auto-renewal',
-        content: 'Subscription-based pricing with monthly or annual billing cycles. Includes automatic renewal clauses, price adjustment mechanisms, usage-based pricing tiers, and cancellation policies with notice periods.'
-      },
-      {
-        id: 'pp-v3',
-        name: 'Performance-Based',
-        description: 'Variable pricing tied to outcomes',
-        content: 'Performance-based pricing with variable components tied to specific KPIs and deliverables. Includes bonus structures, penalty clauses for underperformance, and detailed measurement criteria.'
-      }
-    ],
-    'Technical Specifications': [
-      {
-        id: 'ts-v1',
-        name: 'High-Level Requirements',
-        description: 'General technical requirements and standards',
-        content: 'Broad technical specifications covering system requirements, compatibility standards, integration points, and general performance criteria. Suitable for service-based agreements.'
-      },
-      {
-        id: 'ts-v2',
-        name: 'Detailed Specifications',
-        description: 'Comprehensive technical documentation',
-        content: 'Detailed technical requirements including architecture diagrams, API specifications, data formats, security protocols, performance benchmarks, and testing criteria. Ideal for complex technical implementations.'
-      },
-      {
-        id: 'ts-v3',
-        name: 'SaaS Platform Specs',
-        description: 'Cloud platform and SaaS requirements',
-        content: 'Technical specifications tailored for SaaS platforms, including uptime guarantees, scalability requirements, data residency, backup procedures, and disaster recovery plans.'
-      }
-    ],
-    'Legal Compliance': [
-      {
-        id: 'lc-v1',
-        name: 'Standard Compliance',
-        description: 'Basic regulatory compliance requirements',
-        content: 'Standard compliance provisions covering general business regulations, anti-corruption laws, export controls, and basic industry standards. Includes representation and warranty clauses.'
-      },
-      {
-        id: 'lc-v2',
-        name: 'GDPR & Privacy',
-        description: 'Enhanced data protection compliance',
-        content: 'Comprehensive data protection and privacy compliance including GDPR, CCPA, and other data protection regulations. Covers data processing agreements, subject rights, breach notification, and cross-border transfers.'
-      },
-      {
-        id: 'lc-v3',
-        name: 'Industry-Specific',
-        description: 'Specialized regulatory requirements',
-        content: 'Industry-specific compliance provisions tailored to regulated sectors (healthcare, finance, etc.). Includes HIPAA, SOX, PCI-DSS, and other sector-specific requirements with audit and reporting obligations.'
-      }
-    ],
-    'Delivery & Timeline': [
-      {
-        id: 'dt-v1',
-        name: 'Fixed Timeline',
-        description: 'Definite delivery dates and milestones',
-        content: 'Fixed delivery schedule with specific dates, milestones, and deadlines. Includes provisions for delays, force majeure, and remedies for late delivery. Clear acceptance criteria for each milestone.'
-      },
-      {
-        id: 'dt-v2',
-        name: 'Agile/Iterative',
-        description: 'Sprint-based delivery schedule',
-        content: 'Flexible, sprint-based delivery model with iterative releases. Includes sprint planning, review cycles, backlog management, and continuous delivery provisions. Suitable for software development projects.'
-      },
-      {
-        id: 'dt-v3',
-        name: 'Best Efforts',
-        description: 'Target dates with flexibility',
-        content: 'Target delivery dates with built-in flexibility. Emphasizes best efforts commitment with regular progress reporting. Includes provisions for scope changes and timeline adjustments based on circumstances.'
-      }
-    ],
-    'Termination Clauses': [
-      {
-        id: 'term-v1',
-        name: 'Standard Termination',
-        description: 'Balanced termination rights',
-        content: 'Balanced termination provisions with notice periods, termination for cause, and convenience termination options. Includes wind-down procedures, transition assistance, and final payment terms.'
-      },
-      {
-        id: 'term-v2',
-        name: 'Customer-Favorable',
-        description: 'Enhanced customer exit rights',
-        content: 'Customer-favorable termination terms with shorter notice periods, liberal termination for convenience, and flexible exit provisions. Includes data portability and minimal termination fees.'
-      },
-      {
-        id: 'term-v3',
-        name: 'Vendor-Favorable',
-        description: 'Restrictive termination conditions',
-        content: 'Vendor-favorable terms with longer notice periods, limited termination rights, and substantial termination fees. Emphasizes commitment period and penalties for early termination.'
-      }
-    ],
-    'Intellectual Property': [
-      {
-        id: 'ip-v1',
-        name: 'Customer Ownership',
-        description: 'Customer owns all deliverables',
-        content: 'Full transfer of IP rights to customer for all work product and deliverables. Vendor retains only pre-existing IP and general methodologies. Includes work-for-hire provisions.'
-      },
-      {
-        id: 'ip-v2',
-        name: 'Shared IP Rights',
-        description: 'Joint ownership of developed IP',
-        content: 'Shared intellectual property rights with clear allocation between customer-specific and general use components. Includes cross-licensing provisions and rights to derivative works.'
-      },
-      {
-        id: 'ip-v3',
-        name: 'License Model',
-        description: 'Vendor retains IP, customer gets license',
-        content: 'Vendor retains ownership of all IP with customer receiving a license to use. Defines scope of license (exclusive/non-exclusive), permitted uses, and any restrictions or limitations.'
-      }
-    ],
-    'Data Privacy & Security': [
-      {
-        id: 'dps-v1',
-        name: 'Standard Security',
-        description: 'Basic security and privacy requirements',
-        content: 'Standard security provisions including encryption, access controls, security incident procedures, and basic privacy protections. Suitable for non-sensitive business data.'
-      },
-      {
-        id: 'dps-v2',
-        name: 'Enhanced Security',
-        description: 'Comprehensive security framework',
-        content: 'Comprehensive security requirements including ISO 27001 compliance, regular penetration testing, security audits, detailed incident response, and enhanced encryption standards. For handling sensitive data.'
-      },
-      {
-        id: 'dps-v3',
-        name: 'Zero Trust Model',
-        description: 'Advanced zero-trust security architecture',
-        content: 'Advanced security provisions based on zero-trust principles. Includes continuous verification, micro-segmentation, least privilege access, comprehensive logging, and real-time threat detection.'
-      }
-    ],
-    'Service Level Agreements': [
-      {
-        id: 'sla-v1',
-        name: 'Basic SLA',
-        description: 'Standard availability and support',
-        content: 'Basic SLA with 99% uptime guarantee, business hours support, and standard response times. Includes basic performance metrics and service credits for downtime.'
-      },
-      {
-        id: 'sla-v2',
-        name: 'Enterprise SLA',
-        description: 'Premium service levels with 24/7 support',
-        content: 'Enterprise-grade SLA with 99.9% uptime, 24/7 premium support, dedicated account management, priority response times, and comprehensive service credits. Includes escalation procedures.'
-      },
-      {
-        id: 'sla-v3',
-        name: 'Mission Critical',
-        description: 'Maximum uptime and rapid response',
-        content: 'Mission-critical SLA with 99.99% uptime guarantee, instant response times, dedicated support team, proactive monitoring, and substantial penalties for service failures. For business-critical systems.'
-      }
-    ],
-    'Liability & Insurance': [
-      {
-        id: 'li-v1',
-        name: 'Balanced Liability',
-        description: 'Mutual liability caps and limitations',
-        content: 'Balanced liability provisions with reciprocal caps (typically 12 months fees), standard indemnification, and reasonable insurance requirements. Excludes liability for consequential damages.'
-      },
-      {
-        id: 'li-v2',
-        name: 'Limited Liability',
-        description: 'Vendor-favorable liability limitations',
-        content: 'Vendor-favorable liability caps (typically 3-6 months fees) with broad exclusions and limited indemnification. Minimal insurance requirements and extensive liability limitations.'
-      },
-      {
-        id: 'li-v3',
-        name: 'Uncapped Liability',
-        description: 'No caps for certain breach types',
-        content: 'Comprehensive liability with uncapped exposure for IP infringement, data breaches, confidentiality violations, and gross negligence. Substantial insurance requirements and broad indemnification.'
-      }
-    ]
-  };
+  const defaultContractSections = Object.keys(sectionLibrary).sort();
 
   // Build map from version id to section info for resolving template sectionIds
   const versionIdToSection = useMemo(() => {
@@ -305,12 +115,15 @@ export function ContractCreation({ onBack, onCreateContract, selectedTemplate }:
       }
     }
     return map;
-  }, []);
+  }, [sectionLibrary]);
 
-  // Initialize contract sections from template (once on mount). Blank template = no sections.
+  // Initialize contract sections from template when sections are loaded. Blank template = no sections.
+  const hasInitializedSections = useRef(false);
   useEffect(() => {
+    if (!sectionsLoaded || hasInitializedSections.current) return;
     const sectionIds = selectedTemplate.sectionIds ?? [];
     if (sectionIds.length > 0) {
+      hasInitializedSections.current = true;
       const sections = sectionIds
         .map((versionId) => {
           const info = versionIdToSection[versionId];
@@ -325,10 +138,10 @@ export function ContractCreation({ onBack, onCreateContract, selectedTemplate }:
         })
         .filter((s): s is NonNullable<typeof s> => s !== null);
       setContractDetails((prev) => ({ ...prev, contractSections: sections }));
+    } else {
+      hasInitializedSections.current = true;
     }
-    // Blank template: leave contractSections empty; user adds via "Add Section"
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [sectionsLoaded, selectedTemplate.sectionIds, versionIdToSection]);
 
   const addContractSection = (sectionName: string, versionId: string, versionName: string) => {
     const newSection = {
@@ -470,18 +283,53 @@ export function ContractCreation({ onBack, onCreateContract, selectedTemplate }:
                   </div>
 
                   <div className="space-y-3">
-                    {contractDetails.contractSections.map((section) => (
+                    {contractDetails.contractSections.map((section) => {
+                      const version = sectionLibrary[section.name]?.find((v) => v.id === section.versionId);
+                      const content = version?.content ?? '';
+                      const blocks = content.split(/\n\n+/).filter((b) => b.trim());
+                      const hasMultipleBlocks = blocks.length > 1;
+                      return (
                       <div key={section.id} className="border rounded-lg p-4 space-y-3 brand-accent-shadow">
                         <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <FileText className="h-4 w-4 text-muted-foreground" />
-                            <div>
-                              <span className="font-medium">{section.name}</span>
-                              <Badge variant="outline" className="ml-2 text-xs">
-                                {section.versionName}
-                              </Badge>
-                            </div>
-                          </div>
+                          <HoverCard openDelay={200} closeDelay={100}>
+                            <HoverCardTrigger asChild>
+                              <div className="flex items-center gap-2 cursor-pointer flex-1 min-w-0">
+                                <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
+                                <div className="min-w-0">
+                                  <span className="font-medium">{section.name}</span>
+                                  <Badge variant="outline" className="ml-2 text-xs">
+                                    {section.versionName}
+                                  </Badge>
+                                </div>
+                              </div>
+                            </HoverCardTrigger>
+                            <HoverCardContent side="right" align="start" className="w-96 max-h-80 overflow-y-auto">
+                              <div className="space-y-2">
+                                <h4 className="font-medium text-sm">{section.name} – {section.versionName}</h4>
+                                <div className="space-y-4">
+                                  {blocks.length > 0 ? (
+                                    blocks.map((block, i) => (
+                                      <div
+                                        key={i}
+                                        className={hasMultipleBlocks ? 'flex flex-row gap-2 border-l-2 border-brand-secondary/20 pl-3' : ''}
+                                      >
+                                        {hasMultipleBlocks && (
+                                          <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand-primary/20 text-xs font-medium text-brand-secondary">
+                                            {i + 1}
+                                          </div>
+                                        )}
+                                        <div className="text-sm leading-[1.7] text-foreground whitespace-pre-line">
+                                          {block.trim()}
+                                        </div>
+                                      </div>
+                                    ))
+                                  ) : (
+                                    <p className="text-sm text-muted-foreground">No content</p>
+                                  )}
+                                </div>
+                              </div>
+                            </HoverCardContent>
+                          </HoverCard>
                           <Button
                             variant="ghost"
                             size="sm"
@@ -545,7 +393,8 @@ export function ContractCreation({ onBack, onCreateContract, selectedTemplate }:
                           </div>
                         </div>
                       </div>
-                    ))}
+                    );
+                    })}
 
                     <div className="space-y-2">
                       <Label className="text-sm">Add Section:</Label>
@@ -601,22 +450,39 @@ export function ContractCreation({ onBack, onCreateContract, selectedTemplate }:
                                             </div>
                                           </button>
                                         </HoverCardTrigger>
-                                        <HoverCardContent className="w-96" side="right">
+                                        <HoverCardContent className="w-96 max-h-80 overflow-y-auto" side="right">
                                           <div className="space-y-2">
                                             <div>
                                               <h4 className="font-medium">{version.name}</h4>
                                               <p className="text-sm text-muted-foreground">{version.description}</p>
                                             </div>
                                             <div className="pt-2 border-t">
-                                              <p className="text-xs font-medium text-muted-foreground mb-1">Content Preview:</p>
-                                              <p className="text-xs text-muted-foreground leading-relaxed">
-                                                {version.content}
-                                              </p>
-                                            </div>
-                                            <div className="pt-2 border-t flex justify-end">
-                                              <span className="text-xs text-brand-secondary font-medium">
-                                                Hover to preview
-                                              </span>
+                                              <p className="text-xs font-medium text-muted-foreground mb-2">Content Preview:</p>
+                                              <div className="space-y-4">
+                                                {(() => {
+                                                  const blocks = (version.content ?? '').split(/\n\n+/).filter((b) => b.trim());
+                                                  const hasMultiple = blocks.length > 1;
+                                                  return blocks.length > 0 ? (
+                                                    blocks.map((block, i) => (
+                                                      <div
+                                                        key={i}
+                                                        className={hasMultiple ? 'flex flex-row gap-2 border-l-2 border-brand-secondary/20 pl-3' : ''}
+                                                      >
+                                                        {hasMultiple && (
+                                                          <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand-primary/20 text-xs font-medium text-brand-secondary">
+                                                            {i + 1}
+                                                          </div>
+                                                        )}
+                                                        <div className="text-sm leading-[1.7] text-foreground whitespace-pre-line">
+                                                          {block.trim()}
+                                                        </div>
+                                                      </div>
+                                                    ))
+                                                  ) : (
+                                                    <p className="text-sm text-muted-foreground">No content</p>
+                                                  );
+                                                })()}
+                                              </div>
                                             </div>
                                           </div>
                                         </HoverCardContent>
