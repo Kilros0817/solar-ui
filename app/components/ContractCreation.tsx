@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -38,7 +38,6 @@ export function ContractCreation({ onBack, onCreateContract, selectedTemplate }:
     value: '',
     assignee: '',
     priority: 'medium',
-    involvedDivisions: [] as string[],
     contractSections: [] as Array<{
       id: string;
       name: string;
@@ -297,6 +296,40 @@ export function ContractCreation({ onBack, onCreateContract, selectedTemplate }:
     ]
   };
 
+  // Build map from version id to section info for resolving template sectionIds
+  const versionIdToSection = useMemo(() => {
+    const map: Record<string, { sectionName: string; versionId: string; versionName: string }> = {};
+    for (const [sectionName, versions] of Object.entries(sectionLibrary)) {
+      for (const v of versions) {
+        map[v.id] = { sectionName, versionId: v.id, versionName: v.name };
+      }
+    }
+    return map;
+  }, []);
+
+  // Initialize contract sections from template (once on mount). Blank template = no sections.
+  useEffect(() => {
+    const sectionIds = selectedTemplate.sectionIds ?? [];
+    if (sectionIds.length > 0) {
+      const sections = sectionIds
+        .map((versionId) => {
+          const info = versionIdToSection[versionId];
+          if (!info) return null;
+          return {
+            id: `${versionId}-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+            name: info.sectionName,
+            versionId: info.versionId,
+            versionName: info.versionName,
+            assignedDivision: null as string | null,
+          };
+        })
+        .filter((s): s is NonNullable<typeof s> => s !== null);
+      setContractDetails((prev) => ({ ...prev, contractSections: sections }));
+    }
+    // Blank template: leave contractSections empty; user adds via "Add Section"
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const addContractSection = (sectionName: string, versionId: string, versionName: string) => {
     const newSection = {
       id: Date.now().toString(),
@@ -349,7 +382,7 @@ export function ContractCreation({ onBack, onCreateContract, selectedTemplate }:
       <div className="flex items-center gap-4">
         <Button variant="outline" onClick={onBack}>
           <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Template Library
+          Back
         </Button>
         <div>
           <h1>Contract Details</h1>
@@ -444,63 +477,7 @@ export function ContractCreation({ onBack, onCreateContract, selectedTemplate }:
                 </Select>
               </div> */}
 
-              <div className="space-y-2">
-                <Label htmlFor="divisions">Involved Divisions</Label>
-                <Select 
-                  onValueChange={(value) => {
-                    if (!contractDetails.involvedDivisions.includes(value)) {
-                      setContractDetails({
-                        ...contractDetails, 
-                        involvedDivisions: [...contractDetails.involvedDivisions, value]
-                      });
-                    }
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select divisions to involve" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availableDivisions
-                      .filter(division => !contractDetails.involvedDivisions.includes(division))
-                      .map(division => (
-                        <SelectItem key={division} value={division}>
-                          <div className="flex items-center gap-2">
-                            <Building className="h-4 w-4" />
-                            {division}
-                          </div>
-                        </SelectItem>
-                      ))
-                    }
-                  </SelectContent>
-                </Select>
-                
-                {contractDetails.involvedDivisions.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {contractDetails.involvedDivisions.map(division => (
-                      <Badge key={division} variant="secondary" className="flex items-center gap-1">
-                        <Building className="h-3 w-3" />
-                        {division}
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-4 w-4 p-0 hover:bg-transparent"
-                          onClick={() => {
-                            setContractDetails({
-                              ...contractDetails,
-                              involvedDivisions: contractDetails.involvedDivisions.filter(d => d !== division)
-                            });
-                          }}
-                        >
-                          <X className="h-3 w-3" />
-                        </Button>
-                      </Badge>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {contractDetails.involvedDivisions.length > 0 && (
-                <div className="space-y-4 pt-6 border-t">
+              <div className="space-y-4 pt-6 border-t">
                   <div className="flex items-center justify-between">
                     <div>
                       <Label>Contract Sections</Label>
@@ -573,7 +550,7 @@ export function ContractCreation({ onBack, onCreateContract, selectedTemplate }:
                                 <SelectValue placeholder="Select a division" />
                               </SelectTrigger>
                               <SelectContent>
-                                {contractDetails.involvedDivisions.map(division => (
+                                {availableDivisions.map(division => (
                                   <SelectItem key={division} value={division}>
                                     <div className="flex items-center gap-2">
                                       <Building className="h-4 w-4" />
@@ -673,7 +650,6 @@ export function ContractCreation({ onBack, onCreateContract, selectedTemplate }:
                     </div>
                   </div>
                 </div>
-              )}
             </CardContent>
           </Card>
         </div>
@@ -700,7 +676,7 @@ export function ContractCreation({ onBack, onCreateContract, selectedTemplate }:
                 </p>
               </div>
 
-              <div className="pt-4 space-y-2">
+              <div className="pt-4">
                 <Button 
                   className="w-full brand-focus" 
                   style={{ backgroundColor: 'var(--brand-secondary)', color: 'white' }}
@@ -708,9 +684,6 @@ export function ContractCreation({ onBack, onCreateContract, selectedTemplate }:
                   disabled={!contractDetails.title || !contractDetails.client}
                 >
                   Create Contract
-                </Button>
-                <Button variant="outline" className="w-full">
-                  Preview Template
                 </Button>
               </div>
             </CardContent>

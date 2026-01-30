@@ -5,6 +5,7 @@ import React, { useEffect, useState } from "react";
 import { createConfig, WagmiProvider, fallback, http, Config } from "wagmi";
 
 import { UserProvider } from './contexts/UserContext'
+import { NewContractProvider } from './contexts/NewContractContext'
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import Web3AuthConnectorInstance from "@/utils/Web3AuthConnectorInstance";
@@ -62,7 +63,9 @@ const TBProvider: React.FC<TBProviderProps> = ({ children }: any) => {
           <QueryClientProvider client={queryClient}>
             <div className="flex flex-col">
               <UserProvider>
-                {children}
+                <NewContractProvider>
+                  {children}
+                </NewContractProvider>
               </UserProvider>
             </div>
           </QueryClientProvider>

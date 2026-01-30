@@ -4,22 +4,15 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ContractList } from '../components/ContractList';
 import { ContractDetails } from '../components/ContractDetails';
-import { ContractCreation } from '../components/ContractCreation';
-import { NewContractChoice } from '../components/NewContractChoice';
-import { TemplateLibrary } from '../components/TemplateLibrary';
 import { useUser } from '../contexts/UserContext';
+import { useNewContract } from '../contexts/NewContractContext';
 import { USER_ROLE } from '@/utils/constants';
-import { ContractTemplate } from '../data/templates';
-import { FileText } from 'lucide-react';
 
 export default function ApprovedPage() {
   const router = useRouter();
   const { userRole } = useUser();
+  const { setFrom } = useNewContract();
   const [selectedContract, setSelectedContract] = useState<number | null>(null);
-  const [showContractCreation, setShowContractCreation] = useState(false);
-  const [showNewContractChoice, setShowNewContractChoice] = useState(false);
-  const [showTemplateSelection, setShowTemplateSelection] = useState(false);
-  const [selectedTemplate, setSelectedTemplate] = useState<ContractTemplate | null>(null);
 
   useEffect(() => {
     if (userRole === null) {
@@ -33,86 +26,23 @@ export default function ApprovedPage() {
     return null;
   }
 
-  const handleCreateContract = (contractData: any) => {
-    console.log('Creating contract:', contractData);
-    setShowContractCreation(false);
-    setSelectedTemplate(null);
-    setSelectedContract(1);
+  const handleCreateContract = () => {
+    if (userRole === USER_ROLE.LEGAL_TEAM || userRole === USER_ROLE.PROJECT_OWNER || userRole === USER_ROLE.ADMIN) {
+      setFrom('approved');
+      router.push('/new-contract');
+    }
   };
 
-  const handleCreateFromTemplate = (template: ContractTemplate) => {
-    setSelectedTemplate(template);
-    setShowContractCreation(true);
-  };
+  if (selectedContract) {
+    return <ContractDetails contractId={selectedContract} onBack={() => setSelectedContract(null)} />;
+  }
 
-  const renderContent = () => {
-    if (showNewContractChoice) {
-      return (
-        <NewContractChoice
-          onSelectBlank={() => {
-            setShowNewContractChoice(false);
-            const blankTemplate: ContractTemplate = {
-              id: 'blank',
-              name: 'Blank Contract',
-              description: 'Start from scratch',
-              category: 'Custom',
-              icon: FileText,
-              createdDate: new Date().toISOString(),
-              lastModified: new Date().toISOString(),
-              createdBy: 'System',
-              sectionIds: []
-            };
-            handleCreateFromTemplate(blankTemplate);
-          }}
-          onSelectTemplate={() => {
-            setShowNewContractChoice(false);
-            setShowTemplateSelection(true);
-          }}
-          onBack={() => {
-            setShowNewContractChoice(false);
-          }}
-        />
-      );
-    }
-
-    if (showTemplateSelection) {
-      return (
-        <TemplateLibrary
-          onSelectContractTemplate={(template) => {
-            setShowTemplateSelection(false);
-            handleCreateFromTemplate(template);
-          }}
-        />
-      );
-    }
-
-    if (showContractCreation && selectedTemplate) {
-      return (
-        <ContractCreation
-          onBack={() => {
-            setShowContractCreation(false);
-            setSelectedTemplate(null);
-          }}
-          onCreateContract={handleCreateContract}
-          selectedTemplate={selectedTemplate}
-        />
-      );
-    }
-
-    if (selectedContract) {
-      return <ContractDetails contractId={selectedContract} onBack={() => setSelectedContract(null)} />;
-    }
-
-    return (
-      <ContractList
-        title="Approved Contracts"
-        filterStatus="approved"
-        onCreateContract={() => userRole === USER_ROLE.LEGAL_TEAM ? setShowNewContractChoice(true) : null}
-        onViewContract={(contractId) => setSelectedContract(contractId)}
-      />
-    );
-  };
-
-  return renderContent();
+  return (
+    <ContractList
+      title="Approved Contracts"
+      filterStatus="approved"
+      onCreateContract={handleCreateContract}
+      onViewContract={(contractId) => setSelectedContract(contractId)}
+    />
+  );
 }
-
