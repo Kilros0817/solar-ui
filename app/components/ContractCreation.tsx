@@ -22,7 +22,8 @@ import {
 import { ContractTemplate } from '../data/templates';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collapsible';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from './ui/hover-card';
-import { DIVISION_CATEGORY, DIVISION_LABELS } from '@/utils/constants';
+import { DIVISION_LABELS } from '@/utils/constants';
+import { getAllDivisionLeaders } from '@/utils/subgraph';
 
 interface ContractCreationProps {
   onBack: () => void;
@@ -37,7 +38,6 @@ export function ContractCreation({ onBack, onCreateContract, selectedTemplate }:
     description: '',
     value: '',
     assignee: '',
-    priority: 'medium',
     contractSections: [] as Array<{
       id: string;
       name: string;
@@ -48,6 +48,13 @@ export function ContractCreation({ onBack, onCreateContract, selectedTemplate }:
   });
 
   const [openSectionType, setOpenSectionType] = useState<string | null>(null);
+  const [availableDivisions, setAvailableDivisions] = useState<{id: string, dcategory: number}[]>([]);
+
+  useEffect(() => {
+    getAllDivisionLeaders().then((leaders) => {
+      setAvailableDivisions(leaders);
+    });
+  }, []);
 
   const formatCurrency = (value: string) => {
     // Remove all non-digit characters
@@ -66,13 +73,6 @@ export function ContractCreation({ onBack, onCreateContract, selectedTemplate }:
     const formattedValue = formatCurrency(inputValue);
     setContractDetails({...contractDetails, value: formattedValue});
   };
-
-  // Division labels mapping
-  // Get all divisions except NO_DIVISION
-  const availableDivisions = Object.entries(DIVISION_CATEGORY)
-    .filter(([_, value]) => value !== DIVISION_CATEGORY.NO_DIVISION)
-    .map(([_, value]) => DIVISION_LABELS[value as number])
-    .filter(Boolean); // Remove any undefined values
 
   const defaultContractSections = [
     'Terms & Conditions',
@@ -430,32 +430,14 @@ export function ContractCreation({ onBack, onCreateContract, selectedTemplate }:
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="value">Contract Value</Label>
-                  <Input
-                    id="value"
-                    placeholder="$0.00"
-                    value={contractDetails.value}
-                    onChange={handleValueChange}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="priority">Priority</Label>
-                  <Select 
-                    value={contractDetails.priority} 
-                    onValueChange={(value) => setContractDetails({...contractDetails, priority: value})}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="low">Low Priority</SelectItem>
-                      <SelectItem value="medium">Medium Priority</SelectItem>
-                      <SelectItem value="high">High Priority</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="value">Contract Value</Label>
+                <Input
+                  id="value"
+                  placeholder="$0.00"
+                  value={contractDetails.value}
+                  onChange={handleValueChange}
+                />
               </div>
 
               {/* TODO: Assign To field - Hidden for now, will be used later if needed */}
@@ -519,7 +501,7 @@ export function ContractCreation({ onBack, onCreateContract, selectedTemplate }:
                                 className="flex items-center gap-1 w-fit"
                               >
                                 <Building className="h-3 w-3" />
-                                {section.assignedDivision}
+                                { DIVISION_LABELS[Number(section.assignedDivision)] }
                                 <Button
                                   variant="ghost"
                                   size="sm"
@@ -551,10 +533,10 @@ export function ContractCreation({ onBack, onCreateContract, selectedTemplate }:
                               </SelectTrigger>
                               <SelectContent>
                                 {availableDivisions.map(division => (
-                                  <SelectItem key={division} value={division}>
+                                  <SelectItem key={division.id} value={division.dcategory.toString()}>
                                     <div className="flex items-center gap-2">
                                       <Building className="h-4 w-4" />
-                                      {division}
+                                      {DIVISION_LABELS[division.dcategory]}
                                     </div>
                                   </SelectItem>
                                 ))}
@@ -681,7 +663,11 @@ export function ContractCreation({ onBack, onCreateContract, selectedTemplate }:
                   className="w-full brand-focus" 
                   style={{ backgroundColor: 'var(--brand-secondary)', color: 'white' }}
                   onClick={handleCreateContract}
-                  disabled={!contractDetails.title || !contractDetails.client}
+                  disabled={
+                    !contractDetails.title ||
+                    !contractDetails.client ||
+                    contractDetails.contractSections.some((s) => !s.assignedDivision)
+                  }
                 >
                   Create Contract
                 </Button>

@@ -127,6 +127,24 @@ export const getAllDivisionLeadersAndMembers = async () => {
   }
 }
 
+export const getAllDivisionLeaders = async () => {
+  let query = `{
+    users(where: {role: 2}) {
+      id
+      dcategory
+    }
+  }`;
+  try {
+    const res = await getDataFromSubgraph(query);
+    const leaders = (res.data as any).users || [];
+
+    return leaders;
+  } catch (e) {
+    console.log(e, "============error in get all division leaders from subgraph============");
+    return {};
+  }
+}
+
 interface User {
   id: string;
   firstName: string;
