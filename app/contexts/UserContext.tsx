@@ -7,9 +7,16 @@ import { USER_ROLE } from '@/utils/constants';
 
 export type UserRole = number | null;
 
+export interface UserInfo {
+  role: UserRole;
+  firstName?: string;
+  lastName?: string;
+}
+
 interface UserContextType {
   userRole: UserRole;
   setUserRole: (role: UserRole) => void;
+  setUserInfo: (info: UserInfo) => void;
   userName: string;
   logout: () => Promise<void>;
 }
@@ -23,26 +30,33 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
   const handleSetUserRole = (role: UserRole) => {
     setUserRole(role);
-    // Set default names based on role
-    switch (role) {
-      case USER_ROLE.LEGAL_TEAM:
-        setUserName('Sarah Chen');
-        break;
-      case USER_ROLE.PROJECT_OWNER:
-        setUserName('Michael Rodriguez');
-        break;
-      case USER_ROLE.DIVISION_LEADER:
-        setUserName('Jennifer Taylor');
-        break;
-      case USER_ROLE.DIVISION_MEMBER:
-        setUserName('David Kim');
-        break;
-      case USER_ROLE.ADMIN:
-        setUserName('Admin User');
-        break;
-      default:
-        setUserName('');
-    }
+    // Role-based default names (e.g. for demo role switcher)
+    const defaultName = (() => {
+      switch (role) {
+        case USER_ROLE.LEGAL_TEAM: return 'Sarah Chen';
+        case USER_ROLE.PROJECT_OWNER: return 'Michael Rodriguez';
+        case USER_ROLE.DIVISION_LEADER: return 'Jennifer Taylor';
+        case USER_ROLE.DIVISION_MEMBER: return 'David Kim';
+        case USER_ROLE.ADMIN: return 'Admin User';
+        default: return '';
+      }
+    })();
+    setUserName(defaultName);
+  };
+
+  const handleSetUserInfo = ({ role, firstName, lastName }: UserInfo) => {
+    setUserRole(role);
+    const name = [firstName, lastName].filter(Boolean).join(' ').trim();
+    setUserName(name || (() => {
+      switch (role) {
+        case USER_ROLE.LEGAL_TEAM: return 'Legal Team';
+        case USER_ROLE.PROJECT_OWNER: return 'Project Owner';
+        case USER_ROLE.DIVISION_LEADER: return 'Division Lead';
+        case USER_ROLE.DIVISION_MEMBER: return 'Division Member';
+        case USER_ROLE.ADMIN: return 'Administrator';
+        default: return 'User';
+      }
+    })());
   };
 
   const logout = async () => {
@@ -73,7 +87,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <UserContext.Provider value={{ userRole, setUserRole: handleSetUserRole, userName, logout }}>
+    <UserContext.Provider value={{ userRole, setUserRole: handleSetUserRole, setUserInfo: handleSetUserInfo, userName, logout }}>
       {children}
     </UserContext.Provider>
   );

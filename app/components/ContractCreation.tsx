@@ -17,20 +17,21 @@ import {
   Trash2,
   ChevronDown,
   ChevronRight,
-  Eye
+  Eye,
+  Loader2
 } from 'lucide-react';
 import { ContractTemplate } from '../data/templates';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from './ui/hover-card';
 import { DIVISION_LABELS, URLs } from '@/utils/constants';
 import { getAllDivisionLeaders } from '@/utils/subgraph';
+import { toast } from 'sonner';
 
 interface ContractCreationProps {
   onBack: () => void;
-  onCreateContract: (contractData: any) => void;
   selectedTemplate: ContractTemplate;
 }
 
-export function ContractCreation({ onBack, onCreateContract, selectedTemplate }: ContractCreationProps) {
+export function ContractCreation({ onBack, selectedTemplate }: ContractCreationProps) {
   const [contractDetails, setContractDetails] = useState({
     title: '',
     client: '',
@@ -48,13 +49,34 @@ export function ContractCreation({ onBack, onCreateContract, selectedTemplate }:
 
   const [openSectionType, setOpenSectionType] = useState<string | null>(null);
   const [availableDivisions, setAvailableDivisions] = useState<{id: string, dcategory: number}[]>([]);
-  const [sectionLibrary, setSectionLibrary] = useState<Record<string, Array<{ id: string; name: string; description: string; content: string }>>>({});
+  const [sectionLibrary, setSectionLibrary] = useState<Record<string, Array<{ id: string; name: string; description: string; content: string; clauseIds?: string[] }>>>({});
+  const [clauseMap, setClauseMap] = useState<Record<string, string>>({});
   const [sectionsLoaded, setSectionsLoaded] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
     getAllDivisionLeaders().then((leaders) => {
-      setAvailableDivisions(leaders);
+      setAvailableDivisions(Array.isArray(leaders) ? leaders : []);
     });
+  }, []);
+
+  useEffect(() => {
+    const fetchClauses = async () => {
+      try {
+        const res = await fetch(`${URLs.ClauseAPI}?limit=200`);
+        const data = await res.json();
+        if (res.ok && data.items) {
+          const map: Record<string, string> = {};
+          for (const item of data.items as Array<{ templateId: string; content: string }>) {
+            map[item.templateId] = item.content ?? '';
+          }
+          setClauseMap(map);
+        }
+      } catch (err) {
+        console.error('Failed to fetch clause templates:', err);
+      }
+    };
+    fetchClauses();
   }, []);
 
   useEffect(() => {
@@ -63,13 +85,14 @@ export function ContractCreation({ onBack, onCreateContract, selectedTemplate }:
         const res = await fetch(`${URLs.SectionAPI}?limit=200`);
         const data = await res.json();
         if (res.ok && data.items) {
-          const grouped: Record<string, Array<{ id: string; name: string; description: string; content: string }>> = {};
-          for (const item of data.items as Array<{ templateId: string; sectionName: string; name: string; description: string; content?: string }>) {
+          const grouped: Record<string, Array<{ id: string; name: string; description: string; content: string; clauseIds?: string[] }>> = {};
+          for (const item of data.items as Array<{ templateId: string; sectionName: string; name: string; description: string; content?: string; clauseIds?: string[] }>) {
             const version = {
               id: item.templateId,
               name: item.name,
               description: item.description ?? '',
               content: item.content ?? '',
+              clauseIds: item.clauseIds ?? [],
             };
             const key = item.sectionName;
             if (!grouped[key]) grouped[key] = [];
@@ -180,18 +203,85 @@ export function ContractCreation({ onBack, onCreateContract, selectedTemplate }:
     });
   };
 
-  const handleCreateContract = () => {
-    const newContract = {
-      template: selectedTemplate,
-      details: contractDetails,
-      createdAt: new Date().toISOString(),
-      status: 'draft'
+  const handleCreateContract = async () => {
+    setIsUploading(true);
+    const date = new Date().toISOString();
+    const sectionsToUpload: Array<{
+      sectionName: string;
+      assignedDivisionLeaderAddress: string;
+      assignedDivisionName: string;
+      date: string;
+      sectionContent: Array<{ clauseId: string; clauseContent: string }>;
+    }> = [];
+
+    for (const section of contractDetails.contractSections) {
+      const division = availableDivisions.find((d) => d.dcategory.toString() === section.assignedDivision);
+      if (!division) continue;
+
+      const version = sectionLibrary[section.name]?.find((v) => v.id === section.versionId);
+      const clauseIds = version?.clauseIds ?? [];
+      const sectionContent = clauseIds.map((clauseId) => ({
+        clauseId,
+        clauseContent: clauseMap[clauseId] ?? '',
+      }));
+
+      sectionsToUpload.push({
+        sectionName: section.name,
+        assignedDivisionLeaderAddress: division.id,
+        assignedDivisionName: DIVISION_LABELS[division.dcategory] ?? '',
+        date,
+        sectionContent,
+      });
+    }
+
+    const contractPayload = {
+      contractTitle: contractDetails.title,
+      client: contractDetails.client,
+      description: contractDetails.description,
+      price: contractDetails.value,
+      sections: sectionsToUpload.map((s) => ({ sectionName: s.sectionName, sectionContent: s.sectionContent })),
     };
-    onCreateContract(newContract);
+
+    try {
+      // 1. Upload contract first
+      const contractRes = await fetch(`${URLs.UploadAPI}/contract`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contract: contractPayload }),
+      });
+      const contractData = await contractRes.json();
+      if (!contractRes.ok) throw new Error(contractData.error || 'Failed to upload contract');
+
+      // 2. Upload sections (if any)
+      if (sectionsToUpload.length > 0) {
+        const sectionsRes = await fetch(`${URLs.UploadAPI}/sections`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sections: sectionsToUpload }),
+        });
+        const sectionsData = await sectionsRes.json();
+        if (!sectionsRes.ok) throw new Error(sectionsData.error || 'Failed to upload sections');
+      }
+
+      toast.success('Contract created successfully');
+    } catch (err) {
+      console.error('Create contract error:', err);
+      toast.error(err instanceof Error ? err.message : 'Failed to create contract');
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-6 relative">
+      {isUploading && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+          <div className="flex flex-col items-center gap-4">
+            <Loader2 className="h-12 w-12 animate-spin text-brand-primary" />
+            <p className="text-sm text-muted-foreground">Uploading contract...</p>
+          </div>
+        </div>
+      )}
       <div className="flex items-center gap-4">
         <Button variant="outline" onClick={onBack}>
           <ArrowLeft className="h-4 w-4 mr-2" />
@@ -530,12 +620,20 @@ export function ContractCreation({ onBack, onCreateContract, selectedTemplate }:
                   style={{ backgroundColor: 'var(--brand-secondary)', color: 'white' }}
                   onClick={handleCreateContract}
                   disabled={
+                    isUploading ||
                     !contractDetails.title ||
                     !contractDetails.client ||
                     contractDetails.contractSections.some((s) => !s.assignedDivision)
                   }
                 >
-                  Create Contract
+                  {isUploading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Creating...
+                    </>
+                  ) : (
+                    'Create Contract'
+                  )}
                 </Button>
               </div>
             </CardContent>

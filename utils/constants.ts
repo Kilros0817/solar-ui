@@ -3,6 +3,7 @@ export const URLs = {
 	ClauseAPI: "http://localhost:8085/clause",
 	SectionAPI: "http://localhost:8085/section",
 	ContractAPI: "http://localhost:8085/contract",
+	UploadAPI: "http://localhost:8085/upload",
 	SubgraphURL: "https://api.studio.thegraph.com/query/72239/solar-dms/version/latest"
 };
 
@@ -56,7 +57,7 @@ export const DIVISION_LABELS: Record<number, string> = {
     [DIVISION_CATEGORY.SAFETY]: 'Safety',
 };
 
-export const TBDelegator = "0xE28EcFec6dc61Bb1eA41A331db290A68807FF3C2";
+export const TBDelegator = "0xd2bB2A349354612713079A014615Fb582259261C";
 export const TBSponsor = "0x0d8e9E3Efa9DAD7Aa4b761c132ADF6ddEB7d16B4";
 
 export const TBDelegatorABI = [

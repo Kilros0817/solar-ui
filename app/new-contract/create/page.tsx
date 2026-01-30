@@ -24,7 +24,7 @@ const blankTemplate: ContractTemplate = {
 export default function NewContractCreatePage() {
   const router = useRouter();
   const { userRole } = useUser();
-  const { templateId, from } = useNewContract();
+  const { templateId } = useNewContract();
 
   const [selectedTemplate, setSelectedTemplate] = useState<ContractTemplate | null>(null);
   const [loading, setLoading] = useState(true);
@@ -85,11 +85,6 @@ export default function NewContractCreatePage() {
     router.push('/new-contract');
   };
 
-  const handleCreateContract = (contractData: unknown) => {
-    console.log('Creating contract:', contractData);
-    router.push(`/${from}`);
-  };
-
   if (userRole === null || userRole === USER_ROLE.NO_ROLE) {
     return null;
   }
@@ -116,7 +111,6 @@ export default function NewContractCreatePage() {
   return (
     <ContractCreation
       onBack={handleBack}
-      onCreateContract={handleCreateContract}
       selectedTemplate={selectedTemplate}
     />
   );

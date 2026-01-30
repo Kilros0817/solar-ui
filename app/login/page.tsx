@@ -19,7 +19,7 @@ export default function LoginPage() {
   const router = useRouter();
   const hasSignedIn = useRef(false);
 
-  const { setUserRole, userRole } = useUser();
+  const { setUserInfo, setUserRole, userRole } = useUser();
   const [email, setEmail] = useState('');
   const [emailError, setEmailError] = useState('');
   const [isTouched, setIsTouched] = useState(false);
@@ -103,11 +103,13 @@ export default function LoginPage() {
 
         hasSignedIn.current = true;
         try {
-          const role = await getUserRole(config, address);
-          setUserRole(role);
+          const { role, firstName, lastName } = await getUserRole(config, address);
+
+          const roleValue = Number(role ?? USER_ROLE.NO_ROLE);
+          setUserInfo({ role: roleValue, firstName, lastName });
 
           // Redirect based on role
-          if (role === USER_ROLE.NO_ROLE) {
+          if (roleValue === USER_ROLE.NO_ROLE) {
             router.push('/register');
           } else {
             router.push('/dashboard');

@@ -24,7 +24,7 @@ import {
 export function ContractHeader() {
   const router = useRouter();
   const pathname = usePathname();
-  const { userName, userRole, setUserRole, logout } = useUser();
+  const { userName, userRole, setUserInfo, logout } = useUser();
   const { address, isConnected } = useConnection();
   const config = useConfig();
   const web3Auth = getWeb3AuthInstance();
@@ -41,11 +41,9 @@ export function ContractHeader() {
         // Only fetch if role is not already set to avoid unnecessary calls
         if (userRole === null) {
           try {
-            const role = await getUserRole(config, address);
-            
-            // memberInfo returns [role, dCategory, ...] - getUserRole returns res[1] which is the role
+            const { role, firstName, lastName } = await getUserRole(config, address);
             const roleValue = Number(role ?? USER_ROLE.NO_ROLE);
-            setUserRole(roleValue);
+            setUserInfo({ role: roleValue, firstName, lastName });
           } catch (error) {
             console.error('Error fetching user role:', error);
             // On error, don't set role (keep current state) to avoid redirect loops
@@ -58,7 +56,7 @@ export function ContractHeader() {
     };
 
     fetchUserRole();
-  }, [web3Auth?.connected, isConnected, address, config, setUserRole, router, pathname, userRole]);
+  }, [web3Auth?.connected, isConnected, address, config, setUserInfo, router, pathname, userRole]);
 
   const getRoleDisplay = () => {
     switch (userRole) {

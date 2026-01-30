@@ -12,8 +12,6 @@ import { getWeb3AuthInstance } from "@/utils/Web3AuthStore";
 import { encodeFunctionData } from "viem";
 import { TBDelegator, TBDelegatorABI, TBSponsor, URLs, BaseRPC1 } from "./constants";
 
-
-
 export const getAuthorization = async (config: any) => {
   const web3Auth = getWeb3AuthInstance();
   if (!web3Auth) throw new Error("Web3Auth not initialized");
@@ -144,7 +142,7 @@ export const getUserRole = async (config, address) => {
     functionName: "memberInfo",
     args: [address]
   })
-  return res[1];
+  return { role: res[1], firstName: res[3], lastName: res[4] };
 }
 
 export const requestRegister = async (config: any, account: any, firstname: string, lastname: string, email: string) => {
