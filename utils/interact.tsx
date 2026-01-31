@@ -162,6 +162,7 @@ export const acceptRegisterRequest = async (
   role: number,
   divisionCategory: number
 ) => {
+  console.log(address, role, divisionCategory, "============")   
   const res = await runSponsorTx(config, account, "acceptRegisterRequest", [address, role, divisionCategory]);
   if (res.isSuccess) {
     return true;
@@ -181,5 +182,24 @@ export const declineRegisterRequest = async (
   }
   return false;
 }
+
+// Create contract
+export const createContract = async (
+  config: any,
+  account: string,
+  clientAddress: string,
+  cLabel: string,
+  title: string,
+  docCid: string,
+  divisionLeaders: string[],
+  sectionCids: string[],
+) => {
+  const res = await runSponsorTx(config, account, "createDoc", [clientAddress, cLabel, title, docCid, divisionLeaders, sectionCids]);
+  if (res.isSuccess) {
+    return true;
+  }
+  return false;
+}
+
 
 

@@ -22,8 +22,10 @@ import {
 } from 'lucide-react';
 import { ContractTemplate } from '../data/templates';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from './ui/hover-card';
+import { useConnection, useConfig } from 'wagmi';
 import { DIVISION_LABELS, URLs } from '@/utils/constants';
-import { getAllDivisionLeaders } from '@/utils/subgraph';
+import { getAllDivisionLeaders, getAllClients } from '@/utils/subgraph';
+import { createContract } from '@/utils/interact';
 import { toast } from 'sonner';
 
 interface ContractCreationProps {
@@ -32,11 +34,20 @@ interface ContractCreationProps {
 }
 
 export function ContractCreation({ onBack, selectedTemplate }: ContractCreationProps) {
+  const { address } = useConnection();
+  const config = useConfig();
+  const baseCategories = ['Services', 'Legal', 'HR', 'Technology', 'Procurement', 'Business', 'Real Estate', 'General', 'Custom'];
+  const templateCategory = selectedTemplate.category || 'Custom';
+  const CONTRACT_CATEGORIES = baseCategories.includes(templateCategory)
+    ? baseCategories
+    : [templateCategory, ...baseCategories];
+
   const [contractDetails, setContractDetails] = useState({
     title: '',
     client: '',
     description: '',
     value: '',
+    category: selectedTemplate.category || 'Custom',
     assignee: '',
     contractSections: [] as Array<{
       id: string;
@@ -49,6 +60,7 @@ export function ContractCreation({ onBack, selectedTemplate }: ContractCreationP
 
   const [openSectionType, setOpenSectionType] = useState<string | null>(null);
   const [availableDivisions, setAvailableDivisions] = useState<{id: string, dcategory: number}[]>([]);
+  const [clients, setClients] = useState<Array<{ id: string; firstName: string; lastName: string; email: string }>>([]);
   const [sectionLibrary, setSectionLibrary] = useState<Record<string, Array<{ id: string; name: string; description: string; content: string; clauseIds?: string[] }>>>({});
   const [clauseMap, setClauseMap] = useState<Record<string, string>>({});
   const [sectionsLoaded, setSectionsLoaded] = useState(false);
@@ -57,6 +69,12 @@ export function ContractCreation({ onBack, selectedTemplate }: ContractCreationP
   useEffect(() => {
     getAllDivisionLeaders().then((leaders) => {
       setAvailableDivisions(Array.isArray(leaders) ? leaders : []);
+    });
+  }, []);
+
+  useEffect(() => {
+    getAllClients().then((list) => {
+      setClients(Array.isArray(list) ? list : []);
     });
   }, []);
 
@@ -139,6 +157,11 @@ export function ContractCreation({ onBack, selectedTemplate }: ContractCreationP
     }
     return map;
   }, [sectionLibrary]);
+
+  // Sync category when selectedTemplate changes
+  useEffect(() => {
+    setContractDetails((prev) => ({ ...prev, category: selectedTemplate.category || 'Custom' }));
+  }, [selectedTemplate.category]);
 
   // Initialize contract sections from template when sections are loaded. Blank template = no sections.
   const hasInitializedSections = useRef(false);
@@ -234,11 +257,13 @@ export function ContractCreation({ onBack, selectedTemplate }: ContractCreationP
       });
     }
 
+    const selectedClient = clients.find((c) => c.id === contractDetails.client);
     const contractPayload = {
       contractTitle: contractDetails.title,
-      client: contractDetails.client,
+      client: selectedClient?.firstName ?? contractDetails.client,
       description: contractDetails.description,
       price: contractDetails.value,
+      category: contractDetails.category,
       sections: sectionsToUpload.map((s) => ({ sectionName: s.sectionName, sectionContent: s.sectionContent })),
     };
 
@@ -251,8 +276,11 @@ export function ContractCreation({ onBack, selectedTemplate }: ContractCreationP
       });
       const contractData = await contractRes.json();
       if (!contractRes.ok) throw new Error(contractData.error || 'Failed to upload contract');
+      const docCid = contractData.cid;
 
       // 2. Upload sections (if any)
+      let divisionLeaders: string[] = [];
+      let sectionCids: string[] = [];
       if (sectionsToUpload.length > 0) {
         const sectionsRes = await fetch(`${URLs.UploadAPI}/sections`, {
           method: 'POST',
@@ -261,9 +289,31 @@ export function ContractCreation({ onBack, selectedTemplate }: ContractCreationP
         });
         const sectionsData = await sectionsRes.json();
         if (!sectionsRes.ok) throw new Error(sectionsData.error || 'Failed to upload sections');
+        const sectionCidPairs = sectionsData.sectionCids ?? [];
+        divisionLeaders = sectionCidPairs.map((p: { divisionLeaderAddress: string }) => p.divisionLeaderAddress);
+        sectionCids = sectionCidPairs.map((p: { cid: string }) => p.cid);
       }
 
-      toast.success('Contract created successfully');
+      // 3. Create contract on-chain
+      if (!config || !address) throw new Error('Wallet not connected');
+      const clientAddress = contractDetails.client;
+      const cLabel = contractDetails.category ?? '';
+      const success = await createContract(
+        config,
+        address,
+        clientAddress,
+        cLabel,
+        contractDetails.title,
+        docCid,
+        divisionLeaders,
+        sectionCids
+      );
+
+      if (success) {
+        toast.success('Contract created successfully');
+      } else {
+        throw new Error('Failed to create contract on-chain');
+      }
     } catch (err) {
       console.error('Create contract error:', err);
       toast.error(err instanceof Error ? err.message : 'Failed to create contract');
@@ -312,14 +362,43 @@ export function ContractCreation({ onBack, selectedTemplate }: ContractCreationP
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="client">Client/Company</Label>
-                <Input
-                  id="client"
-                  placeholder="Enter client or company name..."
-                  value={contractDetails.client}
-                  onChange={(e) => setContractDetails({...contractDetails, client: e.target.value})}
-                />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="client">Client/Company</Label>
+                  <Select
+                    value={contractDetails.client}
+                    onValueChange={(value) => setContractDetails({ ...contractDetails, client: value })}
+                  >
+                    <SelectTrigger id="client">
+                      <SelectValue placeholder="Select a client" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {clients.map((client) => (
+                        <SelectItem key={client.id} value={client.id}>
+                          {client.firstName}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="category">Category</Label>
+                  <Select
+                    value={contractDetails.category}
+                    onValueChange={(value) => setContractDetails({ ...contractDetails, category: value })}
+                  >
+                    <SelectTrigger id="category">
+                      <SelectValue placeholder="Select a category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {CONTRACT_CATEGORIES.map((cat) => (
+                        <SelectItem key={cat} value={cat}>
+                          {cat}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
 
               <div className="space-y-2">

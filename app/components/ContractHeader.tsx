@@ -70,6 +70,8 @@ export function ContractHeader() {
         return 'Division Member';
       case USER_ROLE.ADMIN:
         return 'Administrator';
+      case USER_ROLE.CLIENT:
+        return 'Client';
       default:
         return 'User';
     }

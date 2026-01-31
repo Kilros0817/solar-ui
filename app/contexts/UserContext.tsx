@@ -38,6 +38,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
         case USER_ROLE.DIVISION_LEADER: return 'Jennifer Taylor';
         case USER_ROLE.DIVISION_MEMBER: return 'David Kim';
         case USER_ROLE.ADMIN: return 'Admin User';
+        case USER_ROLE.CLIENT: return 'Client';
         default: return '';
       }
     })();
@@ -54,6 +55,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
         case USER_ROLE.DIVISION_LEADER: return 'Division Lead';
         case USER_ROLE.DIVISION_MEMBER: return 'Division Member';
         case USER_ROLE.ADMIN: return 'Administrator';
+        case USER_ROLE.CLIENT: return 'Client';
         default: return 'User';
       }
     })());

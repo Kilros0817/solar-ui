@@ -163,6 +163,8 @@ export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
         return 'Owner Portal';
       case USER_ROLE.ADMIN:
         return 'Admin Portal';
+      case USER_ROLE.CLIENT:
+        return 'Client Portal';
       default:
         return 'Platform';
     }

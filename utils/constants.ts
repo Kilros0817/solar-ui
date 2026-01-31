@@ -17,7 +17,7 @@ export const USER_ROLE = {
     DIVISION_LEADER: 2,
     LEGAL_TEAM: 3,
     ADMIN: 4,
-    PROJECT_OWNER: 5
+	CLIENT: 5
 }
 
 export const DIVISION_CATEGORY = {
@@ -40,7 +40,7 @@ export const ROLE_LABELS: Record<number, string> = {
     [USER_ROLE.DIVISION_LEADER]: 'Division Leader',
     [USER_ROLE.LEGAL_TEAM]: 'Legal Team',
     [USER_ROLE.ADMIN]: 'Administrator',
-    [USER_ROLE.PROJECT_OWNER]: 'Project Owner',
+    [USER_ROLE.CLIENT]: 'Client',
 };
 
 // Division labels for display

@@ -150,8 +150,9 @@ export function PendingUsers() {
       return;
     }
 
-    // Division is required for division-related roles
+    // Division is required for division-related roles (not for Client)
     if (
+      role !== USER_ROLE.CLIENT &&
       (role === USER_ROLE.DIVISION_MEMBER || role === USER_ROLE.DIVISION_LEADER) &&
       (!division || division === DIVISION_CATEGORY.NO_DIVISION)
     ) {
@@ -166,7 +167,7 @@ export function PendingUsers() {
         address,
         userAddress,
         role,
-        division || DIVISION_CATEGORY.NO_DIVISION
+        role === USER_ROLE.CLIENT ? DIVISION_CATEGORY.NO_DIVISION : (division || DIVISION_CATEGORY.NO_DIVISION)
       );
 
       if (result) {
@@ -239,6 +240,7 @@ export function PendingUsers() {
     { value: USER_ROLE.DIVISION_MEMBER, label: ROLE_LABELS[USER_ROLE.DIVISION_MEMBER] },
     { value: USER_ROLE.DIVISION_LEADER, label: ROLE_LABELS[USER_ROLE.DIVISION_LEADER] },
     { value: USER_ROLE.LEGAL_TEAM, label: ROLE_LABELS[USER_ROLE.LEGAL_TEAM] },
+    { value: USER_ROLE.CLIENT, label: ROLE_LABELS[USER_ROLE.CLIENT] },
   ];
 
   const divisionOptions = Object.entries(DIVISION_CATEGORY)
@@ -388,7 +390,8 @@ export function PendingUsers() {
                         }
                           disabled={
                             !selectedRoles[user.id] ||
-                            selectedRoles[user.id] === USER_ROLE.LEGAL_TEAM
+                            selectedRoles[user.id] === USER_ROLE.LEGAL_TEAM ||
+                            selectedRoles[user.id] === USER_ROLE.CLIENT
                           }
                       >
                         <SelectTrigger className="w-[180px]">
@@ -411,8 +414,9 @@ export function PendingUsers() {
                             processingUser === user.id ||
                             !selectedRoles[user.id] ||
                             selectedRoles[user.id] === USER_ROLE.NO_ROLE ||
-                            ((selectedRoles[user.id] === USER_ROLE.DIVISION_MEMBER ||
-                              selectedRoles[user.id] === USER_ROLE.DIVISION_LEADER) &&
+                            (selectedRoles[user.id] !== USER_ROLE.CLIENT &&
+                              (selectedRoles[user.id] === USER_ROLE.DIVISION_MEMBER ||
+                                selectedRoles[user.id] === USER_ROLE.DIVISION_LEADER) &&
                               (!selectedDivisions[user.id] ||
                                 selectedDivisions[user.id] === DIVISION_CATEGORY.NO_DIVISION))
                           }

@@ -1,4 +1,4 @@
-﻿import axios from "axios";
+import axios from "axios";
 import { URLs } from "./constants";
 
 const getDataFromSubgraph = async (query: any) => {
@@ -142,6 +142,26 @@ export const getAllDivisionLeaders = async () => {
   } catch (e) {
     console.log(e, "============error in get all division leaders from subgraph============");
     return {};
+  }
+}
+
+export const getAllClients = async () => {
+  let query = `{
+    users(where: {role: 5}) {
+      id
+      firstName
+      lastName
+      email
+    }
+  }`;
+  try {
+    const res = await getDataFromSubgraph(query);
+    const clients = (res.data as any).users || [];
+
+    return clients;
+  } catch (e) {
+    console.log(e, "============error in get all clients from subgraph============");
+    return [];
   }
 }
 
