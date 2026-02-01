@@ -5,6 +5,7 @@ export const URLs = {
 	ContractAPI: "http://localhost:8085/contract",
 	UploadAPI: "http://localhost:8085/upload",
 	SubgraphURL: "https://api.studio.thegraph.com/query/72239/solar-dms/version/latest",
+	TBGateWay: "https://jade-wonderful-hawk-382.mypinata.cloud/ipfs/",
 };
 
 export const BaseRPC1 = "https://base-sepolia.g.alchemy.com/v2/U6YPO8eU2p26wRrvGyI2OlC1BS4ipA5o";

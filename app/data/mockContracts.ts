@@ -15,6 +15,7 @@ export interface Contract {
   status: number; // 0-based from subgraph: PENDING, DIVISION_REQUEST, APPROVED, COMPLETED
   createdAt: number;
   category: string; // division category from subgraph
+  cid?: string; // IPFS CID for document content
 }
 
 // Helper functions to get counts (status is number: 0=PENDING, 1=DIVISION_REQUEST, 2=APPROVED, 3=COMPLETED)

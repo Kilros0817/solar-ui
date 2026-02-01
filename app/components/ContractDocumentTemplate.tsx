@@ -1,27 +1,82 @@
 'use client'
 
+interface DocSection {
+  sectionName: string;
+  sectionContent: Array<{ clauseId: string; clauseContent: string }>;
+}
+
+interface ContractDocContent {
+  contractTitle?: string;
+  client?: string;
+  description?: string;
+  price?: string;
+  category?: string;
+  sections?: DocSection[];
+}
+
 interface ContractDocumentTemplateProps {
   title: string;
   client: string;
   value: string;
   createdDate: string;
+  docContent?: ContractDocContent;
 }
 
 export function ContractDocumentTemplate({ 
   title, 
   client, 
   value, 
-  createdDate 
+  createdDate,
+  docContent,
 }: ContractDocumentTemplateProps) {
+  const hasDocContent = docContent?.sections?.length;
+
   return (
     <div className="border rounded-lg p-6 bg-white max-h-[800px] overflow-y-auto">
       {/* Document Header */}
       <div className="text-center mb-8 pb-6 border-b">
         <h2 className="text-2xl font-bold mb-2">{title}</h2>
         <p className="text-muted-foreground">{client}</p>
-        <p className="text-sm text-muted-foreground mt-2">Effective Date: {createdDate}</p>
       </div>
 
+      {hasDocContent ? (
+        <>
+          {docContent!.sections!.map((section, idx) => (
+            <div key={idx} className="mb-8">
+              <h3 className="text-xl font-semibold mb-4">{idx + 1}. {section.sectionName}</h3>
+              <div className="space-y-3 text-sm leading-relaxed">
+                {section.sectionContent?.map((clause, cidx) => (
+                  <p key={cidx}>{clause.clauseContent}</p>
+                ))}
+              </div>
+            </div>
+          ))}
+          {/* Signature Section */}
+          <div className="mt-12 pt-8 border-t">
+            <div className="grid grid-cols-2 gap-8">
+              <div>
+                <p className="font-semibold mb-2">Licensor</p>
+                <div className="border-b-2 border-gray-400 mb-2 h-12"></div>
+                <p className="text-xs text-muted-foreground">Signature</p>
+                <div className="mt-4 border-b border-gray-300 mb-2"></div>
+                <p className="text-xs text-muted-foreground">Name & Title</p>
+                <div className="mt-4 border-b border-gray-300 mb-2"></div>
+                <p className="text-xs text-muted-foreground">Date</p>
+              </div>
+              <div>
+                <p className="font-semibold mb-2">Licensee</p>
+                <div className="border-b-2 border-gray-400 mb-2 h-12"></div>
+                <p className="text-xs text-muted-foreground">Signature</p>
+                <div className="mt-4 border-b border-gray-300 mb-2"></div>
+                <p className="text-xs text-muted-foreground">Name & Title</p>
+                <div className="mt-4 border-b border-gray-300 mb-2"></div>
+                <p className="text-xs text-muted-foreground">Date</p>
+              </div>
+            </div>
+          </div>
+        </>
+      ) : (
+        <>
       {/* Section 1: Terms & Conditions */}
       <div className="mb-8">
         <h3 className="text-xl font-semibold mb-4">1. Terms & Conditions</h3>
@@ -198,6 +253,8 @@ export function ContractDocumentTemplate({
           </div>
         </div>
       </div>
+        </>
+      )}
     </div>
   );
 }
