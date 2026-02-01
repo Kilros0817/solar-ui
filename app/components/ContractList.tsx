@@ -1,4 +1,7 @@
+'use client';
+
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -46,6 +49,7 @@ const mapDocumentToContract = (doc: any, index: number): Contract => {
 };
 
 export function ContractList({ title, filterStatus, onCreateContract, onViewContract }: ContractListProps) {
+  const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [loading, setLoading] = useState(true);
@@ -151,7 +155,7 @@ export function ContractList({ title, filterStatus, onCreateContract, onViewCont
                 <TableRow
                   key={contract.id}
                   className="cursor-pointer group"
-                  onClick={() => onViewContract?.(contract.id)}
+                  onClick={() => router.push(`/contract/${contract.id}`)}
                 >
                   <TableCell className="font-medium py-4">{contract.title}</TableCell>
                   <TableCell className="text-muted-foreground py-4">
@@ -171,19 +175,11 @@ export function ContractList({ title, filterStatus, onCreateContract, onViewCont
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8"
-                        onClick={() => onViewContract?.(contract.id)}
+                        className="h-8 w-8 cursor-pointer"
+                        onClick={() => router.push(`/contract/${contract.id}`)}
                         title="View"
                       >
                         <Eye className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8"
-                        title="Edit"
-                      >
-                        <Pencil className="h-4 w-4" />
                       </Button>
                     </div>
                   </TableCell>
