@@ -16,7 +16,8 @@ import {
   MoreVertical,
   X,
   Eye,
-  Loader2
+  Loader2,
+  RefreshCw
 } from 'lucide-react';
 import { Input } from './ui/input';
 import {
@@ -72,31 +73,39 @@ export function TeamManagement({ userRole }: TeamManagementProps) {
   const [viewingMembers, setViewingMembers] = useState<number | null>(null);
   const [divisionGroups, setDivisionGroups] = useState<Record<number, DivisionGroup>>({});
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [copiedAddress, setCopiedAddress] = useState<string | null>(null);
 
   // Leader assignment is disabled for now (will be added later)
   const canAssignLeaders = false;
 
-  useEffect(() => {
-    const fetchDivisions = async () => {
-      if (userRole !== USER_ROLE.ADMIN && userRole !== USER_ROLE.LEGAL_TEAM) return;
-      setLoading(true);
-      try {
-        const grouped =
-          userRole === USER_ROLE.ADMIN
-            ? await getAllMemebers()
-            : await getAllDivisionLeadersAndMembers();
-        setDivisionGroups(grouped || {});
-      } catch (e) {
-        console.error('Failed to load divisions:', e);
-        setDivisionGroups({});
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchDivisions = async () => {
+    if (userRole !== USER_ROLE.ADMIN && userRole !== USER_ROLE.LEGAL_TEAM) return;
+    setLoading(true);
+    try {
+      const grouped =
+        userRole === USER_ROLE.ADMIN
+          ? await getAllMemebers()
+          : await getAllDivisionLeadersAndMembers();
+      setDivisionGroups(grouped || {});
+    } catch (e) {
+      console.error('Failed to load divisions:', e);
+      setDivisionGroups({});
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchDivisions();
   }, [userRole]);
+
+  const handleRefresh = async () => {
+    if (userRole !== USER_ROLE.ADMIN && userRole !== USER_ROLE.LEGAL_TEAM) return;
+    setRefreshing(true);
+    await fetchDivisions();
+    setRefreshing(false);
+  };
 
   const divisions = useMemo(() => {
     const keys = Object.keys(divisionGroups).map((k) => Number(k));
@@ -156,6 +165,16 @@ export function TeamManagement({ userRole }: TeamManagementProps) {
                 className="pl-10"
               />
             </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRefresh}
+              disabled={refreshing || loading}
+              className="gap-2"
+            >
+              <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
             <Badge variant="outline" className="px-4 py-2">
               {filteredDivisions.length} {filteredDivisions.length === 1 ? 'Division' : 'Divisions'}
             </Badge>

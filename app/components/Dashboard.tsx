@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
@@ -14,8 +15,26 @@ import {
   DollarSign
 } from 'lucide-react';
 import { useUser } from '../contexts/UserContext';
-import { ownerContracts } from '../data/mockContracts';
-import { USER_ROLE } from '@/utils/constants';
+import { getAllContracts } from '@/utils/subgraph';
+import type { Contract } from '../data/mockContracts';
+import { USER_ROLE, DIVISION_LABELS } from '@/utils/constants';
+
+const mapDocumentToContract = (doc: any, index: number): Contract => {
+  const client = doc.client;
+  const clientName = client ? [client.firstName, client.lastName].filter(Boolean).join(' ') || client.email || '' : '';
+  const id = /^\d+$/.test(String(doc.id)) ? parseInt(String(doc.id), 10) : index + 1;
+  const status = typeof doc.status === 'number' ? doc.status : 0;
+  const cat = doc.category;
+  const category = typeof cat === 'number' ? (DIVISION_LABELS[cat] ?? String(cat)) : (cat ?? '');
+  return {
+    id,
+    title: doc.title || 'Untitled',
+    client: clientName,
+    category,
+    status,
+    createdAt: doc.createdAt ?? '',
+  };
+};
 
 interface DashboardProps {
   onCreateContract: () => void;
@@ -23,146 +42,51 @@ interface DashboardProps {
 
 export function Dashboard({ onCreateContract }: DashboardProps) {
   const { userRole, userName } = useUser();
+  const [contracts, setContracts] = useState<Contract[]>([]);
 
-  // Division-specific stats
+  useEffect(() => {
+    const fetchContracts = async () => {
+      try {
+        const docs = await getAllContracts();
+        setContracts(Array.isArray(docs) ? docs.map(mapDocumentToContract) : []);
+      } catch (e) {
+        console.error('Failed to fetch contracts for dashboard:', e);
+        setContracts([]);
+      }
+    };
+    fetchContracts();
+  }, []);
+
+  // Division-specific stats (from subgraph data)
+  const pendingCount = contracts.filter(c => c.status === 0).length;
+  const approvedCount = contracts.filter(c => c.status === 2).length;
+  const divisionRequestCount = contracts.filter(c => c.status === 1).length;
+
   const getDivisionStats = () => {
     if (userRole === USER_ROLE.DIVISION_LEADER) {
       return [
-        {
-          title: 'Total Contracts',
-          value: '12',
-          change: '+8%',
-          icon: FileText,
-          color: 'text-blue-600'
-        },
-        {
-          title: 'Pending Review',
-          value: '5',
-          change: '+2%',
-          icon: Clock,
-          color: 'text-orange-600'
-        },
-        {
-          title: 'Approved This Month',
-          value: '8',
-          change: '+15%',
-          icon: CheckCircle,
-          color: 'text-green-600'
-        },
-        {
-          title: 'Requires Action',
-          value: '4',
-          change: '-1%',
-          icon: AlertTriangle,
-          color: 'text-red-600'
-        }
+        { title: 'Total Contracts', value: contracts.length.toString(), change: '—', icon: FileText, color: 'text-blue-600' },
+        { title: 'Pending Review', value: pendingCount.toString(), change: '—', icon: Clock, color: 'text-orange-600' },
+        { title: 'Approved This Month', value: approvedCount.toString(), change: '—', icon: CheckCircle, color: 'text-green-600' },
+        { title: 'Division Request', value: divisionRequestCount.toString(), change: '—', icon: AlertTriangle, color: 'text-red-600' }
       ];
     }
 
     if (userRole === USER_ROLE.DIVISION_MEMBER) {
       return [
-        {
-          title: 'Total Contracts',
-          value: '8',
-          change: '+5%',
-          icon: FileText,
-          color: 'text-blue-600'
-        },
-        {
-          title: 'Pending Review',
-          value: '3',
-          change: '+1%',
-          icon: Clock,
-          color: 'text-orange-600'
-        },
-        {
-          title: 'Approved This Month',
-          value: '5',
-          change: '+12%',
-          icon: CheckCircle,
-          color: 'text-green-600'
-        },
-        {
-          title: 'Requires Action',
-          value: '2',
-          change: '0%',
-          icon: AlertTriangle,
-          color: 'text-red-600'
-        }
+        { title: 'Total Contracts', value: contracts.length.toString(), change: '—', icon: FileText, color: 'text-blue-600' },
+        { title: 'Pending Review', value: pendingCount.toString(), change: '—', icon: Clock, color: 'text-orange-600' },
+        { title: 'Approved This Month', value: approvedCount.toString(), change: '—', icon: CheckCircle, color: 'text-green-600' },
+        { title: 'Division Request', value: divisionRequestCount.toString(), change: '—', icon: AlertTriangle, color: 'text-red-600' }
       ];
     }
 
-    // Project Owner - Contract portfolio overview
-    if (userRole === USER_ROLE.PROJECT_OWNER) {
-      const totalValue = ownerContracts.reduce((sum, contract) => {
-        const value = parseInt(contract.value?.replace(/[$,]/g, '') || '0');
-        return sum + value;
-      }, 0);
-      const pendingCount = ownerContracts.filter(c => c.status === 'pending').length;
-      const approvedCount = ownerContracts.filter(c => c.status === 'approved').length;
-      
-      return [
-        {
-          title: 'My Contracts',
-          value: ownerContracts.length.toString(),
-          change: '+2 this month',
-          icon: FileText,
-          color: 'text-blue-600'
-        },
-        {
-          title: 'Awaiting Review',
-          value: pendingCount.toString(),
-          change: 'Needs approval',
-          icon: Clock,
-          color: 'text-orange-600'
-        },
-        {
-          title: 'Active Contracts',
-          value: approvedCount.toString(),
-          change: '+1 this month',
-          icon: CheckCircle,
-          color: 'text-green-600'
-        },
-        {
-          title: 'Total Contract Value',
-          value: `$${(totalValue / 1000).toFixed(0)}K`,
-          change: '+$500K this month',
-          icon: DollarSign,
-          color: 'text-emerald-600'
-        }
-      ];
-    }
-
-    // Legal and other roles - original stats
+    // Legal and other roles
     return [
-      {
-        title: 'Total Contracts',
-        value: '142',
-        change: '+12%',
-        icon: FileText,
-        color: 'text-blue-600'
-      },
-      {
-        title: 'Pending Review',
-        value: '23',
-        change: '+5%',
-        icon: Clock,
-        color: 'text-orange-600'
-      },
-      {
-        title: 'Approved This Month',
-        value: '45',
-        change: '+18%',
-        icon: CheckCircle,
-        color: 'text-green-600'
-      },
-      {
-        title: 'Requires Action',
-        value: '8',
-        change: '-3%',
-        icon: AlertTriangle,
-        color: 'text-red-600'
-      }
+      { title: 'Total Contracts', value: contracts.length.toString(), change: '—', icon: FileText, color: 'text-blue-600' },
+      { title: 'Pending Review', value: pendingCount.toString(), change: '—', icon: Clock, color: 'text-orange-600' },
+      { title: 'Approved This Month', value: approvedCount.toString(), change: '—', icon: CheckCircle, color: 'text-green-600' },
+      { title: 'Division Request', value: divisionRequestCount.toString(), change: '—', icon: AlertTriangle, color: 'text-red-600' }
     ];
   };
 
@@ -405,7 +329,9 @@ export function Dashboard({ onCreateContract }: DashboardProps) {
                   <div className="flex items-center mt-2 text-sm">
                     <TrendingUp className="h-3 w-3 mr-1 text-green-600" />
                     <span className="text-green-600">{stat.change}</span>
-                    <span className="text-muted-foreground ml-1">vs last month</span>
+                    {stat.change !== '—' && stat.change !== 'N/A' && (
+                      <span className="text-muted-foreground ml-1">vs last month</span>
+                    )}
                   </div>
                 </div>
                 <div className={`p-3 rounded-lg bg-muted ${stat.color}`}>

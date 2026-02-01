@@ -27,7 +27,7 @@ export default function PendingPage() {
   }
 
   const handleCreateContract = () => {
-    if (userRole === USER_ROLE.LEGAL_TEAM || userRole === USER_ROLE.PROJECT_OWNER || userRole === USER_ROLE.ADMIN) {
+    if (userRole === USER_ROLE.LEGAL_TEAM || userRole === USER_ROLE.ADMIN) {
       setFrom('pending');
       router.push('/new-contract');
     }

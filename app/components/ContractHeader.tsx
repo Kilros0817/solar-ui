@@ -62,8 +62,6 @@ export function ContractHeader() {
     switch (userRole) {
       case USER_ROLE.LEGAL_TEAM:
         return 'Legal Division';
-      case USER_ROLE.PROJECT_OWNER:
-        return 'Owner';
       case USER_ROLE.DIVISION_LEADER:
         return 'Division Lead';
       case USER_ROLE.DIVISION_MEMBER:

@@ -29,7 +29,7 @@ export default function NewContractPage() {
     return null;
   }
 
-  if (userRole !== USER_ROLE.LEGAL_TEAM && userRole !== USER_ROLE.ADMIN && userRole !== USER_ROLE.PROJECT_OWNER) {
+  if (userRole !== USER_ROLE.LEGAL_TEAM && userRole !== USER_ROLE.ADMIN) {
     router.replace(`/${from}`);
     return null;
   }

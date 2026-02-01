@@ -1,13 +1,16 @@
-import axios from "axios";
+import { print } from "graphql";
 import { URLs } from "./constants";
 
-const getDataFromSubgraph = async (query: any) => {
+const getDataFromSubgraph = async (query: unknown) => {
   try {
-    const result = await axios.post(URLs.SubgraphURL, {
-      query,
+    const queryStr = typeof query === "string" ? query : print(query as import("graphql").DocumentNode);
+    const res = await fetch(URLs.SubgraphURL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ query: queryStr }),
     });
-
-    return { isSuccess: true, data: result.data && (result.data as any).data };
+    const data = await res.json();
+    return { isSuccess: true, data: data?.data ?? data };
   } catch (error) {
     return { isSuccess: false, data: "" };
   }
@@ -89,16 +92,16 @@ export const getAllMemebers = async () => {
     const res = await getDataFromSubgraph(query);
     const users = (res.data as any).users || [];
     const grouped = groupUsersByDivision(users);
-    
+
     // Add legal team members (role 3) to Legal division (dcategory 1)
     // Legal division users have dcategory = 0, add them as leader
     users.forEach((user: User) => {
       const role = Number(user.role);
       if (role === 3) { // Legal Team
-          grouped[0] = { leader: user, members: [] };
+        grouped[0] = { leader: user, members: [] };
       }
     });
-    
+
     return grouped;
   } catch (e) {
     console.log(e, "============error in get all users from subgraph============");
@@ -159,6 +162,34 @@ export const getAllClients = async () => {
     const clients = (res.data as any).users || [];
 
     return clients;
+  } catch (e) {
+    console.log(e, "============error in get all clients from subgraph============");
+    return [];
+  }
+}
+
+export const getAllContracts = async () => {
+  let query = `{
+    documents {
+      id
+      client {
+        id
+        firstName
+        email
+        lastName
+      }
+      category
+      title
+      cid
+      status
+      createdAt
+    }
+  }`;
+  try {
+    const res = await getDataFromSubgraph(query);
+    const contracts = (res.data as any).documents || [];
+
+    return contracts;
   } catch (e) {
     console.log(e, "============error in get all clients from subgraph============");
     return [];

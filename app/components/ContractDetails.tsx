@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
@@ -23,18 +23,69 @@ import {
   Building,
   ArrowLeft
 } from 'lucide-react';
-import { allContracts, divisionLeadContracts, divisionMemberContracts, ownerContracts, Contract } from '../data/mockContracts';
+import { getAllContracts } from '@/utils/subgraph';
+import type { Contract } from '../data/mockContracts';
 import { useUser } from '../contexts/UserContext';
-import { USER_ROLE } from '@/utils/constants';
+import { USER_ROLE, CONTRACT_STATUS_LABELS, DIVISION_LABELS } from '@/utils/constants';
 
 interface ContractDetailsProps {
   contractId?: number;
   onBack?: () => void;
 }
 
+const formatRelativeDate = (dateStr: string) => {
+  if (!dateStr) return '';
+  const date = new Date(dateStr);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  if (diffDays === 0) return 'Today';
+  if (diffDays === 1) return '1 day ago';
+  if (diffDays < 7) return `${diffDays} days ago`;
+  if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
+  return date.toLocaleDateString();
+};
+
+const mapDocumentToContract = (doc: any, index: number): Contract => {
+  const client = doc.client;
+  const clientName = client ? [client.firstName, client.lastName].filter(Boolean).join(' ') || client.email || '' : '';
+  const id = /^\d+$/.test(String(doc.id)) ? parseInt(String(doc.id), 10) : index + 1;
+  const status = typeof doc.status === 'number' ? doc.status : 0;
+  const cat = doc.category;
+  const category = typeof cat === 'number' ? (DIVISION_LABELS[cat] ?? String(cat)) : (cat ?? '');
+  return {
+    id,
+    title: doc.title || 'Untitled',
+    client: clientName,
+    category,
+    status,
+    createdAt: doc.createdAt ?? '',
+  };
+};
+
 export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps) {
   const [newComment, setNewComment] = useState('');
+  const [foundContract, setFoundContract] = useState<Contract | null>(null);
+  const [loading, setLoading] = useState(true);
   const { userRole } = useUser();
+
+  useEffect(() => {
+    const fetchContract = async () => {
+      setLoading(true);
+      try {
+        const docs = await getAllContracts();
+        const contracts = Array.isArray(docs) ? docs.map(mapDocumentToContract) : [];
+        const contract = contracts.find(c => c.id === contractId) || contracts[0];
+        setFoundContract(contract ?? null);
+      } catch (e) {
+        console.error('Failed to fetch contract:', e);
+        setFoundContract(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchContract();
+  }, [contractId]);
 
   // Mock sections data grouped by division
   const mockSectionsByDivision = [
@@ -125,41 +176,20 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
     // In a real app, this would make an API call
   };
 
-  // Get contracts based on role
-  const getContractsForRole = (): Contract[] => {
-    switch (userRole) {
-      case USER_ROLE.LEGAL_TEAM:
-        return allContracts;
-      case USER_ROLE.DIVISION_LEADER:
-        return divisionLeadContracts;
-      case USER_ROLE.DIVISION_MEMBER:
-        return divisionMemberContracts;
-      case USER_ROLE.PROJECT_OWNER:
-        return ownerContracts;
-      default:
-        return allContracts;
-    }
-  };
-
-  // Find the contract by ID
-  const contracts = getContractsForRole();
-  const foundContract = contracts.find(c => c.id === contractId) || contracts[0];
-
   // Map contract data to the format needed
-  const contract = {
+  const contract = foundContract ? {
     id: foundContract.id,
-    title: `${foundContract.name} - ${foundContract.client}`,
+    title: `${foundContract.title} - ${foundContract.client}`,
     client: foundContract.client,
     status: foundContract.status,
-    priority: foundContract.priority || 'medium',
-    value: foundContract.value || '$125,000', // Default value for display
+    category: foundContract.category,
     dueDate: '2024-12-15',
-    assignee: foundContract.owner,
-    createdDate: foundContract.lastModified,
+    createdDate: foundContract.createdAt ? formatRelativeDate(foundContract.createdAt) : '—',
     version: '2.1',
-    description: `Comprehensive agreement for ${foundContract.client} regarding ${foundContract.name.toLowerCase()}.`,
-    involvedDivisions: ['Legal', 'Finance', 'IT/Technology', 'Procurement', 'Sales']
-  };
+    description: `Comprehensive agreement for ${foundContract.client} regarding ${foundContract.title.toLowerCase()}.`,
+    involvedDivisions: foundContract.category ? [foundContract.category] : ['Legal', 'Finance', 'IT/Technology', 'Procurement', 'Sales'],
+    value: '—'
+  } : null;
 
   const comments = [
     {
@@ -212,12 +242,12 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
     }
   ];
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status: number) => {
     switch (status) {
-      case 'approved': return 'bg-green-100 text-green-800 border-green-200';
-      case 'pending': return 'bg-orange-100 text-orange-800 border-orange-200';
-      case 'review': return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'requires-action': return 'bg-red-100 text-red-800 border-red-200';
+      case 0: return 'bg-orange-100 text-orange-800 border-orange-200';
+      case 1: return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 2: return 'bg-green-100 text-green-800 border-green-200';
+      case 3: return 'bg-emerald-100 text-emerald-800 border-emerald-200';
       default: return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
@@ -229,6 +259,28 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
       setNewComment('');
     }
   };
+
+  if (loading) {
+    return (
+      <div className="p-6 flex items-center justify-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+      </div>
+    );
+  }
+
+  if (!contract) {
+    return (
+      <div className="p-6 space-y-6">
+        {onBack && (
+          <Button variant="ghost" onClick={onBack} className="mb-4">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Contracts
+          </Button>
+        )}
+        <p className="text-muted-foreground">Contract not found</p>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6">
@@ -440,7 +492,7 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
             </CardHeader>
             <CardContent className="space-y-4">
               <Badge className={getStatusColor(contract.status)}>
-                {contract.status}
+                {CONTRACT_STATUS_LABELS[contract.status] ?? 'Unknown'}
               </Badge>
               
               <div className="space-y-3">

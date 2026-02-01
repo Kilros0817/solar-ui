@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { 
   LayoutDashboard, 
@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useUser, UserRole } from '../contexts/UserContext';
-import { USER_ROLE } from '@/utils/constants';
+import { USER_ROLE, DIVISION_LABELS } from '@/utils/constants';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import {
@@ -31,13 +31,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from './ui/dropdown-menu';
-import { 
-  allContracts, 
-  divisionLeadContracts, 
-  divisionMemberContracts,
-  ownerContracts,
-  getContractCounts 
-} from '../data/mockContracts';
+import { getContractCounts } from '../data/mockContracts';
+import type { Contract } from '../data/mockContracts';
+import { getAllContracts } from '@/utils/subgraph';
 import {
   divisionLeadIncoming,
   divisionLeadAssignedWork,
@@ -45,7 +41,6 @@ import {
   divisionMemberIncoming,
   divisionMemberAssignments,
   getNewAssignmentsCount,
-  getInProgressCount,
 } from '../data/mockAssignments';
 
 interface SidebarProps {
@@ -53,10 +48,41 @@ interface SidebarProps {
   onTabChange: (tab: string) => void;
 }
 
+const mapDocumentToContract = (doc: any, index: number): Contract => {
+  const client = doc.client;
+  const clientName = client ? [client.firstName, client.lastName].filter(Boolean).join(' ') || client.email || '' : '';
+  const id = /^\d+$/.test(String(doc.id)) ? parseInt(String(doc.id), 10) : index + 1;
+  const status = typeof doc.status === 'number' ? doc.status : 0;
+  const cat = doc.category;
+  const category = typeof cat === 'number' ? (DIVISION_LABELS[cat] ?? String(cat)) : (cat ?? '');
+  return {
+    id,
+    title: doc.title || 'Untitled',
+    client: clientName,
+    category,
+    status,
+    createdAt: doc.createdAt ?? '',
+  };
+};
+
 export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
   const router = useRouter();
   const pathname = usePathname();
   const { userRole, setUserRole } = useUser();
+  const [contracts, setContracts] = useState<Contract[]>([]);
+
+  useEffect(() => {
+    const fetchContracts = async () => {
+      try {
+        const docs = await getAllContracts();
+        setContracts(Array.isArray(docs) ? docs.map(mapDocumentToContract) : []);
+      } catch (e) {
+        console.error('Failed to fetch contracts for sidebar:', e);
+        setContracts([]);
+      }
+    };
+    fetchContracts();
+  }, []);
 
   // Map routes to tab IDs
   const routeToTabMap: Record<string, string> = {
@@ -76,11 +102,11 @@ export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
   // Get current tab from pathname
   const currentTab = routeToTabMap[pathname] || activeTab;
 
-  // Define menu items based on user role
+  // Define menu items based on user role (contract counts from subgraph)
+  const counts = getContractCounts(contracts);
   const getMenuItems = () => {
     // Legal Division - Full access (current UI)
     if (userRole === USER_ROLE.LEGAL_TEAM) {
-      const counts = getContractCounts(allContracts);
       return [
         { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, count: null },
         { id: 'my-contracts', label: 'My Contracts', icon: FileText, count: counts.all },
@@ -93,10 +119,9 @@ export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
 
     // Division Lead - Assigned sections and team management
     if (userRole === USER_ROLE.DIVISION_LEADER) {
-      const counts = getContractCounts(divisionLeadContracts);
       return [
         { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, count: null },
-        { id: 'incoming', label: 'Incoming', icon: Bell, count: getNewAssignmentsCount(divisionLeadIncoming) }, // New incoming assignments
+        { id: 'incoming', label: 'Incoming', icon: Bell, count: getNewAssignmentsCount(divisionLeadIncoming) },
         { id: 'my-contracts', label: 'My Contracts', icon: FileText, count: counts.all },
         { id: 'pending', label: 'Pending Review', icon: Clock, count: counts.pending },
         { id: 'approved', label: 'Approved', icon: CheckCircle, count: counts.approved },
@@ -109,10 +134,9 @@ export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
 
     // Division Member - Only assigned work
     if (userRole === USER_ROLE.DIVISION_MEMBER) {
-      const counts = getContractCounts(divisionMemberContracts);
       return [
         { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, count: null },
-        { id: 'incoming', label: 'Incoming', icon: Bell, count: getNewAssignmentsCount(divisionMemberIncoming) }, // New incoming assignments
+        { id: 'incoming', label: 'Incoming', icon: Bell, count: getNewAssignmentsCount(divisionMemberIncoming) },
         { id: 'my-contracts', label: 'My Contracts', icon: FileText, count: counts.all },
         { id: 'pending', label: 'Pending Review', icon: Clock, count: counts.pending },
         { id: 'approved', label: 'Approved', icon: CheckCircle, count: counts.approved },
@@ -121,22 +145,11 @@ export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
       ];
     }
 
-    // Owner - High-level overview
-    if (userRole === USER_ROLE.PROJECT_OWNER) {
-      const counts = getContractCounts(ownerContracts);
-      return [
-        { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, count: null },
-        { id: 'my-contracts', label: 'My Contracts', icon: FileText, count: counts.all },
-        { id: 'pending', label: 'Pending Review', icon: Clock, count: counts.pending },
-        { id: 'approved', label: 'Approved', icon: CheckCircle, count: counts.approved },
-      ];
-    }
-
     // Administrator - System management
     if (userRole === USER_ROLE.ADMIN) {
       return [
         { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, count: null },
-        { id: 'my-contracts', label: 'All Contracts', icon: FileText, count: 42 },
+        { id: 'my-contracts', label: 'All Contracts', icon: FileText, count: counts.all },
         { id: 'templates', label: 'All Templates', icon: FolderOpen, count: null },
         { id: 'pending-users', label: 'Pending Users', icon: Users, count: null },
         { id: 'team', label: 'Team', icon: Users, count: null },
@@ -159,8 +172,6 @@ export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
         return 'Division Lead';
       case USER_ROLE.DIVISION_MEMBER:
         return 'Division Member';
-      case USER_ROLE.PROJECT_OWNER:
-        return 'Owner Portal';
       case USER_ROLE.ADMIN:
         return 'Admin Portal';
       case USER_ROLE.CLIENT:
@@ -174,7 +185,6 @@ export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
     { value: USER_ROLE.LEGAL_TEAM as UserRole, label: 'Legal Division' },
     { value: USER_ROLE.DIVISION_LEADER as UserRole, label: 'Division Lead' },
     { value: USER_ROLE.DIVISION_MEMBER as UserRole, label: 'Division Member' },
-    { value: USER_ROLE.PROJECT_OWNER as UserRole, label: 'Owner' },
     { value: USER_ROLE.ADMIN as UserRole, label: 'Administrator' },
   ];
 

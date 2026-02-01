@@ -4,12 +4,19 @@ export const URLs = {
 	SectionAPI: "http://localhost:8085/section",
 	ContractAPI: "http://localhost:8085/contract",
 	UploadAPI: "http://localhost:8085/upload",
-	SubgraphURL: "https://api.studio.thegraph.com/query/72239/solar-dms/version/latest"
+	SubgraphURL: "https://api.studio.thegraph.com/query/72239/solar-dms/version/latest",
 };
 
 export const BaseRPC1 = "https://base-sepolia.g.alchemy.com/v2/U6YPO8eU2p26wRrvGyI2OlC1BS4ipA5o";
 export const BaseRPC2 = "https://base-sepolia.g.alchemy.com/v2/vE7q6lsie-jRPZjFzbayQibbzicwO4uN";
 export const BaseRPC3 = "https://base-sepolia.g.alchemy.com/v2/-DFmaAk_5jzgxCw7iYJ_VPr6VJq0RRFz";
+
+export const CONTRACT_STATUS = {
+    PENDING: 0,
+    DIVISION_REQUEST: 1,
+    APPROVED: 2,
+    COMPLETED: 3,
+}
 
 export const USER_ROLE = {
     NO_ROLE: 0,
@@ -31,6 +38,13 @@ export const DIVISION_CATEGORY = {
     RISK_MANAGEMENT: 7,
     INSURANCE: 8,
     SAFETY: 9
+}
+
+export const CONTRACT_STATUS_LABELS: Record<number, string> = {
+    [CONTRACT_STATUS.PENDING]: 'Pending',
+    [CONTRACT_STATUS.DIVISION_REQUEST]: 'Division Request',
+    [CONTRACT_STATUS.APPROVED]: 'Approved',
+    [CONTRACT_STATUS.COMPLETED]: 'Completed',
 }
 
 // Role labels for display

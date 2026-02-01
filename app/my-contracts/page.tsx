@@ -27,7 +27,7 @@ export default function MyContractsPage() {
   }
 
   const handleCreateContract = () => {
-    if (userRole === USER_ROLE.LEGAL_TEAM || userRole === USER_ROLE.PROJECT_OWNER || userRole === USER_ROLE.ADMIN) {
+    if (userRole === USER_ROLE.LEGAL_TEAM || userRole === USER_ROLE.ADMIN) {
       setFrom('my-contracts');
       router.push('/new-contract');
     }
@@ -39,7 +39,7 @@ export default function MyContractsPage() {
 
   return (
     <ContractList
-      title={userRole === USER_ROLE.PROJECT_OWNER || userRole === USER_ROLE.ADMIN ? 'All Contracts' : 'My Contracts'}
+      title={userRole === USER_ROLE.ADMIN ? 'All Contracts' : 'My Contracts'}
       onCreateContract={handleCreateContract}
       onViewContract={(contractId) => setSelectedContract(contractId)}
     />

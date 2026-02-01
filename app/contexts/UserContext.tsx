@@ -34,7 +34,6 @@ export function UserProvider({ children }: { children: ReactNode }) {
     const defaultName = (() => {
       switch (role) {
         case USER_ROLE.LEGAL_TEAM: return 'Sarah Chen';
-        case USER_ROLE.PROJECT_OWNER: return 'Michael Rodriguez';
         case USER_ROLE.DIVISION_LEADER: return 'Jennifer Taylor';
         case USER_ROLE.DIVISION_MEMBER: return 'David Kim';
         case USER_ROLE.ADMIN: return 'Admin User';
@@ -51,7 +50,6 @@ export function UserProvider({ children }: { children: ReactNode }) {
     setUserName(name || (() => {
       switch (role) {
         case USER_ROLE.LEGAL_TEAM: return 'Legal Team';
-        case USER_ROLE.PROJECT_OWNER: return 'Project Owner';
         case USER_ROLE.DIVISION_LEADER: return 'Division Lead';
         case USER_ROLE.DIVISION_MEMBER: return 'Division Member';
         case USER_ROLE.ADMIN: return 'Administrator';
