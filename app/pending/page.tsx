@@ -39,10 +39,12 @@ export default function PendingPage() {
 
   return (
     <ContractList
-      title="Pending Review"
+      title="Pending"
       filterStatus="pending"
       onCreateContract={handleCreateContract}
       onViewContract={(contractId) => setSelectedContract(contractId)}
+      showCreateWhenEmpty={false}
+      fromPage="pending"
     />
   );
 }

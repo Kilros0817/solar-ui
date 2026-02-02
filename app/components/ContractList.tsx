@@ -26,6 +26,8 @@ interface ContractListProps {
   filterStatus?: string;
   onCreateContract: () => void;
   onViewContract?: (contractId: number) => void;
+  showCreateWhenEmpty?: boolean;
+  fromPage?: string;
 }
 
 const mapDocumentToContract = (doc: any, index: number): Contract => {
@@ -45,7 +47,7 @@ const mapDocumentToContract = (doc: any, index: number): Contract => {
   };
 };
 
-export function ContractList({ title, filterStatus, onCreateContract, onViewContract }: ContractListProps) {
+export function ContractList({ title, filterStatus, onCreateContract, onViewContract, showCreateWhenEmpty = true, fromPage }: ContractListProps) {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
   const [contracts, setContracts] = useState<Contract[]>([]);
@@ -152,7 +154,7 @@ export function ContractList({ title, filterStatus, onCreateContract, onViewCont
                 <TableRow
                   key={contract.id}
                   className="cursor-pointer group"
-                  onClick={() => router.push(`/contract/${contract.id}`)}
+                  onClick={() => router.push(fromPage ? `/contract/${contract.id}?from=${fromPage}` : `/contract/${contract.id}`)}
                 >
                   <TableCell className="font-medium py-4">{contract.title}</TableCell>
                   <TableCell className="text-muted-foreground py-4">
@@ -173,7 +175,7 @@ export function ContractList({ title, filterStatus, onCreateContract, onViewCont
                         variant="ghost"
                         size="icon"
                         className="h-8 w-8 cursor-pointer"
-                        onClick={() => router.push(`/contract/${contract.id}`)}
+                        onClick={() => router.push(fromPage ? `/contract/${contract.id}?from=${fromPage}` : `/contract/${contract.id}`)}
                         title="View"
                       >
                         <Eye className="h-4 w-4" />
@@ -186,8 +188,8 @@ export function ContractList({ title, filterStatus, onCreateContract, onViewCont
           </Table>
         ) : (
           <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
-            <div className="rounded-full bg-muted p-4 mb-4">
-              <FileText className="h-10 w-10 text-muted-foreground" />
+            <div className="rounded-full bg-muted p-4 mb-4 mt-4">
+              <FileText className="text-muted-foreground" />
             </div>
             <h3 className="font-semibold text-lg mb-1">No contracts found</h3>
             <p className="text-sm text-muted-foreground mb-6 max-w-sm">
@@ -195,8 +197,8 @@ export function ContractList({ title, filterStatus, onCreateContract, onViewCont
                 ? 'No contracts match your search. Try a different term.'
                 : 'Get started by creating your first contract.'}
             </p>
-            {!searchTerm && (
-              <Button onClick={onCreateContract}>Create New Contract</Button>
+            {!searchTerm && showCreateWhenEmpty && (
+              <Button className='mb-4' onClick={onCreateContract}>Create New Contract</Button>
             )}
           </div>
         )}

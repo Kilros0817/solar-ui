@@ -43,6 +43,7 @@ export default function ApprovedPage() {
       filterStatus="approved"
       onCreateContract={handleCreateContract}
       onViewContract={(contractId) => setSelectedContract(contractId)}
+      showCreateWhenEmpty={false}
     />
   );
 }

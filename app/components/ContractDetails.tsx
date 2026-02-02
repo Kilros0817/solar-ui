@@ -36,6 +36,7 @@ interface ContractDocPayload {
 interface ContractDetailsProps {
   contractId?: number;
   onBack?: () => void;
+  showApproveActions?: boolean;
 }
 
 const mapDocumentToContract = (doc: any, index: number): Contract => {
@@ -56,7 +57,7 @@ const mapDocumentToContract = (doc: any, index: number): Contract => {
   };
 };
 
-export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps) {
+export function ContractDetails({ contractId = 1, onBack, showApproveActions = true }: ContractDetailsProps) {
   const [foundContract, setFoundContract] = useState<Contract | null>(null);
   const [loading, setLoading] = useState(true);
   const [docContent, setDocContent] = useState<ContractDocPayload | null>(null);
@@ -313,16 +314,18 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
                 </div>
               </div>
 
-              <div className="pt-4 space-y-2">
-                <Button className="w-full">
-                  <CheckCircle className="h-4 w-4 mr-2" />
-                  Approve Contract
-                </Button>
-                <Button variant="outline" className="w-full">
-                  <AlertTriangle className="h-4 w-4 mr-2" />
-                  Request Changes
-                </Button>
-              </div>
+              {showApproveActions && (
+                <div className="pt-4 space-y-2">
+                  <Button className="w-full">
+                    <CheckCircle className="h-4 w-4 mr-2" />
+                    Approve Contract
+                  </Button>
+                  <Button variant="outline" className="w-full">
+                    <AlertTriangle className="h-4 w-4 mr-2" />
+                    Request Changes
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
 
