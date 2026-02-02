@@ -1,4 +1,4 @@
-﻿import { TBDelegator } from "./constants";
+import { TBDelegator } from "./constants";
 import { toast } from "sonner";
 
 /**
@@ -68,4 +68,14 @@ export const copyAddressToClipboard = async (address: string): Promise<boolean> 
 export const isValidEmail = (email: string): boolean => {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return emailRegex.test(email);
+};
+
+/**
+ * Formats a date string or Unix timestamp to a locale date string
+ * @param dateStr - Unix timestamp (seconds) or ISO date string
+ * @returns Formatted date string or empty string if invalid
+ */
+export const formatRelativeDate = (dateStr: number): string => {
+  const date = new Date(dateStr * 1000);
+  return date.toLocaleDateString();
 };

@@ -19,6 +19,7 @@ import { getAllContracts } from '@/utils/subgraph';
 import { getContractsByStatus } from '../data/mockContracts';
 import type { Contract } from '../data/mockContracts';
 import { CONTRACT_STATUS_LABELS, DIVISION_LABELS } from '@/utils/constants';
+import { formatRelativeDate } from '@/utils/utility';
 
 interface ContractListProps {
   title: string;
@@ -26,10 +27,6 @@ interface ContractListProps {
   onCreateContract: () => void;
   onViewContract?: (contractId: number) => void;
 }
-
-const formatRelativeDate = (dateStr: number) => {
-  return (new Date(dateStr * 1000)).toLocaleDateString();
-};
 
 const mapDocumentToContract = (doc: any, index: number): Contract => {
   const client = doc.client;

@@ -19,6 +19,7 @@ import { getAllContracts } from '@/utils/subgraph';
 import type { Contract } from '../data/mockContracts';
 import { useUser } from '../contexts/UserContext';
 import { USER_ROLE, CONTRACT_STATUS_LABELS, DIVISION_LABELS, URLs } from '@/utils/constants';
+import { formatRelativeDate } from '@/utils/utility';
 
 interface ContractDocPayload {
   contractTitle?: string;
@@ -36,19 +37,6 @@ interface ContractDetailsProps {
   contractId?: number;
   onBack?: () => void;
 }
-
-const formatRelativeDate = (dateStr: string | number) => {
-  if (dateStr === undefined || dateStr === null || dateStr === '') return '';
-  const date = typeof dateStr === 'number' ? new Date(dateStr * 1000) : new Date(dateStr);
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-  if (diffDays === 0) return 'Today';
-  if (diffDays === 1) return '1 day ago';
-  if (diffDays < 7) return `${diffDays} days ago`;
-  if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
-  return date.toLocaleDateString();
-};
 
 const mapDocumentToContract = (doc: any, index: number): Contract => {
   const client = doc.client;
@@ -156,30 +144,6 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
     involvedDivisions: docContent?.category ? [docContent.category] : foundContract.category ? [foundContract.category] : ['Legal', 'Finance', 'IT/Technology', 'Procurement', 'Sales'],
     value: docContent?.price ?? '—',
   } : null;
-
-  const versions = [
-    {
-      version: '2.1',
-      date: '2024-12-08',
-      author: 'Sarah Johnson',
-      changes: 'Updated pricing structure and added data retention policy',
-      current: true
-    },
-    {
-      version: '2.0',
-      date: '2024-12-05',
-      author: 'Mike Chen',
-      changes: 'Legal review completed, liability clauses updated',
-      current: false
-    },
-    {
-      version: '1.3',
-      date: '2024-12-01',
-      author: 'Emma Davis',
-      changes: 'Initial draft with standard terms and conditions',
-      current: false
-    }
-  ];
 
   const getStatusColor = (status: number) => {
     switch (status) {
