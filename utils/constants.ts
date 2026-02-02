@@ -4,6 +4,7 @@ export const URLs = {
 	SectionAPI: "http://localhost:8085/section",
 	ContractAPI: "http://localhost:8085/contract",
 	UploadAPI: "http://localhost:8085/upload",
+	SubgraphAPI: "http://localhost:8085/subgraph",
 	SubgraphURL: "https://api.studio.thegraph.com/query/72239/solar-dms/version/latest",
 	TBGateWay: "https://jade-wonderful-hawk-382.mypinata.cloud/ipfs/",
 };

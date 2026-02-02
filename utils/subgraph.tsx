@@ -4,13 +4,16 @@ import { URLs } from "./constants";
 const getDataFromSubgraph = async (query: unknown) => {
   try {
     const queryStr = typeof query === "string" ? query : print(query as import("graphql").DocumentNode);
-    const res = await fetch(URLs.SubgraphURL, {
+    const res = await fetch(URLs.SubgraphAPI, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ query: queryStr }),
     });
-    const data = await res.json();
-    return { isSuccess: true, data: data?.data ?? data };
+    const json = await res.json();
+    if (!res.ok) {
+      return { isSuccess: false, data: "" };
+    }
+    return { isSuccess: json.isSuccess !== false, data: json.data ?? "" };
   } catch (error) {
     return { isSuccess: false, data: "" };
   }
