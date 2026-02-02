@@ -199,8 +199,8 @@ export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
   ];
 
   return (
-    <aside className="w-64 border-r bg-card h-full flex flex-col">
-      <div className="p-6 border-b">
+    <aside className="w-64 border-r bg-card h-full min-h-0 flex flex-col shrink-0">
+      <div className="p-6 border-b shrink-0">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
             <FileText className="h-4 w-4 text-primary-foreground" />
@@ -212,7 +212,7 @@ export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
         </div>
       </div>
       
-      <nav className="flex-1 p-4 space-y-1">
+      <nav className="flex-1 min-h-0 overflow-y-auto p-4 space-y-1">
         {menuItems.map((item) => {
           const isActive = currentTab === item.id;
           const handleClick = () => {
@@ -261,7 +261,7 @@ export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
       </nav>
 
       {/* Role Switcher for Testing */}
-      <div className="p-4 border-t">
+      <div className="p-4 border-t shrink-0 mt-auto">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="sm" className="w-full">

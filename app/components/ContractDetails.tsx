@@ -2,19 +2,10 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
-import { Avatar, AvatarFallback } from './ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { ContractDocumentTemplate } from './ContractDocumentTemplate';
 import { SectionReviewTab } from './SectionReviewTab';
-import { 
-  CheckCircle, 
-  AlertTriangle,
-  User,
-  Calendar,
-  DollarSign,
-  Building,
-  ArrowLeft
-} from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { getAllContracts } from '@/utils/subgraph';
 import type { Contract } from '../data/mockContracts';
 import { useUser } from '../contexts/UserContext';
@@ -36,7 +27,6 @@ interface ContractDocPayload {
 interface ContractDetailsProps {
   contractId?: number;
   onBack?: () => void;
-  showApproveActions?: boolean;
 }
 
 const mapDocumentToContract = (doc: any, index: number): Contract => {
@@ -57,7 +47,7 @@ const mapDocumentToContract = (doc: any, index: number): Contract => {
   };
 };
 
-export function ContractDetails({ contractId = 1, onBack, showApproveActions = true }: ContractDetailsProps) {
+export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps) {
   const [foundContract, setFoundContract] = useState<Contract | null>(null);
   const [loading, setLoading] = useState(true);
   const [docContent, setDocContent] = useState<ContractDocPayload | null>(null);
@@ -142,7 +132,6 @@ export function ContractDetails({ contractId = 1, onBack, showApproveActions = t
     category: docContent?.category ?? foundContract.category,
     createdDate: foundContract.createdAt ? formatRelativeDate(foundContract.createdAt) : '—',
     description: docContent?.description ?? `Comprehensive agreement for ${foundContract.client} regarding ${foundContract.title.toLowerCase()}.`,
-    involvedDivisions: docContent?.category ? [docContent.category] : foundContract.category ? [foundContract.category] : ['Legal', 'Finance', 'IT/Technology', 'Procurement', 'Sales'],
     value: docContent?.price ?? '—',
   } : null;
 
@@ -194,9 +183,9 @@ export function ContractDetails({ contractId = 1, onBack, showApproveActions = t
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="space-y-6">
         {/* Main Content */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="space-y-6">
           <Tabs defaultValue="overview" className="w-full">
             <TabsList className="grid w-full grid-cols-2 md:grid-cols-3 h-auto">
               <TabsTrigger value="overview">Overview</TabsTrigger>
@@ -214,39 +203,36 @@ export function ContractDetails({ contractId = 1, onBack, showApproveActions = t
                   
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
+                      <span className="font-medium">Contract Status:</span>
+                      <p className="mt-1">
+                        <Badge className={getStatusColor(contract.status)}>
+                          {CONTRACT_STATUS_LABELS[contract.status] ?? 'Unknown'}
+                        </Badge>
+                      </p>
+                    </div>
+                    <div>
+                      <span className="font-medium">Contract Category:</span>
+                      <p className="mt-1">{contract.category || '—'}</p>
+                    </div>
+                    <div>
                       <span className="font-medium">Contract Value:</span>
-                      <p className="text-lg font-semibold text-green-600">{contract.value}</p>
+                      <p className="text-lg font-semibold text-green-600 mt-1">{contract.value}</p>
                     </div>
                     <div>
                       <span className="font-medium">Created:</span>
-                      <p>{contract.createdDate}</p>
-                    </div>
-                    {/* TODO: Version field - Hidden for now, will be used later if needed */}
-                    {/* <div>
-                      <span className="font-medium">Version:</span>
-                      <p>{contract.version}</p>
-                    </div> */}
-                  </div>
-                  
-                  <div className="pt-4 border-t">
-                    <span className="font-medium">Involved Divisions:</span>
-                    <div className="flex flex-wrap gap-2 mt-2">
-                      {contract.involvedDivisions.map((division) => (
-                        <Badge key={division} variant="outline" className="text-xs">
-                          {division}
-                        </Badge>
-                      ))}
+                      <p className="mt-1">{contract.createdDate}</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle>Document View</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {docLoading ? (
+              <div className="flex justify-center">
+                <Card className="w-full max-w-3xl">
+                  <CardHeader>
+                    <CardTitle>Contract View</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {docLoading ? (
                     <div className="flex items-center justify-center py-12">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
                     </div>
@@ -270,8 +256,9 @@ export function ContractDetails({ contractId = 1, onBack, showApproveActions = t
                       createdDate={contract.createdDate}
                     />
                   )}
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              </div>
             </TabsContent>
 
             <TabsContent value="sections" className="space-y-4">
@@ -294,78 +281,6 @@ export function ContractDetails({ contractId = 1, onBack, showApproveActions = t
               </Card>
             </TabsContent>
           </Tabs>
-        </div>
-
-        {/* Sidebar */}
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Status</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <Badge className={getStatusColor(contract.status)}>
-                {CONTRACT_STATUS_LABELS[contract.status] ?? 'Unknown'}
-              </Badge>
-              
-              <div className="space-y-3">
-                <div className="flex items-center gap-2 text-sm">
-                  <DollarSign className="h-4 w-4 text-muted-foreground" />
-                  <span>{contract.value}</span>
-                </div>
-              </div>
-
-              {showApproveActions && (
-                <div className="pt-4 space-y-2">
-                  <Button className="w-full">
-                    <CheckCircle className="h-4 w-4 mr-2" />
-                    Approve Contract
-                  </Button>
-                  <Button variant="outline" className="w-full">
-                    <AlertTriangle className="h-4 w-4 mr-2" />
-                    Request Changes
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Involved Divisions</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {contract.involvedDivisions.map((division) => (
-                <div key={division} className="flex items-center gap-3 p-2 border rounded-lg">
-                  <Building className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm">{division}</span>
-                </div>
-              ))}
-              <Button variant="outline" size="sm" className="w-full mt-2">
-                Add Division
-              </Button>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Team Members</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {['Sarah Johnson', 'Mike Chen', 'Emma Davis'].map((member) => (
-                <div key={member} className="flex items-center gap-3">
-                  <Avatar className="h-8 w-8">
-                    <AvatarFallback>
-                      <User className="h-4 w-4" />
-                    </AvatarFallback>
-                  </Avatar>
-                  <span className="text-sm">{member}</span>
-                </div>
-              ))}
-              <Button variant="outline" size="sm" className="w-full mt-2">
-                Add Member
-              </Button>
-            </CardContent>
-          </Card>
         </div>
       </div>
     </div>

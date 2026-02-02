@@ -56,16 +56,18 @@ export function LayoutWrapper({ children }: LayoutWrapperProps) {
   };
 
   return (
-    <div className="h-screen flex flex-col bg-background relative">
+    <div className="h-screen flex flex-col bg-background relative overflow-hidden">
       {isLoading && <PagePreloader />}
-      <div className={isLoading ? 'blur-sm pointer-events-none' : ''}>
-        <ContractHeader />
-        <div className="flex-1 flex">
+      <div className={`flex-1 flex flex-col min-h-0 overflow-hidden ${isLoading ? 'blur-sm pointer-events-none' : ''}`}>
+        <div className="shrink-0">
+          <ContractHeader />
+        </div>
+        <div className="flex-1 flex min-h-0 overflow-hidden">
           <ContractSidebar 
             activeTab=""
             onTabChange={handleTabChange} 
           />
-          <main className="flex-1 overflow-auto">
+          <main className="flex-1 min-h-0 overflow-y-auto">
             {children}
           </main>
         </div>

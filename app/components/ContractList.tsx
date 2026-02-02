@@ -27,7 +27,6 @@ interface ContractListProps {
   onCreateContract: () => void;
   onViewContract?: (contractId: number) => void;
   showCreateWhenEmpty?: boolean;
-  fromPage?: string;
 }
 
 const mapDocumentToContract = (doc: any, index: number): Contract => {
@@ -47,7 +46,7 @@ const mapDocumentToContract = (doc: any, index: number): Contract => {
   };
 };
 
-export function ContractList({ title, filterStatus, onCreateContract, onViewContract, showCreateWhenEmpty = true, fromPage }: ContractListProps) {
+export function ContractList({ title, filterStatus, onCreateContract, onViewContract, showCreateWhenEmpty = true }: ContractListProps) {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
   const [contracts, setContracts] = useState<Contract[]>([]);
@@ -154,7 +153,7 @@ export function ContractList({ title, filterStatus, onCreateContract, onViewCont
                 <TableRow
                   key={contract.id}
                   className="cursor-pointer group"
-                  onClick={() => router.push(fromPage ? `/contract/${contract.id}?from=${fromPage}` : `/contract/${contract.id}`)}
+                  onClick={() => router.push(`/contract/${contract.id}`)}
                 >
                   <TableCell className="font-medium py-4">{contract.title}</TableCell>
                   <TableCell className="text-muted-foreground py-4">
@@ -175,7 +174,7 @@ export function ContractList({ title, filterStatus, onCreateContract, onViewCont
                         variant="ghost"
                         size="icon"
                         className="h-8 w-8 cursor-pointer"
-                        onClick={() => router.push(fromPage ? `/contract/${contract.id}?from=${fromPage}` : `/contract/${contract.id}`)}
+                        onClick={() => router.push(`/contract/${contract.id}`)}
                         title="View"
                       >
                         <Eye className="h-4 w-4" />

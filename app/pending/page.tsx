@@ -44,7 +44,6 @@ export default function PendingPage() {
       onCreateContract={handleCreateContract}
       onViewContract={(contractId) => setSelectedContract(contractId)}
       showCreateWhenEmpty={false}
-      fromPage="pending"
     />
   );
 }
