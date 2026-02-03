@@ -5,8 +5,8 @@ import { Button } from './ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { ContractDocumentTemplate } from './ContractDocumentTemplate';
 import { SectionReviewTab } from './SectionReviewTab';
-import { ArrowLeft } from 'lucide-react';
-import { getAllContracts } from '@/utils/subgraph';
+import { ArrowLeft, FileText, Calendar, DollarSign, Tag, ClipboardList, Building2 } from 'lucide-react';
+import { getContractById } from '@/utils/subgraph';
 import type { Contract } from '../data/mockContracts';
 import { useUser } from '../contexts/UserContext';
 import { USER_ROLE, CONTRACT_STATUS_LABELS, DIVISION_LABELS, URLs } from '@/utils/constants';
@@ -49,6 +49,7 @@ const mapDocumentToContract = (doc: any, index: number): Contract => {
 
 export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps) {
   const [foundContract, setFoundContract] = useState<Contract | null>(null);
+  const [rawDocument, setRawDocument] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [docContent, setDocContent] = useState<ContractDocPayload | null>(null);
   const [docLoading, setDocLoading] = useState(false);
@@ -59,13 +60,14 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
     const fetchContract = async () => {
       setLoading(true);
       try {
-        const docs = await getAllContracts();
-        const contracts = Array.isArray(docs) ? docs.map(mapDocumentToContract) : [];
-        const contract = contracts.find(c => c.id === contractId) || contracts[0];
-        setFoundContract(contract ?? null);
+        const doc = await getContractById(contractId);
+        setRawDocument(doc ?? null);
+        const contract = doc ? mapDocumentToContract(doc, 0) : null;
+        setFoundContract(contract);
       } catch (e) {
         console.error('Failed to fetch contract:', e);
         setFoundContract(null);
+        setRawDocument(null);
       } finally {
         setLoading(false);
       }
@@ -124,6 +126,12 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
     // In a real app, this would make an API call
   };
 
+  const involvedDivisions = (rawDocument?.sections ?? [])
+    .map((s: any) => s?.divisionLeader?.dcategory)
+    .filter((dc: unknown) => dc !== undefined && dc !== null && Number(dc) > 0)
+    .filter((dc: unknown, i: number, arr: unknown[]) => arr.indexOf(dc) === i)
+    .map((dc: unknown) => DIVISION_LABELS[Number(dc)] ?? String(dc));
+
   const contract = foundContract ? {
     id: foundContract.id,
     title: docContent?.contractTitle ? `${docContent.contractTitle}` : `${foundContract.title}`,
@@ -133,6 +141,7 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
     createdDate: foundContract.createdAt ? formatRelativeDate(foundContract.createdAt) : '—',
     description: docContent?.description ?? `Comprehensive agreement for ${foundContract.client} regarding ${foundContract.title.toLowerCase()}.`,
     value: docContent?.price ?? '—',
+    involvedDivisions: involvedDivisions.length > 0 ? involvedDivisions : (foundContract.category ? [foundContract.category] : []),
   } : null;
 
   const getStatusColor = (status: number) => {
@@ -194,42 +203,79 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
             </TabsList>
             
             <TabsContent value="overview" className="space-y-6">
+              {/* Row 1: Status, Category, Value, Created */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="rounded-lg border bg-card p-4">
+                  <div className="flex items-center gap-2 text-muted-foreground mb-2">
+                    <ClipboardList className="h-4 w-4" />
+                    <span className="text-xs font-medium uppercase tracking-wider">Status</span>
+                  </div>
+                  <Badge className={getStatusColor(contract.status)}>
+                    {CONTRACT_STATUS_LABELS[contract.status] ?? 'Unknown'}
+                  </Badge>
+                </div>
+                <div className="rounded-lg border bg-card p-4">
+                  <div className="flex items-center gap-2 text-muted-foreground mb-2">
+                    <Tag className="h-4 w-4" />
+                    <span className="text-xs font-medium uppercase tracking-wider">Category</span>
+                  </div>
+                  <p className="font-medium">{contract.category || '—'}</p>
+                </div>
+                <div className="rounded-lg border bg-card p-4">
+                  <div className="flex items-center gap-2 text-muted-foreground mb-2">
+                    <DollarSign className="h-4 w-4" />
+                    <span className="text-xs font-medium uppercase tracking-wider">Value</span>
+                  </div>
+                  <p className="font-semibold text-green-600">{contract.value}</p>
+                </div>
+                <div className="rounded-lg border bg-card p-4">
+                  <div className="flex items-center gap-2 text-muted-foreground mb-2">
+                    <Calendar className="h-4 w-4" />
+                    <span className="text-xs font-medium uppercase tracking-wider">Created</span>
+                  </div>
+                  <p className="font-medium">{contract.createdDate}</p>
+                </div>
+              </div>
+
+              {/* Row 2: Involved Divisions */}
+              <div className="rounded-lg border bg-card p-4">
+                <div className="flex items-center gap-2 text-muted-foreground mb-2">
+                  <Building2 className="h-4 w-4" />
+                  <span className="text-xs font-medium uppercase tracking-wider">Involved Divisions</span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {contract.involvedDivisions.length > 0 ? (
+                    contract.involvedDivisions.map((division: string) => (
+                      <Badge key={division} variant="secondary" className="text-xs">
+                        {division}
+                      </Badge>
+                    ))
+                  ) : (
+                    <p className="font-medium text-muted-foreground">—</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Description */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Contract Details</CardTitle>
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <FileText className="h-4 w-4 text-muted-foreground" />
+                    Summary
+                  </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <p className="text-muted-foreground">{contract.description}</p>
-                  
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <span className="font-medium">Contract Status:</span>
-                      <p className="mt-1">
-                        <Badge className={getStatusColor(contract.status)}>
-                          {CONTRACT_STATUS_LABELS[contract.status] ?? 'Unknown'}
-                        </Badge>
-                      </p>
-                    </div>
-                    <div>
-                      <span className="font-medium">Contract Category:</span>
-                      <p className="mt-1">{contract.category || '—'}</p>
-                    </div>
-                    <div>
-                      <span className="font-medium">Contract Value:</span>
-                      <p className="text-lg font-semibold text-green-600 mt-1">{contract.value}</p>
-                    </div>
-                    <div>
-                      <span className="font-medium">Created:</span>
-                      <p className="mt-1">{contract.createdDate}</p>
-                    </div>
-                  </div>
+                <CardContent>
+                  <p className="text-muted-foreground leading-relaxed">{contract.description}</p>
                 </CardContent>
               </Card>
 
               <div className="flex justify-center">
                 <Card className="w-full max-w-3xl">
                   <CardHeader>
-                    <CardTitle>Contract View</CardTitle>
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <FileText className="h-4 w-4 text-muted-foreground" />
+                      Document View
+                    </CardTitle>
                   </CardHeader>
                   <CardContent>
                     {docLoading ? (

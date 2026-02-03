@@ -1,8 +1,9 @@
 'use client'
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { TeamManagement } from '../components/TeamManagement';
+import { MyTeam } from '../components/MyTeam';
 import { useUser } from '../contexts/UserContext';
 import { USER_ROLE } from '@/utils/constants';
 
@@ -10,22 +11,31 @@ export default function DivisionsPage() {
   const router = useRouter();
   const { userRole } = useUser();
 
-  // Redirect if not legal team or admin
+  const canAccessTeam =
+    userRole === USER_ROLE.DIVISION_LEADER ||
+    userRole === USER_ROLE.LEGAL_TEAM ||
+    userRole === USER_ROLE.ADMIN;
+
   useEffect(() => {
     if (userRole === null) {
       router.push('/login');
     } else if (userRole === USER_ROLE.NO_ROLE) {
       router.push('/register');
-    } else if (userRole !== USER_ROLE.LEGAL_TEAM && userRole !== USER_ROLE.ADMIN) {
+    } else if (userRole != null && !canAccessTeam) {
       router.push('/dashboard');
     }
-  }, [userRole, router]);
+  }, [userRole, canAccessTeam, router]);
 
-  // Don't render if redirecting
-  if (userRole === null || userRole === USER_ROLE.NO_ROLE || (userRole !== USER_ROLE.LEGAL_TEAM && userRole !== USER_ROLE.ADMIN)) {
+  if (userRole === null || userRole === USER_ROLE.NO_ROLE) {
+    return null;
+  }
+  if (!canAccessTeam) {
     return null;
   }
 
+  if (userRole === USER_ROLE.DIVISION_LEADER) {
+    return <MyTeam />;
+  }
   return <TeamManagement userRole={userRole} />;
 }
 

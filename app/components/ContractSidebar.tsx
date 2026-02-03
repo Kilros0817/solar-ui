@@ -11,9 +11,7 @@ import {
   FolderOpen,
   Users,
   Search,
-  Bell,
   ClipboardList,
-  UserCheck,
   FileEdit,
   BarChart3,
   RefreshCw,
@@ -36,14 +34,7 @@ import {
 import { getContractCounts } from '../data/mockContracts';
 import type { Contract } from '../data/mockContracts';
 import { getAllContracts } from '@/utils/subgraph';
-import {
-  divisionLeadIncoming,
-  divisionLeadAssignedWork,
-  divisionLeadTeamAssignments,
-  divisionMemberIncoming,
-  divisionMemberAssignments,
-  getNewAssignmentsCount,
-} from '../data/mockAssignments';
+import { divisionMemberAssignments } from '../data/mockAssignments';
 
 interface SidebarProps {
   activeTab: string;
@@ -95,9 +86,6 @@ export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
     '/approved': 'approved',
     '/esigned': 'esigned',
     '/templates': 'templates',
-    '/incoming': 'incoming',
-    '/assigned-work': 'assigned-work',
-    '/team-assignments': 'team-assignments',
     '/my-assignments': 'my-assignments',
     '/divisions': 'team',
     '/pending-users': 'pending-users',
@@ -127,14 +115,10 @@ export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
     if (userRole === USER_ROLE.DIVISION_LEADER) {
       return [
         { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, count: null },
-        { id: 'incoming', label: 'Incoming', icon: Bell, count: getNewAssignmentsCount(divisionLeadIncoming) },
         { id: 'my-contracts', label: 'My Contracts', icon: FileText, count: counts.all },
         { id: 'pending', label: 'Pending', icon: Clock, count: counts.pending },
         { id: 'review', label: 'Review', icon: FileSearch, count: counts.divisionRequest },
         { id: 'approved', label: 'Approved', icon: CheckCircle, count: counts.approved },
-        { id: 'esigned', label: 'Esigned', icon: PenLine, count: counts.completed },
-        { id: 'assigned-work', label: 'Assigned Work', icon: ClipboardList, count: divisionLeadAssignedWork.length },
-        { id: 'team-assignments', label: 'Team Assignments', icon: UserCheck, count: divisionLeadTeamAssignments.length },
         { id: 'templates', label: 'Division Templates', icon: FolderOpen, count: null },
         { id: 'team', label: 'My Team', icon: Users, count: null },
       ];
@@ -144,12 +128,10 @@ export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
     if (userRole === USER_ROLE.DIVISION_MEMBER) {
       return [
         { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, count: null },
-        { id: 'incoming', label: 'Incoming', icon: Bell, count: getNewAssignmentsCount(divisionMemberIncoming) },
         { id: 'my-contracts', label: 'My Contracts', icon: FileText, count: counts.all },
         { id: 'pending', label: 'Pending', icon: Clock, count: counts.pending },
         { id: 'review', label: 'Review', icon: FileSearch, count: counts.divisionRequest },
         { id: 'approved', label: 'Approved', icon: CheckCircle, count: counts.approved },
-        { id: 'esigned', label: 'Esigned', icon: PenLine, count: counts.completed },
         { id: 'my-assignments', label: 'My Assignments', icon: ClipboardList, count: divisionMemberAssignments.length },
         { id: 'templates', label: 'Division Templates', icon: FolderOpen, count: null },
       ];
@@ -225,9 +207,6 @@ export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
               'approved': '/approved',
               'esigned': '/esigned',
               'templates': '/templates',
-              'incoming': '/incoming',
-              'assigned-work': '/assigned-work',
-              'team-assignments': '/team-assignments',
               'my-assignments': '/my-assignments',
               'pending-users': '/pending-users',
               'team': '/divisions',

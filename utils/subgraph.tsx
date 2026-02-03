@@ -61,6 +61,26 @@ export const getUserInfo = async (account: any) => {
   }
 }
 
+/** Returns current user's dcategory and role (e.g. for division leader's My Team). */
+export const getCurrentUserProfile = async (account: string) => {
+  const query = `{
+    user(id: "${account.toLowerCase()}") {
+      dcategory
+      role
+      firstName
+      lastName
+      email
+    }
+  }`;
+  try {
+    const res = await getDataFromSubgraph(query);
+    return (res.data as { user?: { dcategory?: number; role?: number; firstName?: string; lastName?: string; email?: string } }).user ?? null;
+  } catch (e) {
+    console.error(e, "============ error in getCurrentUserProfile ============");
+    return null;
+  }
+}
+
 export const getPendingUsers = async () => {
 
   let query = `{
@@ -147,7 +167,27 @@ export const getAllDivisionLeaders = async () => {
     return leaders;
   } catch (e) {
     console.log(e, "============error in get all division leaders from subgraph============");
-    return {};
+    return [];
+  }
+}
+
+export const getDivisionMembersByDivisionId = async (divisionId: number) => {
+  let query = `{
+    users(where: {dcategory: ${divisionId}, role: 1}) {
+      id
+      firstName
+      lastName
+      email
+    }
+  }`;
+  try {
+    const res = await getDataFromSubgraph(query);
+    const members = (res.data as any).users || [];
+
+    return members;
+  } catch (e) {
+    console.log(e, "============error in get all division leaders from subgraph============");
+    return [];
   }
 }
 
@@ -198,6 +238,41 @@ export const getAllContracts = async () => {
     return [];
   }
 }
+
+export const getContractById = async (id: string | number) => {
+  const idStr = String(id);
+  const query = `{
+    document(id: "${idStr}") {
+      id
+      client {
+        id
+        firstName
+        email
+        lastName
+      }
+      category
+      title
+      cid
+      status
+      createdAt
+      sections {
+        divisionLeader {
+          dcategory
+          firstName
+          lastName
+        }
+      }
+    }
+  }`;
+  try {
+    const res = await getDataFromSubgraph(query);
+    const doc = (res.data as any).document;
+    return doc ?? null;
+  } catch (e) {
+    console.log(e, "============error in get contract by id from subgraph============");
+    return null;
+  }
+};
 
 interface User {
   id: string;
