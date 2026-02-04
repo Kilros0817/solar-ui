@@ -73,6 +73,7 @@ export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
     '/my-assignments': 'my-assignments',
     '/assignments': 'my-contracts',
     '/assignments/section': 'my-contracts',
+    '/assignments/clause': 'my-contracts',
     '/divisions': 'team',
     '/pending-users': 'pending-users',
   };

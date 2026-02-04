@@ -18,6 +18,7 @@ import type { SectionWithDivision } from '@/app/data/interfaces';
 export type MemberAssignmentBox = {
   sectionId: string;
   sectionIndex: number;
+  clauseIndex: number;
   sectionName: string;
   status: number;
   clauseContent: string;
@@ -29,7 +30,7 @@ export default function AssignmentsPage() {
   const router = useRouter();
   const { address } = useConnection();
   const { userRole } = useUser();
-  const { selectedContractId, setSelectedSection } = useAssignment();
+  const { selectedContractId, setSelectedSection, setSelectedClause } = useAssignment();
   const { profile, loadDoc, getDoc, loadingDocId, loadingProfile, error: contextError } = useContractDoc();
   const contractId = selectedContractId ?? '';
   const [sections, setSections] = useState<
@@ -203,6 +204,7 @@ export default function AssignmentsPage() {
           boxes.push({
             sectionId: String(sectionId),
             sectionIndex,
+            clauseIndex,
             sectionName,
             status: typeof c.status === 'number' ? c.status : 0,
             clauseContent: content?.clauseContent ?? '',
@@ -346,7 +348,8 @@ export default function AssignmentsPage() {
                           className="gap-1.5 shrink-0"
                           onClick={() => {
                             setSelectedSection(a.sectionIndex);
-                            router.push('/assignments/section');
+                            setSelectedClause(a.clauseIndex);
+                            router.push('/assignments/clause');
                           }}
                         >
                           <Pencil className="h-3.5 w-3.5" />
