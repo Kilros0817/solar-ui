@@ -15,7 +15,7 @@ import {
 } from './ui/table';
 import { Skeleton } from './ui/skeleton';
 import { FileText, Search, Eye, Pencil } from 'lucide-react';
-import { getAllContracts } from '@/utils/subgraph';
+import { getAllContracts, getContractsByDivisionLeader } from '@/utils/subgraph';
 import { getContractsByStatus } from '../data/mockContracts';
 import type { Contract } from '../data/mockContracts';
 import { CONTRACT_STATUS_LABELS, DIVISION_LABELS } from '@/utils/constants';
@@ -26,17 +26,23 @@ interface ContractListProps {
   filterStatus?: string;
   onCreateContract: () => void;
   onViewContract?: (contractId: number) => void;
+  /** When provided, View/row click navigates to this path instead of /contract/:id */
+  getViewPath?: (contractId: number) => string;
+  /** When provided (Division Leader), fetch only contracts assigned to this division leader */
+  divisionLeaderAddress?: string | null;
   showCreateWhenEmpty?: boolean;
 }
 
-const mapDocumentToContract = (doc: any, index: number): Contract => {
+type ContractWithSections = Contract & { sectionCount?: number };
+
+const mapDocumentToContract = (doc: any, index: number, sectionCount?: number): ContractWithSections => {
   const client = doc.client;
   const clientName = client ? [client.firstName, client.lastName].filter(Boolean).join(' ') || client.email || '' : '';
   const id = /^\d+$/.test(String(doc.id)) ? parseInt(String(doc.id), 10) : index + 1;
   const status = typeof doc.status === 'number' ? doc.status : 0;
   const cat = doc.category;
   const category = typeof cat === 'number' ? (DIVISION_LABELS[cat] ?? String(cat)) : (cat ?? '');
-  return {
+  const c: ContractWithSections = {
     id,
     title: doc.title || 'Untitled',
     client: clientName,
@@ -44,20 +50,35 @@ const mapDocumentToContract = (doc: any, index: number): Contract => {
     status,
     createdAt: doc.createdAt ?? '',
   };
+  if (sectionCount != null) c.sectionCount = sectionCount;
+  return c;
 };
 
-export function ContractList({ title, filterStatus, onCreateContract, onViewContract, showCreateWhenEmpty = true }: ContractListProps) {
+export function ContractList({ title, filterStatus, onCreateContract, onViewContract, getViewPath, divisionLeaderAddress, showCreateWhenEmpty = true }: ContractListProps) {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
-  const [contracts, setContracts] = useState<Contract[]>([]);
+  const [contracts, setContracts] = useState<ContractWithSections[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchContracts = async () => {
       setLoading(true);
       try {
-        const docs = await getAllContracts();
-        setContracts(Array.isArray(docs) ? docs.map(mapDocumentToContract) : []);
+        if (divisionLeaderAddress) {
+          const sections = await getContractsByDivisionLeader(divisionLeaderAddress.toLowerCase());
+          const seen = new Set<string>();
+          const docs: any[] = [];
+          (sections || []).forEach((s: { doc?: { id: string; sections?: unknown[] } }) => {
+            if (s?.doc?.id && !seen.has(s.doc.id)) {
+              seen.add(s.doc.id);
+              docs.push(s.doc);
+            }
+          });
+          setContracts(docs.map((d, i) => mapDocumentToContract(d, i, d.sections?.length)));
+        } else {
+          const docs = await getAllContracts();
+          setContracts(Array.isArray(docs) ? docs.map((d, i) => mapDocumentToContract(d, i, undefined)) : []);
+        }
       } catch (e) {
         console.error('Failed to fetch contracts:', e);
         setContracts([]);
@@ -66,7 +87,7 @@ export function ContractList({ title, filterStatus, onCreateContract, onViewCont
       }
     };
     fetchContracts();
-  }, []);
+  }, [divisionLeaderAddress]);
 
   let displayContracts = contracts;
 
@@ -81,6 +102,8 @@ export function ContractList({ title, filterStatus, onCreateContract, onViewCont
       contract.client.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesSearch;
   });
+
+  const viewPath = (contractId: number) => getViewPath ? getViewPath(contractId) : `/contract/${contractId}`;
 
   const getStatusColor = (status: number) => {
     switch (status) {
@@ -144,6 +167,7 @@ export function ContractList({ title, filterStatus, onCreateContract, onViewCont
                 <TableHead className="font-semibold py-4">Category</TableHead>
                 <TableHead className="font-semibold py-4">Status</TableHead>
                 <TableHead className="font-semibold py-4">Client</TableHead>
+                <TableHead className="font-semibold py-4">Sections</TableHead>
                 <TableHead className="font-semibold py-4">Created</TableHead>
                 <TableHead className="w-[50px] py-4" />
               </TableRow>
@@ -153,7 +177,7 @@ export function ContractList({ title, filterStatus, onCreateContract, onViewCont
                 <TableRow
                   key={contract.id}
                   className="cursor-pointer group"
-                  onClick={() => router.push(`/contract/${contract.id}`)}
+                  onClick={() => router.push(viewPath(contract.id))}
                 >
                   <TableCell className="font-medium py-4">{contract.title}</TableCell>
                   <TableCell className="text-muted-foreground py-4">
@@ -166,6 +190,9 @@ export function ContractList({ title, filterStatus, onCreateContract, onViewCont
                   </TableCell>
                   <TableCell className="py-4">{contract.client || '—'}</TableCell>
                   <TableCell className="text-muted-foreground py-4">
+                    {contract.sectionCount != null ? contract.sectionCount : '—'}
+                  </TableCell>
+                  <TableCell className="text-muted-foreground py-4">
                     {contract.createdAt ? formatRelativeDate(contract.createdAt) : '—'}
                   </TableCell>
                   <TableCell className="py-4" onClick={(e) => e.stopPropagation()}>
@@ -174,7 +201,7 @@ export function ContractList({ title, filterStatus, onCreateContract, onViewCont
                         variant="ghost"
                         size="icon"
                         className="h-8 w-8 cursor-pointer"
-                        onClick={() => router.push(`/contract/${contract.id}`)}
+                        onClick={() => router.push(viewPath(contract.id))}
                         title="View"
                       >
                         <Eye className="h-4 w-4" />

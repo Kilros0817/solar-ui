@@ -33,7 +33,8 @@ import {
 } from './ui/dropdown-menu';
 import { getContractCounts } from '../data/mockContracts';
 import type { Contract } from '../data/mockContracts';
-import { getAllContracts } from '@/utils/subgraph';
+import { getAllContracts, getContractsByDivisionLeader } from '@/utils/subgraph';
+import { useConnection } from 'wagmi';
 import { divisionMemberAssignments } from '../data/mockAssignments';
 
 interface SidebarProps {
@@ -61,21 +62,35 @@ const mapDocumentToContract = (doc: any, index: number): Contract => {
 export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
   const router = useRouter();
   const pathname = usePathname();
+  const { address } = useConnection();
   const { userRole, setUserRole } = useUser();
   const [contracts, setContracts] = useState<Contract[]>([]);
 
   useEffect(() => {
     const fetchContracts = async () => {
       try {
-        const docs = await getAllContracts();
-        setContracts(Array.isArray(docs) ? docs.map(mapDocumentToContract) : []);
+        if (userRole === USER_ROLE.DIVISION_LEADER && address) {
+          const sections = await getContractsByDivisionLeader(address.toLowerCase());
+          const seen = new Set<string>();
+          const docs: any[] = [];
+          (sections || []).forEach((s: { doc?: { id: string } }) => {
+            if (s?.doc?.id && !seen.has(s.doc.id)) {
+              seen.add(s.doc.id);
+              docs.push(s.doc);
+            }
+          });
+          setContracts(docs.map((d, i) => mapDocumentToContract(d, i)));
+        } else {
+          const docs = await getAllContracts();
+          setContracts(Array.isArray(docs) ? docs.map(mapDocumentToContract) : []);
+        }
       } catch (e) {
         console.error('Failed to fetch contracts for sidebar:', e);
         setContracts([]);
       }
     };
     fetchContracts();
-  }, []);
+  }, [userRole, address]);
 
   // Map routes to tab IDs
   const routeToTabMap: Record<string, string> = {
@@ -101,7 +116,7 @@ export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
     if (userRole === USER_ROLE.LEGAL_TEAM) {
       return [
         { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, count: null },
-        { id: 'my-contracts', label: 'My Contracts', icon: FileText, count: counts.all },
+        { id: 'my-contracts', label: 'All Contracts', icon: FileText, count: counts.all },
         { id: 'pending', label: 'Pending', icon: Clock, count: counts.pending },
         { id: 'review', label: 'Review', icon: FileSearch, count: counts.divisionRequest },
         { id: 'approved', label: 'Approved', icon: CheckCircle, count: counts.approved },
@@ -115,7 +130,7 @@ export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
     if (userRole === USER_ROLE.DIVISION_LEADER) {
       return [
         { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, count: null },
-        { id: 'my-contracts', label: 'My Contracts', icon: FileText, count: counts.all },
+        { id: 'my-contracts', label: 'All Assignments', icon: ClipboardList, count: counts.all },
         { id: 'pending', label: 'Pending', icon: Clock, count: counts.pending },
         { id: 'review', label: 'Review', icon: FileSearch, count: counts.divisionRequest },
         { id: 'approved', label: 'Approved', icon: CheckCircle, count: counts.approved },

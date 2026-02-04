@@ -1,215 +1,178 @@
+'use client'
+
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useConnection } from 'wagmi';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
-import { Badge } from './ui/badge';
 import { Button } from './ui/button';
-import { Clock, User, CheckCircle2, FileText } from 'lucide-react';
+import { Badge } from './ui/badge';
+import { FileText, Loader2, Eye, ClipboardList, AlertCircle } from 'lucide-react';
+import { getCurrentUserProfile, getAllContracts, getContractById } from '@/utils/subgraph';
+import { DIVISION_LABELS, USER_ROLE } from '@/utils/constants';
+import { useUser } from '@/app/contexts/UserContext';
+
+type ContractAssignment = {
+  id: string;
+  title: string;
+  client: string;
+  sectionCount: number;
+};
 
 export function MyAssignments() {
-  const myAssignments = [
-    {
-      id: 1,
-      contractName: 'Enterprise Software License Agreement',
-      sectionName: 'Payment Terms',
-      clauseName: 'Payment Schedule',
-      assignedBy: 'Jennifer Taylor (Division Lead)',
-      dueDate: '2025-12-10',
-      status: 'in-progress',
-      priority: 'high',
-      progress: 60,
-    },
-    {
-      id: 2,
-      contractName: 'Enterprise Software License Agreement',
-      sectionName: 'Payment Terms',
-      clauseName: 'Late Payment Penalties',
-      assignedBy: 'Jennifer Taylor (Division Lead)',
-      dueDate: '2025-12-10',
-      status: 'pending',
-      priority: 'high',
-      progress: 0,
-    },
-    {
-      id: 3,
-      contractName: 'Vendor Service Agreement',
-      sectionName: 'Service Level Requirements',
-      clauseName: 'Uptime Guarantees',
-      assignedBy: 'Jennifer Taylor (Division Lead)',
-      dueDate: '2025-12-08',
-      status: 'in-progress',
-      priority: 'medium',
-      progress: 80,
-    },
-    {
-      id: 4,
-      contractName: 'Partnership Agreement',
-      sectionName: 'Revenue Sharing',
-      clauseName: 'Quarterly Distribution',
-      assignedBy: 'Jennifer Taylor (Division Lead)',
-      dueDate: '2025-12-15',
-      status: 'pending',
-      priority: 'low',
-      progress: 0,
-    },
-    {
-      id: 5,
-      contractName: 'Client Service Agreement',
-      sectionName: 'Termination Clause',
-      clauseName: 'Notice Period',
-      assignedBy: 'Jennifer Taylor (Division Lead)',
-      dueDate: '2025-12-07',
-      status: 'completed',
-      priority: 'medium',
-      progress: 100,
-    },
-  ];
+  const router = useRouter();
+  const { address } = useConnection();
+  const { userRole } = useUser();
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [divisionLabel, setDivisionLabel] = useState('');
+  const [contracts, setContracts] = useState<ContractAssignment[]>([]);
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'in-progress':
-        return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'completed':
-        return 'bg-green-100 text-green-800 border-green-200';
-      default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+  useEffect(() => {
+    if (userRole !== null && userRole !== USER_ROLE.DIVISION_MEMBER) {
+      router.replace('/my-contracts');
+      return;
     }
-  };
+  }, [userRole, router]);
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'high':
-        return 'bg-red-100 text-red-800';
-      case 'medium':
-        return 'bg-amber-100 text-amber-800';
-      case 'low':
-        return 'bg-gray-100 text-gray-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
+  useEffect(() => {
+    if (!address) {
+      setLoading(false);
+      return;
     }
-  };
+    const run = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const profile = await getCurrentUserProfile(address);
+        if (!profile?.dcategory || Number(profile.dcategory) === 0) {
+          setError('You are not assigned to a division.');
+          setContracts([]);
+          setLoading(false);
+          return;
+        }
+        const memberDcategory = Number(profile.dcategory);
+        setDivisionLabel(DIVISION_LABELS[memberDcategory] ?? `Division #${memberDcategory}`);
 
-  const stats = {
-    total: myAssignments.length,
-    pending: myAssignments.filter((a) => a.status === 'pending').length,
-    inProgress: myAssignments.filter((a) => a.status === 'in-progress').length,
-    completed: myAssignments.filter((a) => a.status === 'completed').length,
-  };
+        const docs = await getAllContracts();
+        const docList = Array.isArray(docs) ? docs.slice(0, 50) : [];
+        const details = await Promise.all(docList.map((d: { id: string }) => getContractById(d.id)));
+        const withSectionsForDivision: ContractAssignment[] = [];
+        docList.forEach((_d: { id: string }, i: number) => {
+          const doc = details[i];
+          if (!doc?.sections) return;
+          const sectionsForDivision = doc.sections.filter(
+            (s: { divisionLeader?: { dcategory?: number } }) =>
+              s?.divisionLeader?.dcategory != null && Number(s.divisionLeader.dcategory) === memberDcategory
+          );
+          if (sectionsForDivision.length === 0) return;
+          const client = doc.client;
+          const clientName = client
+            ? [client.firstName, client.lastName].filter(Boolean).join(' ') || (client as { email?: string }).email || ''
+            : '';
+          withSectionsForDivision.push({
+            id: String(doc.id),
+            title: doc.title || 'Untitled',
+            client: clientName,
+            sectionCount: sectionsForDivision.length,
+          });
+        });
+        setContracts(withSectionsForDivision);
+      } catch (e) {
+        console.error('Failed to load assignments:', e);
+        setError('Failed to load assignments.');
+        setContracts([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    run();
+  }, [address]);
+
+  if (userRole !== null && userRole !== USER_ROLE.DIVISION_MEMBER) {
+    return null;
+  }
+
+  if (loading) {
+    return (
+      <div className="p-6 flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-6 space-y-6">
+        <h1 className="text-3xl font-bold">My Assignments</h1>
+        <p className="text-muted-foreground">Sections and clauses assigned to your division</p>
+        <Card>
+          <CardContent className="py-12 flex items-center justify-center gap-3 text-muted-foreground">
+            <AlertCircle className="h-10 w-10" />
+            <span>{error}</span>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
-    <div className="p-6">
-      <div className="mb-6">
-        <h1 className="text-3xl mb-2">My Assignments</h1>
-        <p className="text-muted-foreground">
-          Sections and clauses assigned to you by your Division Lead
+    <div className="p-6 space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold">My Assignments</h1>
+        <p className="text-muted-foreground mt-1">
+          Contracts with sections assigned to your division ({divisionLabel})
         </p>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+      {contracts.length === 0 ? (
         <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm text-muted-foreground">Total Assignments</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl">{stats.total}</div>
+          <CardContent className="py-12 flex flex-col items-center justify-center text-center">
+            <ClipboardList className="h-12 w-12 text-muted-foreground mb-3" />
+            <p className="font-medium">No assignments yet</p>
+            <p className="text-sm text-muted-foreground">
+              When your division is assigned contract sections, they will appear here.
+            </p>
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm text-muted-foreground">Pending</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl text-yellow-600">{stats.pending}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm text-muted-foreground">In Progress</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl text-blue-600">{stats.inProgress}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm text-muted-foreground">Completed</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl text-green-600">{stats.completed}</div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Assignments List */}
-      <div className="grid gap-4">
-        {myAssignments.map((assignment) => (
-          <Card key={assignment.id} className="hover:shadow-md transition-shadow">
-            <CardHeader>
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <CardTitle className="text-lg">{assignment.clauseName}</CardTitle>
-                    <Badge className={getPriorityColor(assignment.priority)}>
-                      {assignment.priority}
-                    </Badge>
-                    <Badge className={getStatusColor(assignment.status)}>
-                      {assignment.status.replace('-', ' ')}
-                    </Badge>
-                  </div>
-                  <CardDescription>
-                    {assignment.sectionName} · {assignment.contractName}
-                  </CardDescription>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {/* Progress Bar */}
-                <div className="space-y-1">
-                  <div className="flex items-center justify-between text-sm text-muted-foreground">
-                    <span>Progress</span>
-                    <span>{assignment.progress}%</span>
-                  </div>
-                  <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-brand-secondary transition-all"
-                      style={{ width: `${assignment.progress}%` }}
-                    />
-                  </div>
-                </div>
-
-                {/* Details and Actions */}
-                <div className="flex items-center justify-between pt-2">
-                  <div className="flex items-center gap-6 text-sm text-muted-foreground">
-                    <div className="flex items-center gap-2">
-                      <User className="h-4 w-4" />
-                      <span>{assignment.assignedBy}</span>
+      ) : (
+        <>
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Badge variant="secondary">{contracts.length} contract{contracts.length !== 1 ? 's' : ''}</Badge>
+          </div>
+          <div className="grid gap-4">
+            {contracts.map((c) => (
+              <Card key={c.id} className="hover:shadow-md transition-shadow">
+                <CardHeader className="pb-3">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-10 h-10 rounded-lg bg-brand-secondary/10 flex items-center justify-center shrink-0">
+                        <FileText className="h-5 w-5 text-brand-secondary" />
+                      </div>
+                      <div className="min-w-0">
+                        <CardTitle className="text-lg truncate">{c.title}</CardTitle>
+                        <CardDescription className="truncate">{c.client || '—'}</CardDescription>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Clock className="h-4 w-4" />
-                      <span>Due {assignment.dueDate}</span>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <Badge variant="outline">{c.sectionCount} section{c.sectionCount !== 1 ? 's' : ''}</Badge>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="gap-2"
+                        onClick={() => router.push(`/contract/${c.id}/assignments`)}
+                        title="View sections"
+                      >
+                        <Eye className="h-4 w-4" />
+                        View
+                      </Button>
                     </div>
                   </div>
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="sm">View Details</Button>
-                    {assignment.status !== 'completed' && (
-                      <Button size="sm" className="bg-brand-secondary hover:bg-brand-secondary/90">
-                        Continue Work
-                      </Button>
-                    )}
-                    {assignment.status === 'completed' && (
-                      <Button size="sm" variant="outline" className="text-green-600">
-                        <CheckCircle2 className="h-4 w-4 mr-1" />
-                        Completed
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+                </CardHeader>
+              </Card>
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 }

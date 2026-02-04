@@ -274,6 +274,38 @@ export const getContractById = async (id: string | number) => {
   }
 };
 
+export const getContractsByDivisionLeader = async (divisionLeaderId: string) => {
+  let query = `{
+    sections(where: {divisionLeader: "${divisionLeaderId}"}) {
+      doc {
+        id
+        cid
+        category
+        status
+        title
+        createdAt
+        client {
+          id
+          firstName
+          lastName
+        }
+        sections(where: {divisionLeader: "${divisionLeaderId}"}) {
+          cid
+          assignedAt
+        }
+      }
+    }
+  }`;
+  try {
+    const res = await getDataFromSubgraph(query);
+    const sections = (res.data as any).sections || [];
+    return sections;
+  } catch (e) {
+    console.log(e, "============error in get contracts by division leader from subgraph============");
+    return [];
+  }
+}
+
 interface User {
   id: string;
   firstName: string;
