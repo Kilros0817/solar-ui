@@ -38,13 +38,7 @@ import { acceptRegisterRequest, declineRegisterRequest } from '@/utils/interact'
 import { USER_ROLE, DIVISION_CATEGORY, ROLE_LABELS, DIVISION_LABELS } from '@/utils/constants';
 import { getPendingUsers } from '@/utils/subgraph';
 import { copyAddressToClipboard } from '@/utils/utility';
-
-interface PendingUser {
-  id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-}
+import type { PendingUser } from '../data/interfaces';
 
 const getInitials = (firstName: string, lastName: string) => {
   return `${firstName[0]}${lastName[0]}`.toUpperCase();

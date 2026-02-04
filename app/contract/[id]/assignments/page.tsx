@@ -9,11 +9,7 @@ import { ArrowLeft, FileText, Loader2, ClipboardList, Building2, Eye } from 'luc
 import { getContractById, getCurrentUserProfile } from '@/utils/subgraph';
 import { DIVISION_LABELS, USER_ROLE, URLs } from '@/utils/constants';
 import { useUser } from '@/app/contexts/UserContext';
-
-type SectionWithDivision = {
-  index: number;
-  divisionLeader?: { dcategory?: number; firstName?: string; lastName?: string };
-};
+import type { SectionWithDivision } from '@/app/data/interfaces';
 
 export default function ContractAssignmentsPage() {
   const params = useParams();

@@ -2,22 +2,7 @@ import { X, Layers, FileCheck } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Badge } from '../ui/badge';
-
-interface SectionTemplate {
-  id: string;
-  name: string;
-  sectionName?: string;
-  description?: string;
-  content?: string;
-  clauseIds?: string[];
-  [key: string]: unknown;
-}
-
-interface SectionTemplatePreviewModalProps {
-  template: SectionTemplate;
-  onClose: () => void;
-  onUse?: () => void;
-}
+import type { SectionTemplatePreview, SectionTemplatePreviewModalProps } from '../../data/interfaces';
 
 export function SectionTemplatePreviewModal({ template, onClose, onUse }: SectionTemplatePreviewModalProps) {
   const blocks = template.content

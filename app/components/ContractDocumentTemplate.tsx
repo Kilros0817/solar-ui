@@ -1,26 +1,6 @@
 'use client'
 
-interface DocSection {
-  sectionName: string;
-  sectionContent: Array<{ clauseId: string; clauseContent: string }>;
-}
-
-interface ContractDocContent {
-  contractTitle?: string;
-  client?: string;
-  description?: string;
-  price?: string;
-  category?: string;
-  sections?: DocSection[];
-}
-
-interface ContractDocumentTemplateProps {
-  title: string;
-  client: string;
-  value: string;
-  createdDate: string;
-  docContent?: ContractDocContent;
-}
+import type { ContractDocumentTemplateProps } from '../data/interfaces';
 
 export function ContractDocumentTemplate({ 
   title, 

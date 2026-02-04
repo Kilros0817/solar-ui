@@ -1,13 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, ReactNode } from 'react';
-
-interface NewContractContextType {
-  templateId: string | null;
-  setTemplateId: (id: string | null) => void;
-  from: string;
-  setFrom: (from: string) => void;
-}
+import type { NewContractContextType } from '../data/interfaces';
 
 const NewContractContext = createContext<NewContractContextType | undefined>(undefined);
 

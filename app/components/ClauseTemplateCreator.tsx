@@ -12,24 +12,7 @@ import {
   SelectValue,
 } from './ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
-
-interface ClauseTemplateCreatorProps {
-  onClose: () => void;
-  onSave: (clause: {
-    name: string;
-    description: string;
-    content: string;
-    category: string;
-    templateId?: string;
-  }) => void | Promise<void>;
-  editingClause?: {
-    id?: string;
-    name: string;
-    description: string;
-    content: string;
-    category: string;
-  } | null;
-}
+import type { ClauseTemplateCreatorProps } from '../data/interfaces';
 
 export function ClauseTemplateCreator({ onClose, onSave, editingClause }: ClauseTemplateCreatorProps) {
   const [name, setName] = useState(editingClause?.name || '');

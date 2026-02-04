@@ -7,27 +7,10 @@ import { ContractDocumentTemplate } from './ContractDocumentTemplate';
 import { SectionReviewTab } from './SectionReviewTab';
 import { ArrowLeft, FileText, Calendar, DollarSign, Tag, ClipboardList, Building2 } from 'lucide-react';
 import { getContractById } from '@/utils/subgraph';
-import type { Contract } from '../data/mockContracts';
+import type { Contract, ContractDocPayload, ContractDetailsProps } from '../data/interfaces';
 import { useUser } from '../contexts/UserContext';
 import { USER_ROLE, CONTRACT_STATUS_LABELS, DIVISION_LABELS, URLs } from '@/utils/constants';
 import { formatRelativeDate } from '@/utils/utility';
-
-interface ContractDocPayload {
-  contractTitle?: string;
-  client?: string;
-  description?: string;
-  price?: string;
-  category?: string;
-  sections?: Array<{
-    sectionName: string;
-    sectionContent: Array<{ clauseId: string; clauseContent: string }>;
-  }>;
-}
-
-interface ContractDetailsProps {
-  contractId?: number;
-  onBack?: () => void;
-}
 
 const mapDocumentToContract = (doc: any, index: number): Contract => {
   const client = doc.client;

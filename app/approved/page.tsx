@@ -27,7 +27,7 @@ export default function ApprovedPage() {
   }
 
   const handleCreateContract = () => {
-    if (userRole === USER_ROLE.LEGAL_TEAM || userRole === USER_ROLE.ADMIN) {
+    if (userRole === USER_ROLE.LEGAL_TEAM) {
       setFrom('approved');
       router.push('/new-contract');
     }
@@ -37,12 +37,15 @@ export default function ApprovedPage() {
     return <ContractDetails contractId={selectedContract} onBack={() => setSelectedContract(null)} />;
   }
 
+  const canCreateContract = userRole === USER_ROLE.LEGAL_TEAM;
+
   return (
     <ContractList
       title="Approved Contracts"
       filterStatus="approved"
       onCreateContract={handleCreateContract}
       onViewContract={(contractId) => setSelectedContract(contractId)}
+      showCreateButton={canCreateContract}
       showCreateWhenEmpty={false}
     />
   );

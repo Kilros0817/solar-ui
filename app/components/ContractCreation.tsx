@@ -27,11 +27,7 @@ import { DIVISION_LABELS, URLs } from '@/utils/constants';
 import { getAllDivisionLeaders, getAllClients } from '@/utils/subgraph';
 import { createContract } from '@/utils/interact';
 import { toast } from 'sonner';
-
-interface ContractCreationProps {
-  onBack: () => void;
-  selectedTemplate: ContractTemplate;
-}
+import type { ContractCreationProps } from '../data/interfaces';
 
 export function ContractCreation({ onBack, selectedTemplate }: ContractCreationProps) {
   const { address } = useConnection();

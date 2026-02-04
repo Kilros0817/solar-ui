@@ -31,16 +31,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from './ui/dropdown-menu';
-import { getContractCounts } from '../data/mockContracts';
-import type { Contract } from '../data/mockContracts';
+import { getContractCounts } from '../data/interfaces';
+import type { Contract, SidebarProps } from '../data/interfaces';
 import { getAllContracts, getContractsByDivisionLeader } from '@/utils/subgraph';
 import { useConnection } from 'wagmi';
 import { divisionMemberAssignments } from '../data/mockAssignments';
-
-interface SidebarProps {
-  activeTab: string;
-  onTabChange: (tab: string) => void;
-}
 
 const mapDocumentToContract = (doc: any, index: number): Contract => {
   const client = doc.client;

@@ -27,7 +27,7 @@ export default function ReviewPage() {
   }
 
   const handleCreateContract = () => {
-    if (userRole === USER_ROLE.LEGAL_TEAM || userRole === USER_ROLE.ADMIN) {
+    if (userRole === USER_ROLE.LEGAL_TEAM) {
       setFrom('review');
       router.push('/new-contract');
     }
@@ -37,12 +37,15 @@ export default function ReviewPage() {
     return <ContractDetails contractId={selectedContract} onBack={() => setSelectedContract(null)} />;
   }
 
+  const canCreateContract = userRole === USER_ROLE.LEGAL_TEAM;
+
   return (
     <ContractList
       title="Review"
       filterStatus="division-request"
       onCreateContract={handleCreateContract}
       onViewContract={(contractId) => setSelectedContract(contractId)}
+      showCreateButton={canCreateContract}
       showCreateWhenEmpty={false}
     />
   );

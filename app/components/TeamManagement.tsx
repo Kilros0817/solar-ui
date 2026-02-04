@@ -29,20 +29,7 @@ import {
 import { DIVISION_CATEGORY, DIVISION_LABELS, USER_ROLE } from '@/utils/constants';
 import { getAllDivisionLeadersAndMembers, getAllMemebers } from '@/utils/subgraph';
 import { copyAddressToClipboard } from '@/utils/utility';
-
-type DivisionUser = {
-  id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  dcategory?: number;
-  role?: number;
-};
-
-type DivisionGroup = {
-  leader: DivisionUser | null;
-  members: DivisionUser[];
-};
+import type { DivisionUser, DivisionGroup, TeamManagementProps } from '../data/interfaces';
 
 const getDisplayName = (u: DivisionUser) => `${u.firstName ?? ''} ${u.lastName ?? ''}`.trim();
 
@@ -63,10 +50,6 @@ const getDivisionLabel = (division: number) => {
   if (division === 0) return 'Legal Team';
   return DIVISION_LABELS[division] ?? `Division #${division}`;
 };
-
-interface TeamManagementProps {
-  userRole: number | null;
-}
 
 export function TeamManagement({ userRole }: TeamManagementProps) {
   const [searchQuery, setSearchQuery] = useState('');

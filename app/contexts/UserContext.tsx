@@ -4,22 +4,9 @@ import React, { createContext, useContext, useState, ReactNode } from 'react';
 import { useDisconnect } from 'wagmi';
 import { getWeb3AuthInstance } from '@/utils/Web3AuthStore';
 import { USER_ROLE } from '@/utils/constants';
+import type { UserRole, UserInfo, UserContextType } from '../data/interfaces';
 
-export type UserRole = number | null;
-
-export interface UserInfo {
-  role: UserRole;
-  firstName?: string;
-  lastName?: string;
-}
-
-interface UserContextType {
-  userRole: UserRole;
-  setUserRole: (role: UserRole) => void;
-  setUserInfo: (info: UserInfo) => void;
-  userName: string;
-  logout: () => Promise<void>;
-}
+export type { UserRole, UserInfo };
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
 

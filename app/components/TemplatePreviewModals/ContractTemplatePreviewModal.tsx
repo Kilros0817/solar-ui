@@ -4,19 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui
 import { Badge } from '../ui/badge';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '../ui/hover-card';
 import { ContractTemplate } from '../../data/templates';
-
-interface SectionInfo {
-  name: string;
-  description: string;
-  content: string;
-}
-
-interface ContractTemplatePreviewModalProps {
-  template: ContractTemplate;
-  onClose: () => void;
-  onUse?: () => void;
-  sectionTemplates?: Record<string, Array<{ id: string; name: string; description: string; content?: string }>>;
-}
+import type { SectionInfo, ContractTemplatePreviewModalProps } from '../../data/interfaces';
 
 function resolveSections(
   sectionIds: string[],

@@ -1,12 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './ui/card';
 import { Button } from './ui/button';
 import { FileText, Library, ArrowRight } from 'lucide-react';
-
-interface NewContractChoiceProps {
-  onSelectBlank: () => void;
-  onSelectTemplate: () => void;
-  onBack: () => void;
-}
+import type { NewContractChoiceProps } from '../data/interfaces';
 
 export function NewContractChoice({ onSelectBlank, onSelectTemplate, onBack }: NewContractChoiceProps) {
   return (

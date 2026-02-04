@@ -35,12 +35,7 @@ import {
 import { useUser } from '../contexts/UserContext';
 import { USER_ROLE, URLs } from '@/utils/constants';
 import { ContractTemplate } from '../data/templates';
-
-interface TemplateLibraryProps {
-  onSelectContractTemplate?: (template: ContractTemplate) => void;
-}
-
-type EditingContract = ContractTemplate & { selectedSections?: { sectionName: string; versionId: string }[] };
+import type { TemplateLibraryProps, EditingContract } from '../data/interfaces';
 
 export function TemplateLibrary({ onSelectContractTemplate }: TemplateLibraryProps) {
   const { userRole } = useUser();

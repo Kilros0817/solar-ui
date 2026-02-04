@@ -16,24 +16,10 @@ import {
 import { Skeleton } from './ui/skeleton';
 import { FileText, Search, Eye, Pencil } from 'lucide-react';
 import { getAllContracts, getContractsByDivisionLeader } from '@/utils/subgraph';
-import { getContractsByStatus } from '../data/mockContracts';
-import type { Contract } from '../data/mockContracts';
+import { getContractsByStatus } from '../data/interfaces';
+import type { Contract, ContractListProps, ContractWithSections } from '../data/interfaces';
 import { CONTRACT_STATUS_LABELS, DIVISION_LABELS } from '@/utils/constants';
 import { formatRelativeDate } from '@/utils/utility';
-
-interface ContractListProps {
-  title: string;
-  filterStatus?: string;
-  onCreateContract: () => void;
-  onViewContract?: (contractId: number) => void;
-  /** When provided, View/row click navigates to this path instead of /contract/:id */
-  getViewPath?: (contractId: number) => string;
-  /** When provided (Division Leader), fetch only contracts assigned to this division leader */
-  divisionLeaderAddress?: string | null;
-  showCreateWhenEmpty?: boolean;
-}
-
-type ContractWithSections = Contract & { sectionCount?: number };
 
 const mapDocumentToContract = (doc: any, index: number, sectionCount?: number): ContractWithSections => {
   const client = doc.client;
@@ -54,7 +40,7 @@ const mapDocumentToContract = (doc: any, index: number, sectionCount?: number): 
   return c;
 };
 
-export function ContractList({ title, filterStatus, onCreateContract, onViewContract, getViewPath, divisionLeaderAddress, showCreateWhenEmpty = true }: ContractListProps) {
+export function ContractList({ title, filterStatus, onCreateContract, onViewContract, getViewPath, divisionLeaderAddress, showCreateButton = true, showCreateWhenEmpty = true }: ContractListProps) {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
   const [contracts, setContracts] = useState<ContractWithSections[]>([]);
@@ -125,13 +111,15 @@ export function ContractList({ title, filterStatus, onCreateContract, onViewCont
             Manage and track your contracts
           </p>
         </div>
-        <Button
-          onClick={onCreateContract}
-          className="bg-brand-secondary hover:bg-[var(--brand-secondary-hover)] shrink-0"
-        >
-          <FileText className="h-4 w-4 mr-2" />
-          Create New Contract
-        </Button>
+        {showCreateButton && (
+          <Button
+            onClick={onCreateContract}
+            className="bg-brand-secondary hover:bg-[var(--brand-secondary-hover)] shrink-0"
+          >
+            <FileText className="h-4 w-4 mr-2" />
+            Create New Contract
+          </Button>
+        )}
       </div>
 
       {/* Search */}
@@ -223,7 +211,7 @@ export function ContractList({ title, filterStatus, onCreateContract, onViewCont
                 ? 'No contracts match your search. Try a different term.'
                 : 'Get started by creating your first contract.'}
             </p>
-            {!searchTerm && showCreateWhenEmpty && (
+            {!searchTerm && showCreateWhenEmpty && showCreateButton && (
               <Button className='mb-4' onClick={onCreateContract}>Create New Contract</Button>
             )}
           </div>

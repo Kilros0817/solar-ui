@@ -8,10 +8,7 @@ import { PagePreloader } from './PagePreloader';
 import { useUser } from '../contexts/UserContext';
 import { USER_ROLE } from '@/utils/constants';
 import { getWeb3AuthInstance } from '@/utils/Web3AuthStore';
-
-interface LayoutWrapperProps {
-  children: React.ReactNode;
-}
+import type { LayoutWrapperProps } from '../data/interfaces';
 
 export function LayoutWrapper({ children }: LayoutWrapperProps) {
   const pathname = usePathname();

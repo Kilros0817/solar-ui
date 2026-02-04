@@ -17,29 +17,7 @@ import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collapsible';
 import { useState } from 'react';
 import { USER_ROLE } from '@/utils/constants';
-
-interface Section {
-  id: string;
-  name: string;
-  content: string;
-  status: 'pending' | 'approved' | 'rejected';
-  submittedBy: string;
-  submittedDate: string;
-  division: string;
-  comments?: string;
-}
-
-interface DivisionSection {
-  division: string;
-  sections: Section[];
-}
-
-interface SectionReviewTabProps {
-  sections: DivisionSection[];
-  onApprove?: (sectionId: string) => void;
-  onReject?: (sectionId: string, reason: string) => void;
-  userRole: number;
-}
+import type { SectionReviewTabProps } from '../data/interfaces';
 
 export function SectionReviewTab({ 
   sections, 

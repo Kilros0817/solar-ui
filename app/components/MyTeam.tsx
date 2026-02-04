@@ -9,13 +9,7 @@ import { Users, Building2, Loader2, RefreshCw, Copy, Check, AlertCircle } from '
 import { DIVISION_LABELS } from '@/utils/constants';
 import { getCurrentUserProfile, getDivisionMembersByDivisionId } from '@/utils/subgraph';
 import { copyAddressToClipboard } from '@/utils/utility';
-
-type Member = {
-  id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-};
+import type { Member } from '../data/interfaces';
 
 const getDisplayName = (m: Member) => `${m.firstName ?? ''} ${m.lastName ?? ''}`.trim();
 const getInitials = (m: Member) => {

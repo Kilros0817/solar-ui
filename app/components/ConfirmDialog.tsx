@@ -1,16 +1,7 @@
 import { AlertCircle } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
-
-interface ConfirmDialogProps {
-  title: string;
-  description: string;
-  confirmLabel?: string;
-  cancelLabel?: string;
-  variant?: 'default' | 'destructive';
-  onConfirm: () => void;
-  onCancel: () => void;
-}
+import type { ConfirmDialogProps } from '../data/interfaces';
 
 export function ConfirmDialog({
   title,

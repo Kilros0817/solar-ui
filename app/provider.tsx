@@ -13,14 +13,11 @@ import { setWeb3AuthInstance } from "@/utils/Web3AuthStore";
 
 import { baseSepolia } from "viem/chains";
 import { BaseRPC1, BaseRPC2, BaseRPC3 } from "@/utils/constants";
+import type { TBProviderProps } from './data/interfaces';
 
 const queryClient = new QueryClient();
 
-interface TBProviderProps {
-  children: React.ReactNode;
-}
-
-const TBProvider: React.FC<TBProviderProps> = ({ children }: any) => {
+const TBProvider: React.FC<TBProviderProps> = ({ children }: TBProviderProps) => {
 
   const [config, setConfig] = useState<Config | null>(null);
 

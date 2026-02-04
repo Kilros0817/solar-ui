@@ -13,27 +13,7 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
 import { Checkbox } from './ui/checkbox';
-
-interface ClauseTemplate {
-  id: string;
-  name: string;
-  description: string;
-  content: string;
-  category: string;
-}
-
-interface SectionTemplateCreatorProps {
-  onClose: () => void;
-  onSave: (section: {
-    sectionName: string;
-    versionName: string;
-    description: string;
-    category: string;
-    selectedClauses: ClauseTemplate[];
-  }) => void | Promise<void>;
-  availableClauses: ClauseTemplate[];
-  editingSection?: any;
-}
+import type { ClauseTemplate, SectionTemplateCreatorProps } from '../data/interfaces';
 
 export function SectionTemplateCreator({ onClose, onSave, availableClauses, editingSection }: SectionTemplateCreatorProps) {
   const [sectionName, setSectionName] = useState(editingSection?.sectionName || '');

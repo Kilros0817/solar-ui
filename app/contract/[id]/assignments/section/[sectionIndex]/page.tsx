@@ -11,13 +11,7 @@ import { ArrowLeft, FileText, Loader2, UserPlus } from 'lucide-react';
 import { getContractById, getCurrentUserProfile, getDivisionMembersByDivisionId } from '@/utils/subgraph';
 import { DIVISION_LABELS, USER_ROLE, URLs } from '@/utils/constants';
 import { useUser } from '@/app/contexts/UserContext';
-
-type Clause = { clauseId: string; clauseContent: string };
-type DocSection = {
-  sectionName: string;
-  sectionContent?: Clause[];
-};
-type DivisionMember = { id: string; firstName?: string; lastName?: string; email?: string };
+import type { Clause, DocSection, DivisionMember } from '@/app/data/interfaces';
 
 const getMemberLabel = (m: DivisionMember) =>
   [m.firstName, m.lastName].filter(Boolean).join(' ').trim() || m.email || m.id;

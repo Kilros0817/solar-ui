@@ -2,21 +2,7 @@ import { X, Text, FileCheck } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Badge } from '../ui/badge';
-
-interface ClauseTemplate {
-  id: string;
-  name: string;
-  description?: string;
-  content?: string;
-  category?: string;
-  [key: string]: unknown;
-}
-
-interface ClauseTemplatePreviewModalProps {
-  template: ClauseTemplate;
-  onClose: () => void;
-  onUse?: () => void;
-}
+import type { ClauseTemplate, ClauseTemplatePreviewModalProps } from '../../data/interfaces';
 
 export function ClauseTemplatePreviewModal({ template, onClose, onUse }: ClauseTemplatePreviewModalProps) {
   return (

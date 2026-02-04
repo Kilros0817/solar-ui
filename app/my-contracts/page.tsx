@@ -29,7 +29,7 @@ export default function MyContractsPage() {
   }
 
   const handleCreateContract = () => {
-    if (userRole === USER_ROLE.LEGAL_TEAM || userRole === USER_ROLE.ADMIN) {
+    if (userRole === USER_ROLE.LEGAL_TEAM) {
       setFrom('my-contracts');
       router.push('/new-contract');
     }
@@ -43,11 +43,15 @@ export default function MyContractsPage() {
   }
 
   const title =
-    userRole === USER_ROLE.LEGAL_TEAM || userRole === USER_ROLE.ADMIN
+    userRole === USER_ROLE.LEGAL_TEAM
       ? 'All Contracts'
-      : userRole === USER_ROLE.DIVISION_LEADER
-        ? 'All Assignments'
-        : 'My Contracts';
+      : userRole === USER_ROLE.ADMIN
+        ? 'All Contracts'
+        : userRole === USER_ROLE.DIVISION_LEADER
+          ? 'All Assignments'
+          : 'My Contracts';
+
+  const canCreateContract = userRole === USER_ROLE.LEGAL_TEAM;
 
   return (
     <ContractList
@@ -56,6 +60,7 @@ export default function MyContractsPage() {
       onViewContract={(contractId) => setSelectedContract(contractId)}
       getViewPath={viewPath}
       divisionLeaderAddress={isDivisionLeader ? address ?? null : undefined}
+      showCreateButton={canCreateContract}
     />
   );
 }

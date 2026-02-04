@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import { useUser } from '../contexts/UserContext';
 import { getAllContracts } from '@/utils/subgraph';
-import type { Contract } from '../data/mockContracts';
+import type { Contract, DashboardProps } from '../data/interfaces';
 import { USER_ROLE, DIVISION_LABELS } from '@/utils/constants';
 
 const mapDocumentToContract = (doc: any, index: number): Contract => {
@@ -35,10 +35,6 @@ const mapDocumentToContract = (doc: any, index: number): Contract => {
     createdAt: doc.createdAt ?? '',
   };
 };
-
-interface DashboardProps {
-  onCreateContract: () => void;
-}
 
 export function Dashboard({ onCreateContract }: DashboardProps) {
   const { userRole, userName } = useUser();

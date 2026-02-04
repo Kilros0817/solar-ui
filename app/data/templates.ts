@@ -1,19 +1,7 @@
-import { 
-  FileText
-} from 'lucide-react';
+import { FileText } from 'lucide-react';
+import type { ContractTemplate } from './interfaces';
 
-export interface ContractTemplate {
-  id: string;
-  name: string;
-  description: string;
-  category: string;
-  icon: any;
-  createdDate: string;
-  lastModified: string;
-  createdBy: string;
-  sectionIds: string[];
-}
-
+export type { ContractTemplate };
 export const contractTemplates: ContractTemplate[] = [
   {
     id: 'software-license',

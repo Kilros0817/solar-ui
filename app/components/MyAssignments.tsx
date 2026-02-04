@@ -10,13 +10,7 @@ import { FileText, Loader2, Eye, ClipboardList, AlertCircle } from 'lucide-react
 import { getCurrentUserProfile, getAllContracts, getContractById } from '@/utils/subgraph';
 import { DIVISION_LABELS, USER_ROLE } from '@/utils/constants';
 import { useUser } from '@/app/contexts/UserContext';
-
-type ContractAssignment = {
-  id: string;
-  title: string;
-  client: string;
-  sectionCount: number;
-};
+import type { ContractAssignment } from '../data/interfaces';
 
 export function MyAssignments() {
   const router = useRouter();

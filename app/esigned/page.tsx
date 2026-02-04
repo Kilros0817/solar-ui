@@ -27,7 +27,7 @@ export default function EsignedPage() {
   }
 
   const handleCreateContract = () => {
-    if (userRole === USER_ROLE.LEGAL_TEAM || userRole === USER_ROLE.ADMIN) {
+    if (userRole === USER_ROLE.LEGAL_TEAM) {
       setFrom('esigned');
       router.push('/new-contract');
     }
@@ -37,12 +37,15 @@ export default function EsignedPage() {
     return <ContractDetails contractId={selectedContract} onBack={() => setSelectedContract(null)} />;
   }
 
+  const canCreateContract = userRole === USER_ROLE.LEGAL_TEAM;
+
   return (
     <ContractList
       title="Esigned"
       filterStatus="completed"
       onCreateContract={handleCreateContract}
       onViewContract={(contractId) => setSelectedContract(contractId)}
+      showCreateButton={canCreateContract}
       showCreateWhenEmpty={false}
     />
   );

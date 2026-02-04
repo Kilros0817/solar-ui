@@ -1,17 +1,7 @@
 // Centralized mock data for assignments
+import type { Assignment } from './interfaces';
 
-export interface Assignment {
-  id: number;
-  contractName: string;
-  sectionName?: string;
-  clauseName?: string;
-  assignedBy: string;
-  assignedDate: string;
-  dueDate: string;
-  priority: 'high' | 'medium' | 'low';
-  status: 'new' | 'viewed' | 'in-progress' | 'completed';
-  assignedTo?: string;
-}
+export type { Assignment };
 
 // Division Lead - Incoming assignments from Legal
 export const divisionLeadIncoming: Assignment[] = [
