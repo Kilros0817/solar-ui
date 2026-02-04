@@ -270,6 +270,13 @@ export const getContractById = async (id: string | number) => {
         clauses {
           id
           status
+          assignedAt
+          divisionMember {
+            id
+            firstName
+            lastName
+            email
+          }
         }
       }
     }
@@ -285,35 +292,82 @@ export const getContractById = async (id: string | number) => {
 };
 
 export const getContractsByDivisionLeader = async (divisionLeaderId: string) => {
-  let query = `{
+  const query = `{
     sections(where: {divisionLeader: "${divisionLeaderId}"}) {
-      doc {
+      id
+      cid
+      assignedAt
+      status
+      clauses {
         id
         cid
-        category
+        assignedAt
         status
-        title
-        createdAt
-        client {
+        divisionMember {
           id
           firstName
           lastName
+          email
         }
-        sections(where: {divisionLeader: "${divisionLeaderId}"}) {
-          id
-          cid
-          assignedAt
-          status
+      }
+      doc {
+        id
+        title
+        category
+        status
+        client {
+          firstName
+          lastName
         }
+        createdAt
       }
     }
   }`;
+
   try {
     const res = await getDataFromSubgraph(query);
     const sections = (res.data as any).sections || [];
     return sections;
   } catch (e) {
     console.log(e, "============error in get contracts by division leader from subgraph============");
+    return [];
+  }
+}
+
+export const getContractsByDivisionMember = async (divisionMemberId: string) => {
+  const memberId = divisionMemberId.toLowerCase();
+  const query = `{
+    clauses(where: {divisionMember: "${memberId}"}) {
+      id
+      assignedAt
+      section {
+        id
+        status
+        doc {
+          id
+          title
+          status
+          createdAt
+          category
+          client {
+            firstName
+            lastName
+          }
+        }
+      }
+      divisionMember {
+        id
+        firstName
+        lastName
+      }
+    }
+  }`;
+  try {
+    const res = await getDataFromSubgraph(query);
+    const clauses = (res.data as any).clauses || [];
+    return clauses;
+  } catch (e) {
+    console.log(e, "============error in get contracts by division member from subgraph============");
     return [];
   }
 }

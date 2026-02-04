@@ -1,6 +1,8 @@
 'use client'
 
+import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
+import { useConnection } from 'wagmi';
 import {
   LayoutDashboard,
   FileText,
@@ -33,13 +35,31 @@ import {
 } from './ui/dropdown-menu';
 import { getContractCounts } from '../data/interfaces';
 import type { SidebarProps } from '../data/interfaces';
-import { divisionMemberAssignments } from '../data/mockAssignments';
+import { getContractsByDivisionMember } from '@/utils/subgraph';
 
 export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
   const router = useRouter();
   const pathname = usePathname();
+  const { address } = useConnection();
   const { userRole, setUserRole } = useUser();
   const { contracts } = useContracts();
+  const [divisionMemberClauseCount, setDivisionMemberClauseCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (userRole !== USER_ROLE.DIVISION_MEMBER || !address) {
+      setDivisionMemberClauseCount(null);
+      return;
+    }
+    let cancelled = false;
+    getContractsByDivisionMember(address)
+      .then((clauses) => {
+        if (!cancelled) setDivisionMemberClauseCount(Array.isArray(clauses) ? clauses.length : 0);
+      })
+      .catch(() => {
+        if (!cancelled) setDivisionMemberClauseCount(0);
+      });
+    return () => { cancelled = true; };
+  }, [userRole, address]);
 
   // Map routes to tab IDs
   const routeToTabMap: Record<string, string> = {
@@ -90,15 +110,14 @@ export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
       ];
     }
 
-    // Division Member - Only assigned work
+    // Division Member - Only assigned work (My Assignments below Dashboard, no My Contracts)
     if (userRole === USER_ROLE.DIVISION_MEMBER) {
       return [
         { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, count: null },
-        { id: 'my-contracts', label: 'My Contracts', icon: FileText, count: counts.all },
+        { id: 'my-assignments', label: 'My Assignments', icon: ClipboardList, count: divisionMemberClauseCount },
         { id: 'pending', label: 'Pending', icon: Clock, count: counts.pending },
         { id: 'review', label: 'Review', icon: FileSearch, count: counts.divisionRequest },
         { id: 'approved', label: 'Approved', icon: CheckCircle, count: counts.approved },
-        { id: 'my-assignments', label: 'My Assignments', icon: ClipboardList, count: divisionMemberAssignments.length },
         { id: 'templates', label: 'Division Templates', icon: FolderOpen, count: null },
       ];
     }

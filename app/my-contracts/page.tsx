@@ -23,6 +23,8 @@ export default function MyContractsPage() {
       router.push('/login');
     } else if (userRole === USER_ROLE.NO_ROLE) {
       router.push('/register');
+    } else if (userRole === USER_ROLE.DIVISION_MEMBER) {
+      router.replace('/my-assignments');
     }
   }, [userRole, router]);
 

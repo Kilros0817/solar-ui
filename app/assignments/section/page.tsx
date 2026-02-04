@@ -7,7 +7,8 @@ import { Button } from '@/app/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/app/components/ui/select';
 import { Label } from '@/app/components/ui/label';
-import { ArrowLeft, FileText, Loader2, UserPlus } from 'lucide-react';
+import { Badge } from '@/app/components/ui/badge';
+import { ArrowLeft, FileText, Loader2, UserPlus, RefreshCw } from 'lucide-react';
 import { getDivisionMembersByDivisionId } from '@/utils/subgraph';
 import { assignClausesToMembers } from '@/utils/interact';
 import { useContractDoc } from '@/app/contexts/ContractDocContext';
@@ -20,6 +21,11 @@ import type { Clause, DocSection, DivisionMember } from '@/app/data/interfaces';
 
 const getMemberLabel = (m: DivisionMember) =>
   [m.firstName, m.lastName].filter(Boolean).join(' ').trim() || m.email || m.id;
+
+const getAssignedMemberLabel = (member: { firstName?: string; lastName?: string; email?: string } | null | undefined) =>
+  member
+    ? [member.firstName, member.lastName].filter(Boolean).join(' ').trim() || member.email || '—'
+    : '—';
 
 export default function AssignmentSectionPage() {
   const router = useRouter();
@@ -37,6 +43,7 @@ export default function AssignmentSectionPage() {
   const [assigning, setAssigning] = useState(false);
   const [sectionIdFromSubgraph, setSectionIdFromSubgraph] = useState<number | null>(null);
   const [sectionContentLoaded, setSectionContentLoaded] = useState(false);
+  const [reassigningClauseIndex, setReassigningClauseIndex] = useState<number | null>(null);
 
   useEffect(() => {
     const allowed = userRole === USER_ROLE.DIVISION_LEADER || userRole === USER_ROLE.DIVISION_MEMBER;
@@ -83,6 +90,7 @@ export default function AssignmentSectionPage() {
 
   const contractTitle = doc?.title ?? 'Untitled';
   const divisionLabel = profile ? (DIVISION_LABELS[profile.dcategory] ?? `Division #${profile.dcategory}`) : '';
+  const sectionClausesFromSubgraph = sectionAt?.clauses ?? [];
 
   useEffect(() => {
     if (!doc || profile == null || sectionIndex < 0) return;
@@ -245,68 +253,162 @@ export default function AssignmentSectionPage() {
             <p className="text-muted-foreground py-4">No content available for this section.</p>
           ) : (
             <div className="space-y-4">
-              {clauses.map((clause, i) => (
-                <div
-                  key={clause.clauseId || i}
-                  className="rounded-lg border bg-muted/30 p-4 space-y-3"
-                >
-                  <p className="text-sm leading-relaxed text-foreground">
-                    {clause.clauseContent}
-                  </p>
-                  {userRole === USER_ROLE.DIVISION_LEADER && (
-                    <div className="flex items-center gap-3 pt-2 border-t">
-                      <UserPlus className="h-4 w-4 text-muted-foreground shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <Label className="text-xs text-muted-foreground">Assign to</Label>
-                        <Select
-                          value={clauseAssignments[clause.clauseId] ?? 'unassigned'}
-                          onValueChange={(v) =>
-                            setClauseAssignments((prev) => ({
-                              ...prev,
-                              [clause.clauseId]: v === 'unassigned' ? '' : v,
-                            }))
+              {clauses.map((clause, i) => {
+                const clauseData = sectionClausesFromSubgraph[i];
+                const assignedMember = clauseData?.divisionMember;
+                const assignedLabel = getAssignedMemberLabel(assignedMember);
+                const clauseStatus = typeof clauseData?.status === 'number' ? clauseData.status : undefined;
+                const isAssignedOrSubmitted = clauseStatus === 0 || clauseStatus === 1;
+                const isApprovedOrRejected = clauseStatus === 2 || clauseStatus === 3;
+                const showAssignDropdown =
+                  userRole === USER_ROLE.DIVISION_LEADER &&
+                  (!isAssignedOrSubmitted && (isApprovedOrRejected ? reassigningClauseIndex === i : true));
+                const isMyClause =
+                  userRole === USER_ROLE.DIVISION_MEMBER &&
+                  address &&
+                  String(assignedMember?.id ?? '').toLowerCase() === String(address).toLowerCase();
+                const statusLabel =
+                  clauseStatus === 0
+                    ? 'Assigned'
+                    : clauseStatus === 1
+                      ? 'Submitted'
+                      : clauseStatus === 2
+                        ? 'Approved'
+                        : clauseStatus === 3
+                          ? 'Rejected'
+                          : null;
+                return (
+                  <div
+                    key={clause.clauseId || i}
+                    className="rounded-lg border bg-muted/30 p-4 space-y-3"
+                  >
+                    <p className="text-sm leading-relaxed text-foreground">
+                      {clause.clauseContent}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Assigned to: <span className="font-medium text-foreground">{assignedLabel}</span>
+                    </p>
+                    {isMyClause && statusLabel && (
+                      <div className="flex flex-wrap items-center gap-2 pt-2 border-t">
+                        <Badge
+                          variant={
+                            clauseStatus === 2
+                              ? 'default'
+                              : clauseStatus === 3
+                                ? 'destructive'
+                                : 'secondary'
+                          }
+                          className={
+                            clauseStatus === 2
+                              ? 'bg-green-600'
+                              : clauseStatus === 3
+                                ? ''
+                                : ''
                           }
                         >
-                          <SelectTrigger className="mt-1 max-w-[240px]">
-                            <SelectValue placeholder="Select member" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="unassigned">Unassigned</SelectItem>
-                            {members.map((m) => (
-                              <SelectItem key={m.id} value={m.id}>
-                                {getMemberLabel(m)}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                          {statusLabel}
+                        </Badge>
+                        {clauseStatus === 0 && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              // TODO: call submitClause (upload clause CID, then smart contract)
+                            }}
+                          >
+                            Submit
+                          </Button>
+                        )}
                       </div>
-                    </div>
-                  )}
-                </div>
-              ))}
+                    )}
+                    {userRole === USER_ROLE.DIVISION_LEADER && isApprovedOrRejected && reassigningClauseIndex !== i && (
+                      <div className="pt-2 border-t">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="gap-2"
+                          onClick={() => setReassigningClauseIndex(i)}
+                        >
+                          <RefreshCw className="h-4 w-4" />
+                          Reassign
+                        </Button>
+                      </div>
+                    )}
+                    {showAssignDropdown && (
+                      <div className="flex items-center gap-3 pt-2 border-t">
+                        <UserPlus className="h-4 w-4 text-muted-foreground shrink-0" />
+                        <div className="flex-1 min-w-0 flex flex-wrap items-center gap-2">
+                          <div>
+                            <Label className="text-xs text-muted-foreground">
+                              {reassigningClauseIndex === i ? 'Reassign to' : 'Assign to'}
+                            </Label>
+                            <Select
+                              value={clauseAssignments[clause.clauseId] ?? (assignedMember?.id ?? 'unassigned')}
+                              onValueChange={(v) =>
+                                setClauseAssignments((prev) => ({
+                                  ...prev,
+                                  [clause.clauseId]: v === 'unassigned' ? '' : v,
+                                }))
+                              }
+                            >
+                              <SelectTrigger className="mt-1 max-w-[240px]">
+                                <SelectValue placeholder="Select member" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="unassigned">Unassigned</SelectItem>
+                                {members.map((m) => (
+                                  <SelectItem key={m.id} value={m.id}>
+                                    {getMemberLabel(m)}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          {reassigningClauseIndex === i && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setReassigningClauseIndex(null)}
+                            >
+                              Cancel
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
         </CardContent>
       </Card>
 
-      {userRole === USER_ROLE.DIVISION_LEADER && (
-        <div className="flex justify-end">
-          <Button
-            onClick={handleAssign}
-            disabled={assigning || clauses.length === 0 || sectionIdFromSubgraph == null}
-            className="bg-brand-secondary hover:bg-[var(--brand-secondary-hover)] text-white"
-          >
-            {assigning ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Assigning...
-              </>
-            ) : (
-              'Assign'
-            )}
-          </Button>
-        </div>
-      )}
+      {userRole === USER_ROLE.DIVISION_LEADER && (() => {
+        const allClausesAssigned =
+          clauses.length > 0 &&
+          clauses.every((_, i) => sectionClausesFromSubgraph[i]?.divisionMember != null);
+        const showAssignButton = !allClausesAssigned || reassigningClauseIndex !== null;
+        if (!showAssignButton) return null;
+        return (
+          <div className="flex justify-end">
+            <Button
+              onClick={handleAssign}
+              disabled={assigning || clauses.length === 0 || sectionIdFromSubgraph == null}
+              className="bg-brand-secondary hover:bg-[var(--brand-secondary-hover)] text-white"
+            >
+              {assigning ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Assigning...
+                </>
+              ) : (
+                'Assign'
+              )}
+            </Button>
+          </div>
+        );
+      })()}
     </div>
   );
 }

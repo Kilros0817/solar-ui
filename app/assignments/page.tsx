@@ -2,17 +2,32 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useConnection } from 'wagmi';
 import { Button } from '@/app/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/app/components/ui/card';
-import { ArrowLeft, FileText, Loader2, ClipboardList, Building2, Eye } from 'lucide-react';
+import { Badge } from '@/app/components/ui/badge';
+import { ArrowLeft, FileText, Loader2, ClipboardList, Building2, Eye, Pencil } from 'lucide-react';
 import { useContractDoc } from '@/app/contexts/ContractDocContext';
 import { useAssignment } from '@/app/contexts/AssignmentContext';
 import { DIVISION_LABELS, USER_ROLE, URLs } from '@/utils/constants';
+import { formatRelativeDate } from '@/utils/utility';
 import { useUser } from '@/app/contexts/UserContext';
 import type { SectionWithDivision } from '@/app/data/interfaces';
 
+/** Single assignment for division member: one clause assigned to them */
+export type MemberAssignmentBox = {
+  sectionId: string;
+  sectionIndex: number;
+  sectionName: string;
+  status: number;
+  clauseContent: string;
+  clauseId?: string;
+  assignedAt?: number | string;
+};
+
 export default function AssignmentsPage() {
   const router = useRouter();
+  const { address } = useConnection();
   const { userRole } = useUser();
   const { selectedContractId, setSelectedSection } = useAssignment();
   const { profile, loadDoc, getDoc, loadingDocId, loadingProfile, error: contextError } = useContractDoc();
@@ -29,6 +44,9 @@ export default function AssignmentsPage() {
     }>
   >([]);
   const [sectionNamesLoaded, setSectionNamesLoaded] = useState(false);
+  /** Division member: flat list of clause assignments to show as boxes */
+  const [memberAssignments, setMemberAssignments] = useState<MemberAssignmentBox[]>([]);
+  const [memberAssignmentsLoaded, setMemberAssignmentsLoaded] = useState(false);
 
   useEffect(() => {
     const allowed = userRole === USER_ROLE.DIVISION_LEADER || userRole === USER_ROLE.DIVISION_MEMBER;
@@ -49,6 +67,7 @@ export default function AssignmentsPage() {
 
   useEffect(() => {
     setSectionNamesLoaded(false);
+    setMemberAssignmentsLoaded(false);
   }, [contractId]);
 
   if (!selectedContractId) {
@@ -56,10 +75,12 @@ export default function AssignmentsPage() {
   }
 
   const doc = contractId ? getDoc(contractId) : undefined;
+  const isDivisionMember = userRole === USER_ROLE.DIVISION_MEMBER;
   const loading =
     loadingDocId === contractId ||
     (contractId && doc === undefined) ||
-    (profile === undefined && loadingProfile);
+    (profile === undefined && loadingProfile) ||
+    (isDivisionMember && doc != null && !memberAssignmentsLoaded);
   const notInDivision = profile === null && !loadingProfile;
   const docNotFound = contractId && doc === null;
   const error = contextError ?? (notInDivision ? 'You are not assigned to a division.' : docNotFound ? 'Contract not found.' : null);
@@ -71,9 +92,20 @@ export default function AssignmentsPage() {
       index: i,
       divisionLeader: s?.divisionLeader,
     }));
-    const mySections = rawSections.filter(
+    let mySections = rawSections.filter(
       (s) => s.divisionLeader?.dcategory != null && Number(s.divisionLeader.dcategory) === leaderDcategory
     );
+    if (userRole === USER_ROLE.DIVISION_MEMBER && address) {
+      const memberAddressLower = String(address).toLowerCase();
+      mySections = mySections.filter((s) => {
+        const sectionAt = (doc as any).sections?.[s.index];
+        const clauses = sectionAt?.clauses ?? [];
+        return clauses.some(
+          (c: { divisionMember?: { id?: string } }) =>
+            String(c.divisionMember?.id ?? '').toLowerCase() === memberAddressLower
+        );
+      });
+    }
 
     const getClauseCounts = (sectionIndex: number) => {
       const sectionAt = (doc as any).sections?.[sectionIndex];
@@ -148,7 +180,55 @@ export default function AssignmentsPage() {
       );
       setSectionNamesLoaded(true);
     }
-  }, [doc, profile, sectionNamesLoaded]);
+  }, [doc, profile, sectionNamesLoaded, userRole, address]);
+
+  // Division member: build flat list of assignment boxes (section id, status, clause data)
+  useEffect(() => {
+    if (userRole !== USER_ROLE.DIVISION_MEMBER || !doc || !profile || !address || memberAssignmentsLoaded) return;
+    const memberAddressLower = String(address).toLowerCase();
+    const leaderDcategory = profile.dcategory;
+    type DocSection = { id?: string; divisionLeader?: { dcategory?: number }; clauses?: Array<{ status?: number; assignedAt?: number | string; divisionMember?: { id?: string } }> };
+    const rawSections = (doc as { sections?: DocSection[] }).sections ?? [];
+
+    const buildBoxes = (ipfsSections: Array<{ sectionName?: string; sectionContent?: Array<{ clauseId?: string; clauseContent?: string }> }>) => {
+      const boxes: MemberAssignmentBox[] = [];
+      rawSections.forEach((sec, sectionIndex) => {
+        if (sec?.divisionLeader?.dcategory == null || Number(sec.divisionLeader.dcategory) !== leaderDcategory) return;
+        const sectionId = sec?.id ?? `section-${sectionIndex}`;
+        const sectionName = ipfsSections[sectionIndex]?.sectionName ?? `Section ${sectionIndex + 1}`;
+        const clauseContents = ipfsSections[sectionIndex]?.sectionContent ?? [];
+        (sec.clauses ?? []).forEach((c, clauseIndex) => {
+          if (String(c.divisionMember?.id ?? '').toLowerCase() !== memberAddressLower) return;
+          const content = clauseContents[clauseIndex];
+          boxes.push({
+            sectionId: String(sectionId),
+            sectionIndex,
+            sectionName,
+            status: typeof c.status === 'number' ? c.status : 0,
+            clauseContent: content?.clauseContent ?? '',
+            clauseId: content?.clauseId,
+            assignedAt: c.assignedAt,
+          });
+        });
+      });
+      setMemberAssignments(boxes);
+      setMemberAssignmentsLoaded(true);
+    };
+
+    if (doc.cid) {
+      fetch(`${URLs.TBGateWay}${doc.cid}`)
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          const ipfsSections = data?.sections ?? [];
+          buildBoxes(ipfsSections);
+        })
+        .catch(() => {
+          buildBoxes([]);
+        });
+    } else {
+      buildBoxes([]);
+    }
+  }, [doc, profile, userRole, address, memberAssignmentsLoaded]);
 
   const contractTitle = doc?.title ?? 'Untitled';
   const client = doc?.client;
@@ -190,6 +270,101 @@ export default function AssignmentsPage() {
     );
   }
 
+  const statusLabel = (status: number) => {
+    switch (status) {
+      case 0: return 'Assigned';
+      case 1: return 'Submitted';
+      case 2: return 'Approved';
+      case 3: return 'Rejected';
+      default: return 'Unknown';
+    }
+  };
+
+  const statusVariant = (status: number): 'secondary' | 'default' | 'destructive' | 'outline' => {
+    switch (status) {
+      case 2: return 'default';
+      case 3: return 'destructive';
+      default: return 'secondary';
+    }
+  };
+
+  // Division member: assignment boxes (section id, status, clause data)
+  if (isDivisionMember) {
+    return (
+      <div className="p-6 space-y-6">
+        <Button variant="ghost" onClick={() => router.push(backHref)} className="gap-2">
+          <ArrowLeft className="h-4 w-4" />
+          {backLabel}
+        </Button>
+
+        <div className="flex items-start gap-4">
+          <div className="w-12 h-12 rounded-lg bg-brand-secondary/10 flex items-center justify-center shrink-0">
+            <FileText className="h-6 w-6 text-brand-secondary" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight">{contractTitle}</h1>
+            <p className="text-muted-foreground">{contractClient || '—'}</p>
+            <p className="text-sm text-muted-foreground mt-1">
+              Your assigned clauses in <span className="font-medium text-foreground">{divisionLabel}</span>
+            </p>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <h2 className="text-lg font-medium">Assignments</h2>
+          {memberAssignments.length === 0 ? (
+            <Card>
+              <CardContent className="py-12 text-center text-muted-foreground">
+                No clause assignments for this contract.
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fill, 400px)' }}>
+              {memberAssignments.map((a, idx) => {
+                const assignedTs = typeof a.assignedAt === 'number' ? a.assignedAt : typeof a.assignedAt === 'string' ? (Number(a.assignedAt) || undefined) : undefined;
+                const clausePreview = (a.clauseContent || '—').replace(/\s+/g, ' ').trim();
+                const clauseEllipsis = clausePreview.length > 120 ? clausePreview.slice(0, 120) + '...' : clausePreview;
+                return (
+                  <Card key={`${a.sectionId}-${idx}`} className="flex flex-col w-full">
+                    <CardContent className="p-4 flex flex-col gap-3 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="font-medium text-sm">{a.sectionName}</span>
+                        <Badge variant={statusVariant(a.status)} className={a.status === 2 ? 'bg-green-600 shrink-0' : 'shrink-0'}>
+                          {statusLabel(a.status)}
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground line-clamp-3 min-h-[3.75rem]">
+                        {clauseEllipsis}
+                      </p>
+                      <div className="flex items-center justify-between mt-auto pt-2 border-t">
+                        <span className="text-xs text-muted-foreground">
+                          Assigned: {assignedTs != null ? formatRelativeDate(assignedTs) : '—'}
+                        </span>
+                        <Button
+                          variant="default"
+                          size="sm"
+                          className="gap-1.5 shrink-0"
+                          onClick={() => {
+                            setSelectedSection(a.sectionIndex);
+                            router.push('/assignments/section');
+                          }}
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                          Work on
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Division leader: section list
   return (
     <div className="p-6 space-y-6">
       <Button variant="ghost" onClick={() => router.push(backHref)} className="gap-2">

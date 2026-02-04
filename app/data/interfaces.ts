@@ -53,6 +53,14 @@ export type ContractAssignment = {
   title: string;
   client: string;
   sectionCount: number;
+  /** For division member: number of clauses assigned to them in this contract */
+  assignedClauseCount?: number;
+  /** Contract category (e.g. division label) */
+  category?: string;
+  /** Contract created date (Unix seconds or number) */
+  createdAt?: number;
+  /** Contract status (0=PENDING, 1=DIVISION_REQUEST, 2=APPROVED, 3=COMPLETED) */
+  status?: number;
 };
 
 // --- Contract Template ---

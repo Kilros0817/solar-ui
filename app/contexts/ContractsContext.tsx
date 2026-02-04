@@ -67,17 +67,18 @@ export function ContractsProvider({ children }: { children: React.ReactNode }) {
     try {
       if (isDivisionLeader && address) {
         const sections = await getContractsByDivisionLeader(address.toLowerCase());
-        const seen = new Set<string>();
-        const docs: Record<string, unknown>[] = [];
-        (sections || []).forEach((s: { doc?: { id: string; sections?: unknown[] } }) => {
-          if (s?.doc?.id && !seen.has(s.doc.id)) {
-            seen.add(s.doc.id);
-            docs.push(s.doc as Record<string, unknown>);
-          }
+        const docToSectionCount = new Map<string, number>();
+        const docToDoc = new Map<string, Record<string, unknown>>();
+        (sections || []).forEach((s: { doc?: { id: string } }) => {
+          if (!s?.doc?.id) return;
+          const id = s.doc.id;
+          docToSectionCount.set(id, (docToSectionCount.get(id) ?? 0) + 1);
+          if (!docToDoc.has(id)) docToDoc.set(id, s.doc as Record<string, unknown>);
         });
+        const docs = Array.from(docToDoc.values());
         setContracts(
           docs.map((d, i) =>
-            mapDocToContract(d, i, (d.sections as unknown[])?.length)
+            mapDocToContract(d, i, docToSectionCount.get(String(d.id)) ?? undefined)
           )
         );
       } else {
