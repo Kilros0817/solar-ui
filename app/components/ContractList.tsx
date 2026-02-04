@@ -41,6 +41,10 @@ export function ContractList({ title, filterStatus, onCreateContract, onViewCont
   });
 
   const viewPath = (contractId: number) => getViewPath ? getViewPath(contractId) : `/contract/${contractId}`;
+  const handleView = (contractId: number) => {
+    onViewContract?.(contractId);
+    router.push(viewPath(contractId));
+  };
 
   const getStatusColor = (status: number) => {
     switch (status) {
@@ -116,7 +120,7 @@ export function ContractList({ title, filterStatus, onCreateContract, onViewCont
                 <TableRow
                   key={contract.id}
                   className="cursor-pointer group"
-                  onClick={() => router.push(viewPath(contract.id))}
+                  onClick={() => handleView(contract.id)}
                 >
                   <TableCell className="font-medium py-4">{contract.title}</TableCell>
                   <TableCell className="text-muted-foreground py-4">
@@ -140,7 +144,7 @@ export function ContractList({ title, filterStatus, onCreateContract, onViewCont
                         variant="ghost"
                         size="icon"
                         className="h-8 w-8 cursor-pointer"
-                        onClick={() => router.push(viewPath(contract.id))}
+                        onClick={() => handleView(contract.id)}
                         title="View"
                       >
                         <Eye className="h-4 w-4" />

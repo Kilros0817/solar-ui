@@ -7,6 +7,7 @@ import { ContractList } from '../components/ContractList';
 import { ContractDetails } from '../components/ContractDetails';
 import { useUser } from '../contexts/UserContext';
 import { useNewContract } from '../contexts/NewContractContext';
+import { useAssignment } from '../contexts/AssignmentContext';
 import { USER_ROLE } from '@/utils/constants';
 
 export default function MyContractsPage() {
@@ -14,7 +15,8 @@ export default function MyContractsPage() {
   const { address } = useConnection();
   const { userRole } = useUser();
   const { setFrom } = useNewContract();
-  const [selectedContract, setSelectedContract] = useState<number | null>(null);
+  const { setSelectedContract } = useAssignment();
+  const [selectedContract, setSelectedContractDetails] = useState<number | null>(null);
 
   useEffect(() => {
     if (userRole === null) {
@@ -36,10 +38,13 @@ export default function MyContractsPage() {
   };
 
   const isDivisionLeader = userRole === USER_ROLE.DIVISION_LEADER;
-  const viewPath = isDivisionLeader ? (id: number) => `/contract/${id}/assignments` : undefined;
+  const viewPath = isDivisionLeader ? () => '/assignments' : undefined;
+  const onViewAssignment = isDivisionLeader
+    ? (contractId: number) => setSelectedContract(String(contractId))
+    : undefined;
 
   if (selectedContract && !isDivisionLeader) {
-    return <ContractDetails contractId={selectedContract} onBack={() => setSelectedContract(null)} />;
+    return <ContractDetails contractId={selectedContract} onBack={() => setSelectedContractDetails(null)} />;
   }
 
   const title =
@@ -57,7 +62,7 @@ export default function MyContractsPage() {
     <ContractList
       title={title}
       onCreateContract={handleCreateContract}
-      onViewContract={(contractId) => setSelectedContract(contractId)}
+      onViewContract={onViewAssignment ?? ((contractId) => setSelectedContractDetails(contractId))}
       getViewPath={viewPath}
       divisionLeaderAddress={isDivisionLeader ? address ?? null : undefined}
       showCreateButton={canCreateContract}

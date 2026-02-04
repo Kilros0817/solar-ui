@@ -51,6 +51,8 @@ export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
     '/esigned': 'esigned',
     '/templates': 'templates',
     '/my-assignments': 'my-assignments',
+    '/assignments': 'my-contracts',
+    '/assignments/section': 'my-contracts',
     '/divisions': 'team',
     '/pending-users': 'pending-users',
   };
@@ -172,6 +174,7 @@ export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
               'esigned': '/esigned',
               'templates': '/templates',
               'my-assignments': '/my-assignments',
+              'assignments': '/assignments',
               'pending-users': '/pending-users',
               'team': '/divisions',
             };

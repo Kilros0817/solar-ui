@@ -228,6 +228,7 @@ export const getAllContracts = async () => {
       createdAt
       sections {
         id
+        status
       }
     }
   }`;
@@ -259,10 +260,16 @@ export const getContractById = async (id: string | number) => {
       status
       createdAt
       sections {
+        id
+        status
         divisionLeader {
           dcategory
           firstName
           lastName
+        }
+        clauses {
+          id
+          status
         }
       }
     }
@@ -293,8 +300,10 @@ export const getContractsByDivisionLeader = async (divisionLeaderId: string) => 
           lastName
         }
         sections(where: {divisionLeader: "${divisionLeaderId}"}) {
+          id
           cid
           assignedAt
+          status
         }
       }
     }

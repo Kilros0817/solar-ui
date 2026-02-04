@@ -309,6 +309,7 @@ export function ContractCreation({ onBack, selectedTemplate }: ContractCreationP
 
       if (success) {
         toast.success('Contract created successfully');
+        await new Promise((r) => setTimeout(r, 3000));
         await refetch();
       } else {
         throw new Error('Failed to create contract on-chain');

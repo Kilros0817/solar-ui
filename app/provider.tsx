@@ -7,6 +7,8 @@ import { createConfig, WagmiProvider, fallback, http, Config } from "wagmi";
 import { UserProvider } from './contexts/UserContext'
 import { NewContractProvider } from './contexts/NewContractContext'
 import { ContractsProvider } from './contexts/ContractsContext'
+import { ContractDocProvider } from './contexts/ContractDocContext'
+import { AssignmentProvider } from './contexts/AssignmentContext'
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import Web3AuthConnectorInstance from "@/utils/Web3AuthConnectorInstance";
@@ -63,7 +65,11 @@ const TBProvider: React.FC<TBProviderProps> = ({ children }: TBProviderProps) =>
               <UserProvider>
                 <NewContractProvider>
                   <ContractsProvider>
-                    {children}
+                    <ContractDocProvider>
+                      <AssignmentProvider>
+                        {children}
+                      </AssignmentProvider>
+                    </ContractDocProvider>
                   </ContractsProvider>
                 </NewContractProvider>
               </UserProvider>

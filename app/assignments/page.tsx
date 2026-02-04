@@ -1,0 +1,266 @@
+'use client'
+
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { Button } from '@/app/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/app/components/ui/card';
+import { ArrowLeft, FileText, Loader2, ClipboardList, Building2, Eye } from 'lucide-react';
+import { useContractDoc } from '@/app/contexts/ContractDocContext';
+import { useAssignment } from '@/app/contexts/AssignmentContext';
+import { DIVISION_LABELS, USER_ROLE, URLs } from '@/utils/constants';
+import { useUser } from '@/app/contexts/UserContext';
+import type { SectionWithDivision } from '@/app/data/interfaces';
+
+export default function AssignmentsPage() {
+  const router = useRouter();
+  const { userRole } = useUser();
+  const { selectedContractId, setSelectedSection } = useAssignment();
+  const { profile, loadDoc, getDoc, loadingDocId, loadingProfile, error: contextError } = useContractDoc();
+  const contractId = selectedContractId ?? '';
+  const [sections, setSections] = useState<
+    Array<{
+      index: number;
+      name: string;
+      totalClauses: number;
+      assignedCount: number;
+      submittedCount: number;
+      approvedCount: number;
+      rejectedCount: number;
+    }>
+  >([]);
+  const [sectionNamesLoaded, setSectionNamesLoaded] = useState(false);
+
+  useEffect(() => {
+    const allowed = userRole === USER_ROLE.DIVISION_LEADER || userRole === USER_ROLE.DIVISION_MEMBER;
+    if (userRole !== null && !allowed) {
+      router.replace('/my-contracts');
+      return;
+    }
+  }, [userRole, router]);
+
+  useEffect(() => {
+    if (!selectedContractId) {
+      const fallback = userRole === USER_ROLE.DIVISION_MEMBER ? '/my-assignments' : '/my-contracts';
+      router.replace(fallback);
+      return;
+    }
+    loadDoc(selectedContractId);
+  }, [selectedContractId, loadDoc, router, userRole]);
+
+  useEffect(() => {
+    setSectionNamesLoaded(false);
+  }, [contractId]);
+
+  if (!selectedContractId) {
+    return null;
+  }
+
+  const doc = contractId ? getDoc(contractId) : undefined;
+  const loading =
+    loadingDocId === contractId ||
+    (contractId && doc === undefined) ||
+    (profile === undefined && loadingProfile);
+  const notInDivision = profile === null && !loadingProfile;
+  const docNotFound = contractId && doc === null;
+  const error = contextError ?? (notInDivision ? 'You are not assigned to a division.' : docNotFound ? 'Contract not found.' : null);
+
+  useEffect(() => {
+    if (!doc || !profile || sectionNamesLoaded) return;
+    const leaderDcategory = profile.dcategory;
+    const rawSections: SectionWithDivision[] = (doc.sections ?? []).map((s: any, i: number) => ({
+      index: i,
+      divisionLeader: s?.divisionLeader,
+    }));
+    const mySections = rawSections.filter(
+      (s) => s.divisionLeader?.dcategory != null && Number(s.divisionLeader.dcategory) === leaderDcategory
+    );
+
+    const getClauseCounts = (sectionIndex: number) => {
+      const sectionAt = (doc as any).sections?.[sectionIndex];
+      const clauses = sectionAt?.clauses ?? [];
+      const total = clauses.length;
+      let assigned = 0;
+      let submitted = 0;
+      let approved = 0;
+      let rejected = 0;
+      clauses.forEach((c: { status?: number }) => {
+        const s = typeof c.status === 'number' ? c.status : 0;
+        if (s === 0) assigned++;
+        else if (s === 1) submitted++;
+        else if (s === 2) approved++;
+        else if (s === 3) rejected++;
+      });
+      return { total, assigned, submitted, approved, rejected };
+    };
+
+    if (doc.cid) {
+      fetch(`${URLs.TBGateWay}${doc.cid}`)
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          setSections(
+            mySections.map((s) => {
+              const counts = getClauseCounts(s.index);
+              const totalFromDoc = data?.sections?.[s.index]?.sectionContent?.length ?? counts.total;
+              const total = counts.total > 0 ? counts.total : totalFromDoc;
+              return {
+                index: s.index,
+                name: data?.sections?.[s.index]?.sectionName ?? `Section ${s.index + 1}`,
+                totalClauses: total,
+                assignedCount: counts.assigned,
+                submittedCount: counts.submitted,
+                approvedCount: counts.approved,
+                rejectedCount: counts.rejected,
+              };
+            })
+          );
+        })
+        .catch(() =>
+          setSections(
+            mySections.map((s) => {
+              const counts = getClauseCounts(s.index);
+              return {
+                index: s.index,
+                name: `Section ${s.index + 1}`,
+                totalClauses: counts.total,
+                assignedCount: counts.assigned,
+                submittedCount: counts.submitted,
+                approvedCount: counts.approved,
+                rejectedCount: counts.rejected,
+              };
+            })
+          )
+        )
+        .finally(() => setSectionNamesLoaded(true));
+    } else {
+      setSections(
+        mySections.map((s) => {
+          const counts = getClauseCounts(s.index);
+          return {
+            index: s.index,
+            name: `Section ${s.index + 1}`,
+            totalClauses: counts.total,
+            assignedCount: counts.assigned,
+            submittedCount: counts.submitted,
+            approvedCount: counts.approved,
+            rejectedCount: counts.rejected,
+          };
+        })
+      );
+      setSectionNamesLoaded(true);
+    }
+  }, [doc, profile, sectionNamesLoaded]);
+
+  const contractTitle = doc?.title ?? 'Untitled';
+  const client = doc?.client;
+  const contractClient = client
+    ? [client.firstName, client.lastName].filter(Boolean).join(' ') || (client as { email?: string }).email || ''
+    : '';
+  const divisionLabel = profile ? (DIVISION_LABELS[profile.dcategory] ?? `Division #${profile.dcategory}`) : '';
+
+  const handleViewSection = (index: number) => {
+    setSelectedSection(index);
+    router.push('/assignments/section');
+  };
+
+  const isDivisionUser = userRole === USER_ROLE.DIVISION_LEADER || userRole === USER_ROLE.DIVISION_MEMBER;
+  if (userRole !== null && !isDivisionUser) {
+    return null;
+  }
+
+  if (loading) {
+    return (
+      <div className="p-6 flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  const backHref = userRole === USER_ROLE.DIVISION_MEMBER ? '/my-assignments' : '/my-contracts';
+  const backLabel = userRole === USER_ROLE.DIVISION_MEMBER ? 'Back to My Assignments' : 'Back to All Assignments';
+
+  if (error) {
+    return (
+      <div className="p-6 space-y-6">
+        <Button variant="ghost" onClick={() => router.push(backHref)} className="gap-2">
+          <ArrowLeft className="h-4 w-4" />
+          {backLabel}
+        </Button>
+        <p className="text-muted-foreground">{error}</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-6 space-y-6">
+      <Button variant="ghost" onClick={() => router.push(backHref)} className="gap-2">
+        <ArrowLeft className="h-4 w-4" />
+        {backLabel}
+      </Button>
+
+      <div className="flex items-start gap-4">
+        <div className="w-12 h-12 rounded-lg bg-brand-secondary/10 flex items-center justify-center shrink-0">
+          <FileText className="h-6 w-6 text-brand-secondary" />
+        </div>
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">{contractTitle}</h1>
+          <p className="text-muted-foreground">{contractClient || '—'}</p>
+          <p className="text-sm text-muted-foreground mt-1">
+            Sections assigned to <span className="font-medium text-foreground">{divisionLabel}</span>
+          </p>
+        </div>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Building2 className="h-5 w-5" />
+            Your division&apos;s sections
+          </CardTitle>
+          <CardDescription>
+            Contract sections assigned to your division for review
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {sections.length === 0 ? (
+            <p className="text-muted-foreground py-6 text-center">
+              No sections are assigned to your division for this contract.
+            </p>
+          ) : (
+            <ul className="space-y-3">
+              {sections.map((s) => (
+                <li
+                  key={s.index}
+                  className="flex items-center gap-3 p-3 rounded-lg border bg-muted/30 hover:bg-muted/50 transition-colors"
+                >
+                  <div className="w-10 h-10 rounded-lg bg-brand-secondary/10 flex items-center justify-center shrink-0">
+                    <ClipboardList className="h-5 w-5 text-brand-secondary" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium">{s.name}</p>
+                    <p className="text-xs text-muted-foreground">Section {s.index + 1}</p>
+                    <div className="flex flex-row gap-2 mt-1.5 text-xs text-muted-foreground">
+                      <span className="text-blue-600">Total: {s.totalClauses}</span>
+                      <span className="text-yellow-600">Assigned: {s.assignedCount}</span>
+                      <span className="text-orange-600">Submitted: {s.submittedCount}</span>
+                      <span className="text-green-600">Approved: {s.approvedCount}</span>
+                      <span className="text-red-600">Rejected: {s.rejectedCount}</span>
+                    </div>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 shrink-0 cursor-pointer"
+                    onClick={() => handleViewSection(s.index)}
+                    title="View section"
+                  >
+                    <Eye className="h-4 w-4" />
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

@@ -10,12 +10,14 @@ import { FileText, Loader2, Eye, ClipboardList, AlertCircle } from 'lucide-react
 import { getCurrentUserProfile, getAllContracts, getContractById } from '@/utils/subgraph';
 import { DIVISION_LABELS, USER_ROLE } from '@/utils/constants';
 import { useUser } from '@/app/contexts/UserContext';
+import { useAssignment } from '@/app/contexts/AssignmentContext';
 import type { ContractAssignment } from '../data/interfaces';
 
 export function MyAssignments() {
   const router = useRouter();
   const { address } = useConnection();
   const { userRole } = useUser();
+  const { setSelectedContract } = useAssignment();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [divisionLabel, setDivisionLabel] = useState('');
@@ -153,7 +155,10 @@ export function MyAssignments() {
                         variant="outline"
                         size="sm"
                         className="gap-2"
-                        onClick={() => router.push(`/contract/${c.id}/assignments`)}
+                        onClick={() => {
+                          setSelectedContract(String(c.id));
+                          router.push('/assignments');
+                        }}
                         title="View sections"
                       >
                         <Eye className="h-4 w-4" />
