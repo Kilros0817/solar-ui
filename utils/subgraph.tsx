@@ -226,6 +226,9 @@ export const getAllContracts = async () => {
       cid
       status
       createdAt
+      sections {
+        id
+      }
     }
   }`;
   try {

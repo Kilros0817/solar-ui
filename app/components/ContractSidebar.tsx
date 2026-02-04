@@ -1,12 +1,11 @@
 'use client'
 
-import { useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { 
-  LayoutDashboard, 
-  FileText, 
-  Clock, 
-  CheckCircle, 
+import {
+  LayoutDashboard,
+  FileText,
+  Clock,
+  CheckCircle,
   Archive,
   FolderOpen,
   Users,
@@ -20,7 +19,8 @@ import {
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useUser, UserRole } from '../contexts/UserContext';
-import { USER_ROLE, DIVISION_LABELS } from '@/utils/constants';
+import { useContracts } from '../contexts/ContractsContext';
+import { USER_ROLE } from '@/utils/constants';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import {
@@ -32,60 +32,14 @@ import {
   DropdownMenuTrigger,
 } from './ui/dropdown-menu';
 import { getContractCounts } from '../data/interfaces';
-import type { Contract, SidebarProps } from '../data/interfaces';
-import { getAllContracts, getContractsByDivisionLeader } from '@/utils/subgraph';
-import { useConnection } from 'wagmi';
+import type { SidebarProps } from '../data/interfaces';
 import { divisionMemberAssignments } from '../data/mockAssignments';
-
-const mapDocumentToContract = (doc: any, index: number): Contract => {
-  const client = doc.client;
-  const clientName = client ? [client.firstName, client.lastName].filter(Boolean).join(' ') || client.email || '' : '';
-  const id = /^\d+$/.test(String(doc.id)) ? parseInt(String(doc.id), 10) : index + 1;
-  const status = typeof doc.status === 'number' ? doc.status : 0;
-  const cat = doc.category;
-  const category = typeof cat === 'number' ? (DIVISION_LABELS[cat] ?? String(cat)) : (cat ?? '');
-  return {
-    id,
-    title: doc.title || 'Untitled',
-    client: clientName,
-    category,
-    status,
-    createdAt: doc.createdAt ?? '',
-  };
-};
 
 export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const { address } = useConnection();
   const { userRole, setUserRole } = useUser();
-  const [contracts, setContracts] = useState<Contract[]>([]);
-
-  useEffect(() => {
-    const fetchContracts = async () => {
-      try {
-        if (userRole === USER_ROLE.DIVISION_LEADER && address) {
-          const sections = await getContractsByDivisionLeader(address.toLowerCase());
-          const seen = new Set<string>();
-          const docs: any[] = [];
-          (sections || []).forEach((s: { doc?: { id: string } }) => {
-            if (s?.doc?.id && !seen.has(s.doc.id)) {
-              seen.add(s.doc.id);
-              docs.push(s.doc);
-            }
-          });
-          setContracts(docs.map((d, i) => mapDocumentToContract(d, i)));
-        } else {
-          const docs = await getAllContracts();
-          setContracts(Array.isArray(docs) ? docs.map(mapDocumentToContract) : []);
-        }
-      } catch (e) {
-        console.error('Failed to fetch contracts for sidebar:', e);
-        setContracts([]);
-      }
-    };
-    fetchContracts();
-  }, [userRole, address]);
+  const { contracts } = useContracts();
 
   // Map routes to tab IDs
   const routeToTabMap: Record<string, string> = {

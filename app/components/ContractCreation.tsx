@@ -27,10 +27,12 @@ import { DIVISION_LABELS, URLs } from '@/utils/constants';
 import { getAllDivisionLeaders, getAllClients } from '@/utils/subgraph';
 import { createContract } from '@/utils/interact';
 import { toast } from 'sonner';
+import { useContracts } from '../contexts/ContractsContext';
 import type { ContractCreationProps } from '../data/interfaces';
 
 export function ContractCreation({ onBack, selectedTemplate }: ContractCreationProps) {
   const { address } = useConnection();
+  const { refetch } = useContracts();
   const config = useConfig();
   const baseCategories = ['Services', 'Legal', 'HR', 'Technology', 'Procurement', 'Business', 'Real Estate', 'General', 'Custom'];
   const templateCategory = selectedTemplate.category || 'Custom';
@@ -307,6 +309,7 @@ export function ContractCreation({ onBack, selectedTemplate }: ContractCreationP
 
       if (success) {
         toast.success('Contract created successfully');
+        await refetch();
       } else {
         throw new Error('Failed to create contract on-chain');
       }
@@ -675,9 +678,6 @@ export function ContractCreation({ onBack, selectedTemplate }: ContractCreationP
             <CardContent>
               <div className="space-y-4">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-muted">
-                    <selectedTemplate.icon className="h-5 w-5" />
-                  </div>
                   <div>
                     <p className="font-medium">{selectedTemplate.name}</p>
                     <p className="text-sm text-muted-foreground">{selectedTemplate.category}</p>

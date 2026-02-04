@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
@@ -14,66 +14,17 @@ import {
   TableRow,
 } from './ui/table';
 import { Skeleton } from './ui/skeleton';
-import { FileText, Search, Eye, Pencil } from 'lucide-react';
-import { getAllContracts, getContractsByDivisionLeader } from '@/utils/subgraph';
+import { FileText, Search, Eye } from 'lucide-react';
 import { getContractsByStatus } from '../data/interfaces';
-import type { Contract, ContractListProps, ContractWithSections } from '../data/interfaces';
-import { CONTRACT_STATUS_LABELS, DIVISION_LABELS } from '@/utils/constants';
+import type { ContractListProps } from '../data/interfaces';
+import { CONTRACT_STATUS_LABELS } from '@/utils/constants';
 import { formatRelativeDate } from '@/utils/utility';
+import { useContracts } from '../contexts/ContractsContext';
 
-const mapDocumentToContract = (doc: any, index: number, sectionCount?: number): ContractWithSections => {
-  const client = doc.client;
-  const clientName = client ? [client.firstName, client.lastName].filter(Boolean).join(' ') || client.email || '' : '';
-  const id = /^\d+$/.test(String(doc.id)) ? parseInt(String(doc.id), 10) : index + 1;
-  const status = typeof doc.status === 'number' ? doc.status : 0;
-  const cat = doc.category;
-  const category = typeof cat === 'number' ? (DIVISION_LABELS[cat] ?? String(cat)) : (cat ?? '');
-  const c: ContractWithSections = {
-    id,
-    title: doc.title || 'Untitled',
-    client: clientName,
-    category,
-    status,
-    createdAt: doc.createdAt ?? '',
-  };
-  if (sectionCount != null) c.sectionCount = sectionCount;
-  return c;
-};
-
-export function ContractList({ title, filterStatus, onCreateContract, onViewContract, getViewPath, divisionLeaderAddress, showCreateButton = true, showCreateWhenEmpty = true }: ContractListProps) {
+export function ContractList({ title, filterStatus, onCreateContract, onViewContract, getViewPath, showCreateButton = true, showCreateWhenEmpty = true }: ContractListProps) {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
-  const [contracts, setContracts] = useState<ContractWithSections[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchContracts = async () => {
-      setLoading(true);
-      try {
-        if (divisionLeaderAddress) {
-          const sections = await getContractsByDivisionLeader(divisionLeaderAddress.toLowerCase());
-          const seen = new Set<string>();
-          const docs: any[] = [];
-          (sections || []).forEach((s: { doc?: { id: string; sections?: unknown[] } }) => {
-            if (s?.doc?.id && !seen.has(s.doc.id)) {
-              seen.add(s.doc.id);
-              docs.push(s.doc);
-            }
-          });
-          setContracts(docs.map((d, i) => mapDocumentToContract(d, i, d.sections?.length)));
-        } else {
-          const docs = await getAllContracts();
-          setContracts(Array.isArray(docs) ? docs.map((d, i) => mapDocumentToContract(d, i, undefined)) : []);
-        }
-      } catch (e) {
-        console.error('Failed to fetch contracts:', e);
-        setContracts([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchContracts();
-  }, [divisionLeaderAddress]);
+  const { contracts, loading } = useContracts();
 
   let displayContracts = contracts;
 

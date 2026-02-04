@@ -33,7 +33,10 @@ export default function PendingPage() {
     }
   };
 
-  if (selectedContract) {
+  const isDivisionLeader = userRole === USER_ROLE.DIVISION_LEADER;
+  const viewPath = isDivisionLeader ? (id: number) => `/contract/${id}/assignments` : undefined;
+
+  if (selectedContract && !isDivisionLeader) {
     return <ContractDetails contractId={selectedContract} onBack={() => setSelectedContract(null)} />;
   }
 
@@ -45,6 +48,7 @@ export default function PendingPage() {
       filterStatus="pending"
       onCreateContract={handleCreateContract}
       onViewContract={(contractId) => setSelectedContract(contractId)}
+      getViewPath={viewPath}
       showCreateButton={canCreateContract}
       showCreateWhenEmpty={false}
     />

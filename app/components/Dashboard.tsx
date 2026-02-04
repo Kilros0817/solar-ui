@@ -1,4 +1,3 @@
-import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
@@ -15,43 +14,13 @@ import {
   DollarSign
 } from 'lucide-react';
 import { useUser } from '../contexts/UserContext';
-import { getAllContracts } from '@/utils/subgraph';
-import type { Contract, DashboardProps } from '../data/interfaces';
-import { USER_ROLE, DIVISION_LABELS } from '@/utils/constants';
-
-const mapDocumentToContract = (doc: any, index: number): Contract => {
-  const client = doc.client;
-  const clientName = client ? [client.firstName, client.lastName].filter(Boolean).join(' ') || client.email || '' : '';
-  const id = /^\d+$/.test(String(doc.id)) ? parseInt(String(doc.id), 10) : index + 1;
-  const status = typeof doc.status === 'number' ? doc.status : 0;
-  const cat = doc.category;
-  const category = typeof cat === 'number' ? (DIVISION_LABELS[cat] ?? String(cat)) : (cat ?? '');
-  return {
-    id,
-    title: doc.title || 'Untitled',
-    client: clientName,
-    category,
-    status,
-    createdAt: doc.createdAt ?? '',
-  };
-};
+import { useContracts } from '../contexts/ContractsContext';
+import type { DashboardProps } from '../data/interfaces';
+import { USER_ROLE } from '@/utils/constants';
 
 export function Dashboard({ onCreateContract }: DashboardProps) {
   const { userRole, userName } = useUser();
-  const [contracts, setContracts] = useState<Contract[]>([]);
-
-  useEffect(() => {
-    const fetchContracts = async () => {
-      try {
-        const docs = await getAllContracts();
-        setContracts(Array.isArray(docs) ? docs.map(mapDocumentToContract) : []);
-      } catch (e) {
-        console.error('Failed to fetch contracts for dashboard:', e);
-        setContracts([]);
-      }
-    };
-    fetchContracts();
-  }, []);
+  const { contracts } = useContracts();
 
   // Division-specific stats (from subgraph data)
   const pendingCount = contracts.filter(c => c.status === 0).length;
