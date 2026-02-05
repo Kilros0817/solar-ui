@@ -39,6 +39,7 @@ export function LayoutWrapper({ children }: LayoutWrapperProps) {
       'esigned': '/esigned',
       'templates': '/templates',
       'my-assignments': '/my-assignments',
+      'rejected-tasks': '/my-assignments/rejected',
       'pending-users': '/pending-users',
       'team': '/divisions',
     };

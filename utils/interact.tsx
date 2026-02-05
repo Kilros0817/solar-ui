@@ -215,3 +215,17 @@ export const assignClausesToMembers = async (
   return false;
 }
 
+// submit clause to division leader
+export const submitClauseToLeader = async (
+  config: any,
+  account: string,
+  clauseId: number,
+  clauseCid: string,
+) => {
+  const res = await runSponsorTx(config, account, "submitClause", [clauseId, clauseCid]);
+  if (res.isSuccess) {
+    return true;
+  }
+  return false;
+}
+

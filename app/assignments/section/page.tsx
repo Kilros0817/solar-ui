@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/ca
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/app/components/ui/select';
 import { Label } from '@/app/components/ui/label';
 import { Badge } from '@/app/components/ui/badge';
-import { ArrowLeft, FileText, Loader2, UserPlus, RefreshCw } from 'lucide-react';
+import { ArrowLeft, FileText, Loader2, UserPlus, RefreshCw, Eye } from 'lucide-react';
 import { getDivisionMembersByDivisionId } from '@/utils/subgraph';
 import { assignClausesToMembers } from '@/utils/interact';
 import { useContractDoc } from '@/app/contexts/ContractDocContext';
@@ -32,7 +32,7 @@ export default function AssignmentSectionPage() {
   const config = useConfig();
   const { address } = useConnection();
   const { userRole } = useUser();
-  const { selectedContractId, selectedSectionIndex } = useAssignment();
+  const { selectedContractId, selectedSectionIndex, setSelectedClause } = useAssignment();
   const { profile, loadDoc, getDoc, loadingDocId, loadingProfile, error: contextError, refetchDoc } = useContractDoc();
   const contractId = selectedContractId ?? '';
   const sectionIndex = selectedSectionIndex ?? -1;
@@ -280,8 +280,9 @@ export default function AssignmentSectionPage() {
                 return (
                   <div
                     key={clause.clauseId || i}
-                    className="rounded-lg border bg-muted/30 p-4 space-y-3"
+                    className="rounded-lg border bg-muted/30 p-4 flex gap-4 items-start"
                   >
+                    <div className="flex-1 min-w-0 space-y-3">
                     <p className="text-sm leading-relaxed text-foreground">
                       {clause.clauseContent}
                     </p>
@@ -375,6 +376,21 @@ export default function AssignmentSectionPage() {
                           )}
                         </div>
                       </div>
+                    )}
+                    </div>
+                    {userRole === USER_ROLE.DIVISION_LEADER && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 shrink-0"
+                        onClick={() => {
+                          setSelectedClause(i);
+                          router.push('/assignments/clause');
+                        }}
+                        title="View clause"
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
                     )}
                   </div>
                 );

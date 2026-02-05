@@ -578,9 +578,6 @@ export function TemplateLibrary({ onSelectContractTemplate }: TemplateLibraryPro
                     <CardHeader>
                       <div className="flex items-start justify-between">
                         <div className="flex items-start gap-3">
-                          <div className="p-2 rounded-lg bg-muted group-hover:bg-brand-primary/20 transition-colors">
-                            <template.icon className="h-5 w-5" />
-                          </div>
                           <div>
                             <CardTitle className="text-base">{template.name}</CardTitle>
                             <Badge variant="outline" className="mt-1 text-xs">
@@ -598,7 +595,7 @@ export function TemplateLibrary({ onSelectContractTemplate }: TemplateLibraryPro
                         <Button 
                           size="sm" 
                           variant="outline" 
-                          className="flex-1"
+                          className="flex-1 cursor-pointer"
                           onClick={() => {
                             if (onSelectContractTemplate) {
                               onSelectContractTemplate(template);
@@ -612,17 +609,17 @@ export function TemplateLibrary({ onSelectContractTemplate }: TemplateLibraryPro
                         </Button>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button size="sm" variant="outline">
+                            <Button size="sm" variant="outline" className="cursor-pointer">
                               Actions
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => handleEditContract(template)}>
+                            <DropdownMenuItem onClick={() => handleEditContract(template)} className="cursor-pointer">
                               <Edit className="h-4 w-4 mr-2" />
                               Edit
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem variant="destructive" onClick={() => handleDeleteTemplate(template)}>
+                            <DropdownMenuItem variant="destructive" onClick={() => handleDeleteTemplate(template)} className="cursor-pointer">
                               <Trash2 className="h-4 w-4 mr-2" />
                               Delete
                             </DropdownMenuItem>

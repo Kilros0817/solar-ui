@@ -340,6 +340,7 @@ export const getContractsByDivisionMember = async (divisionMemberId: string) => 
     clauses(where: {divisionMember: "${memberId}"}) {
       id
       assignedAt
+      status
       section {
         id
         status

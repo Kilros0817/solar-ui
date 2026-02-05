@@ -2,30 +2,35 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useConnection } from 'wagmi';
+import { useConfig, useConnection } from 'wagmi';
 import { Button } from '@/app/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card';
-import { Label } from '@/app/components/ui/label';
 import { ArrowLeft, FileText, Loader2 } from 'lucide-react';
 import { useContractDoc } from '@/app/contexts/ContractDocContext';
 import { useAssignment } from '@/app/contexts/AssignmentContext';
 import { DIVISION_LABELS, USER_ROLE, URLs } from '@/utils/constants';
 import { useUser } from '@/app/contexts/UserContext';
+import { submitClauseToLeader } from '@/utils/interact';
+import { toast } from 'sonner';
 import type { DocSection } from '@/app/data/interfaces';
 
 export default function ClauseEditPage() {
   const router = useRouter();
+  const config = useConfig();
   const { address } = useConnection();
   const { userRole } = useUser();
   const { selectedContractId, selectedSectionIndex, selectedClauseIndex } = useAssignment();
-  const { profile, loadDoc, getDoc, loadingDocId, loadingProfile, error: contextError } = useContractDoc();
+  const { profile, loadDoc, getDoc, loadingDocId, loadingProfile, error: contextError, refetchDoc } = useContractDoc();
   const contractId = selectedContractId ?? '';
   const sectionIndex = selectedSectionIndex ?? -1;
   const clauseIndex = selectedClauseIndex ?? -1;
   const [sectionName, setSectionName] = useState('');
   const [clauseContent, setClauseContent] = useState('');
-  const [clauseId, setClauseId] = useState<string>('');
+  const [docClauseId, setDocClauseId] = useState<string>('');
+  /** Subgraph Clause entity id (numeric) for submitClause contract call */
+  const [subgraphClauseId, setSubgraphClauseId] = useState<number | null>(null);
   const [contentLoaded, setContentLoaded] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     const allowed = userRole === USER_ROLE.DIVISION_LEADER || userRole === USER_ROLE.DIVISION_MEMBER;
@@ -58,6 +63,11 @@ export default function ClauseEditPage() {
 
   useEffect(() => {
     if (!doc || sectionIndex < 0 || clauseIndex < 0 || contentLoaded) return;
+    const rawSections = (doc as { sections?: Array<{ clauses?: Array<{ id?: string }> }> }).sections ?? [];
+    const sectionAt = rawSections[sectionIndex];
+    const clauseAt = sectionAt?.clauses?.[clauseIndex];
+    const sgId = clauseAt?.id != null ? Number(clauseAt.id) : null;
+    if (sgId != null && !Number.isNaN(sgId)) setSubgraphClauseId(sgId);
     if (!doc.cid) {
       setSectionName(`Section ${sectionIndex + 1}`);
       setClauseContent('');
@@ -73,7 +83,7 @@ export default function ClauseEditPage() {
           const clause = section.sectionContent[clauseIndex];
           setSectionName(section.sectionName ?? `Section ${sectionIndex + 1}`);
           setClauseContent(clause.clauseContent ?? '');
-          setClauseId(clause.clauseId ?? '');
+          setDocClauseId(clause.clauseId ?? '');
         } else {
           setSectionName(`Section ${sectionIndex + 1}`);
           setClauseContent('');
@@ -88,16 +98,60 @@ export default function ClauseEditPage() {
 
   const contractTitle = doc?.title ?? 'Untitled';
   const divisionLabel = profile ? (DIVISION_LABELS[profile.dcategory] ?? `Division #${profile.dcategory}`) : '';
-  const backHref = '/assignments';
-  const backLabel = 'Back to Assignments';
+  const isDivisionLeader = userRole === USER_ROLE.DIVISION_LEADER;
+  const isDivisionMember = userRole === USER_ROLE.DIVISION_MEMBER;
+  const backHref = isDivisionLeader ? '/assignments/section' : '/assignments';
+  const backLabel = isDivisionLeader ? 'Back to section' : 'Back to Assignments';
 
-  const handleSave = () => {
-    // TODO: persist edited content (upload to IPFS, call submitClause or update contract)
-    console.log('Save clause:', clauseContent);
+  const handleRequestReview = async () => {
+    if (!config || !address || subgraphClauseId == null) {
+      toast.error('Missing wallet or clause data');
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const assignedDate = new Date().toISOString();
+      const uploadRes = await fetch(`${URLs.UploadAPI}/clauses`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          clauses: [{
+            clauseId: docClauseId,
+            clauseContent,
+            divisionMemberAddress: address.toLowerCase(),
+            assignedDate,
+          }],
+        }),
+      });
+      const uploadData = await uploadRes.json();
+      if (!uploadRes.ok) {
+        toast.error(uploadData.error ?? 'Failed to upload clause');
+        return;
+      }
+      const clauseCids = uploadData.clauseCids as string[];
+      if (!Array.isArray(clauseCids) || clauseCids.length === 0) {
+        toast.error('Invalid upload response');
+        return;
+      }
+
+      const success = await submitClauseToLeader(config, address, subgraphClauseId, clauseCids[0]);
+      if (success) {
+        toast.success('Clause submitted for review');
+        await refetchDoc(contractId);
+        router.push('/assignments');
+      } else {
+        toast.error('Failed to submit clause');
+      }
+    } catch (e) {
+      console.error('Request review error:', e);
+      toast.error(e instanceof Error ? e.message : 'Failed to submit clause');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
-  const isDivisionMember = userRole === USER_ROLE.DIVISION_MEMBER;
-  if (userRole !== null && !isDivisionMember) {
+  if (userRole !== null && !isDivisionMember && !isDivisionLeader) {
     router.replace('/assignments');
     return null;
   }
@@ -140,27 +194,27 @@ export default function ClauseEditPage() {
         </div>
       </div>
 
-      <Card>
+      <Card className="gap-2">
         <CardHeader>
-          <CardTitle className="text-lg">Edit clause content</CardTitle>
+          <CardTitle className="text-lg">{isDivisionLeader ? 'View clause content' : 'Edit clause content'}</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="clause-content">Clause content</Label>
+        <CardContent className="">
             <textarea
               id="clause-content"
               value={clauseContent}
-              onChange={(e) => setClauseContent(e.target.value)}
+              onChange={(e) => !isDivisionLeader && setClauseContent(e.target.value)}
+              readOnly={isDivisionLeader}
               rows={8}
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 min-h-[160px] resize-y"
+              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 min-h-[160px] "
               placeholder="Enter clause content..."
             />
-          </div>
-          <div className="flex justify-end">
-            <Button onClick={handleSave}>
-              Save
-            </Button>
-          </div>
+          {isDivisionMember && (
+            <div className="flex justify-end mt-2">
+              <Button onClick={handleRequestReview} disabled={submitting}>
+                {submitting ? 'Submitting...' : 'Request Review'}
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

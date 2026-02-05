@@ -44,19 +44,28 @@ export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
   const { userRole, setUserRole } = useUser();
   const { contracts } = useContracts();
   const [divisionMemberClauseCount, setDivisionMemberClauseCount] = useState<number | null>(null);
+  const [divisionMemberRejectedCount, setDivisionMemberRejectedCount] = useState<number | null>(null);
 
   useEffect(() => {
     if (userRole !== USER_ROLE.DIVISION_MEMBER || !address) {
       setDivisionMemberClauseCount(null);
+      setDivisionMemberRejectedCount(null);
       return;
     }
     let cancelled = false;
     getContractsByDivisionMember(address)
       .then((clauses) => {
-        if (!cancelled) setDivisionMemberClauseCount(Array.isArray(clauses) ? clauses.length : 0);
+        if (cancelled) return;
+        const list = Array.isArray(clauses) ? clauses : [];
+        setDivisionMemberClauseCount(list.length);
+        const rejected = list.filter((c: { status?: number }) => c.status === 3);
+        setDivisionMemberRejectedCount(rejected.length);
       })
       .catch(() => {
-        if (!cancelled) setDivisionMemberClauseCount(0);
+        if (!cancelled) {
+          setDivisionMemberClauseCount(0);
+          setDivisionMemberRejectedCount(0);
+        }
       });
     return () => { cancelled = true; };
   }, [userRole, address]);
@@ -71,6 +80,7 @@ export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
     '/esigned': 'esigned',
     '/templates': 'templates',
     '/my-assignments': 'my-assignments',
+    '/my-assignments/rejected': 'rejected-tasks',
     '/assignments': 'my-contracts',
     '/assignments/section': 'my-contracts',
     '/assignments/clause': 'my-contracts',
@@ -111,7 +121,7 @@ export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
       ];
     }
 
-    // Division Member - Only assigned work (My Assignments below Dashboard, no My Contracts)
+    // Division Member - Only assigned work (My Assignments below Dashboard, Rejected below Approved)
     if (userRole === USER_ROLE.DIVISION_MEMBER) {
       return [
         { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, count: null },
@@ -119,6 +129,7 @@ export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
         { id: 'pending', label: 'Pending', icon: Clock, count: counts.pending },
         { id: 'review', label: 'Review', icon: FileSearch, count: counts.divisionRequest },
         { id: 'approved', label: 'Approved', icon: CheckCircle, count: counts.approved },
+        { id: 'rejected-tasks', label: 'Rejected', icon: Archive, count: divisionMemberRejectedCount },
         { id: 'templates', label: 'Division Templates', icon: FolderOpen, count: null },
       ];
     }
@@ -194,6 +205,7 @@ export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
               'esigned': '/esigned',
               'templates': '/templates',
               'my-assignments': '/my-assignments',
+              'rejected-tasks': '/my-assignments/rejected',
               'assignments': '/assignments',
               'pending-users': '/pending-users',
               'team': '/divisions',
