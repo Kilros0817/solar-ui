@@ -339,6 +339,7 @@ export const getContractsByDivisionMember = async (divisionMemberId: string) => 
   const query = `{
     clauses(where: {divisionMember: "${memberId}"}) {
       id
+      cid
       assignedAt
       status
       section {

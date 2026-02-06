@@ -18,7 +18,7 @@ type RejectedClause = {
   section: { id: string; doc: { id: string; title?: string } };
 };
 
-export default function RejectedTasksPage() {
+export default function ClauseAssignmentsRejectedPage() {
   const router = useRouter();
   const { address } = useConnection();
   const { userRole } = useUser();
@@ -31,7 +31,7 @@ export default function RejectedTasksPage() {
 
   useEffect(() => {
     if (userRole !== null && userRole !== USER_ROLE.DIVISION_MEMBER) {
-      router.replace('/my-assignments');
+      router.replace('/my-contracts');
       return;
     }
   }, [userRole, router]);
@@ -89,8 +89,8 @@ export default function RejectedTasksPage() {
         setWorkingOnId(null);
         return;
       }
-      setSelection(contractId, secIdx, clauseIdx);
-      router.push('/assignments/clause');
+      setSelection(contractId, secIdx, clauseIdx, null, 'clauses');
+      router.push('/clause-assignments/clause');
     } catch (e) {
       console.error('Failed to open clause:', e);
     } finally {
@@ -126,9 +126,9 @@ export default function RejectedTasksPage() {
 
   return (
     <div className="p-6 space-y-6">
-      <Button variant="ghost" onClick={() => router.push('/my-assignments')} className="gap-2">
+      <Button variant="ghost" onClick={() => router.push('/clause-assignments')} className="gap-2">
         <ArrowLeft className="h-4 w-4" />
-        Back to My Assignments
+        Back to Clause Assignments
       </Button>
 
       <div>

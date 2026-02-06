@@ -38,8 +38,9 @@ export function LayoutWrapper({ children }: LayoutWrapperProps) {
       'approved': '/approved',
       'esigned': '/esigned',
       'templates': '/templates',
-      'my-assignments': '/my-assignments',
-      'rejected-tasks': '/my-assignments/rejected',
+      'clause-assignments': '/clause-assignments',
+      'section-assignments': '/section-assignments',
+      'rejected-tasks': '/clause-assignments/rejected',
       'pending-users': '/pending-users',
       'team': '/divisions',
     };

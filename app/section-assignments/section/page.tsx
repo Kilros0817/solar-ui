@@ -27,7 +27,7 @@ const getAssignedMemberLabel = (member: { firstName?: string; lastName?: string;
     ? [member.firstName, member.lastName].filter(Boolean).join(' ').trim() || member.email || '—'
     : '—';
 
-export default function AssignmentSectionPage() {
+export default function SectionAssignmentsSectionPage() {
   const router = useRouter();
   const config = useConfig();
   const { address } = useConnection();
@@ -46,8 +46,7 @@ export default function AssignmentSectionPage() {
   const [reassigningClauseIndex, setReassigningClauseIndex] = useState<number | null>(null);
 
   useEffect(() => {
-    const allowed = userRole === USER_ROLE.DIVISION_LEADER || userRole === USER_ROLE.DIVISION_MEMBER;
-    if (userRole !== null && !allowed) {
+    if (userRole !== null && userRole !== USER_ROLE.DIVISION_LEADER) {
       router.replace('/my-contracts');
       return;
     }
@@ -55,7 +54,7 @@ export default function AssignmentSectionPage() {
 
   useEffect(() => {
     if (!selectedContractId || selectedSectionIndex == null || selectedSectionIndex < 0) {
-      router.replace('/assignments');
+      router.replace('/section-assignments');
       return;
     }
     loadDoc(selectedContractId);
@@ -201,8 +200,7 @@ export default function AssignmentSectionPage() {
     }
   };
 
-  const isDivisionUser = userRole === USER_ROLE.DIVISION_LEADER || userRole === USER_ROLE.DIVISION_MEMBER;
-  if (userRole !== null && !isDivisionUser) {
+  if (userRole !== null && userRole !== USER_ROLE.DIVISION_LEADER) {
     return null;
   }
 
@@ -217,7 +215,7 @@ export default function AssignmentSectionPage() {
   if (error) {
     return (
       <div className="p-6 space-y-6">
-        <Button variant="ghost" onClick={() => router.push('/assignments')} className="gap-2">
+        <Button variant="ghost" onClick={() => router.push('/section-assignments')} className="gap-2">
           <ArrowLeft className="h-4 w-4" />
           Back to sections
         </Button>
@@ -228,7 +226,7 @@ export default function AssignmentSectionPage() {
 
   return (
     <div className="p-6 space-y-6">
-      <Button variant="ghost" onClick={() => router.push('/assignments')} className="gap-2">
+      <Button variant="ghost" onClick={() => router.push('/section-assignments')} className="gap-2">
         <ArrowLeft className="h-4 w-4" />
         Back to sections
       </Button>
@@ -261,12 +259,7 @@ export default function AssignmentSectionPage() {
                 const isAssignedOrSubmitted = clauseStatus === 0 || clauseStatus === 1;
                 const isApprovedOrRejected = clauseStatus === 2 || clauseStatus === 3;
                 const showAssignDropdown =
-                  userRole === USER_ROLE.DIVISION_LEADER &&
-                  (!isAssignedOrSubmitted && (isApprovedOrRejected ? reassigningClauseIndex === i : true));
-                const isMyClause =
-                  userRole === USER_ROLE.DIVISION_MEMBER &&
-                  address &&
-                  String(assignedMember?.id ?? '').toLowerCase() === String(address).toLowerCase();
+                  !isAssignedOrSubmitted && (isApprovedOrRejected ? reassigningClauseIndex === i : true);
                 const statusLabel =
                   clauseStatus === 0
                     ? 'Assigned'
@@ -289,7 +282,7 @@ export default function AssignmentSectionPage() {
                     <p className="text-xs text-muted-foreground">
                       Assigned to: <span className="font-medium text-foreground">{assignedLabel}</span>
                     </p>
-                    {isMyClause && statusLabel && (
+                    {statusLabel && (
                       <div className="flex flex-wrap items-center gap-2 pt-2 border-t">
                         <Badge
                           variant={
@@ -299,30 +292,13 @@ export default function AssignmentSectionPage() {
                                 ? 'destructive'
                                 : 'secondary'
                           }
-                          className={
-                            clauseStatus === 2
-                              ? 'bg-green-600'
-                              : clauseStatus === 3
-                                ? ''
-                                : ''
-                          }
+                          className={clauseStatus === 2 ? 'bg-green-600' : ''}
                         >
                           {statusLabel}
                         </Badge>
-                        {clauseStatus === 0 && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              // TODO: call submitClause (upload clause CID, then smart contract)
-                            }}
-                          >
-                            Submit
-                          </Button>
-                        )}
                       </div>
                     )}
-                    {userRole === USER_ROLE.DIVISION_LEADER && isApprovedOrRejected && reassigningClauseIndex !== i && (
+                    {isApprovedOrRejected && reassigningClauseIndex !== i && (
                       <div className="pt-2 border-t">
                         <Button
                           variant="outline"
@@ -378,20 +354,18 @@ export default function AssignmentSectionPage() {
                       </div>
                     )}
                     </div>
-                    {userRole === USER_ROLE.DIVISION_LEADER && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 shrink-0"
-                        onClick={() => {
-                          setSelectedClause(i);
-                          router.push('/assignments/clause');
-                        }}
-                        title="View clause"
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                    )}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 shrink-0"
+                      onClick={() => {
+                        setSelectedClause(i);
+                        router.push('/section-assignments/clause');
+                      }}
+                      title="View clause"
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
                   </div>
                 );
               })}
@@ -400,7 +374,7 @@ export default function AssignmentSectionPage() {
         </CardContent>
       </Card>
 
-      {userRole === USER_ROLE.DIVISION_LEADER && (() => {
+      {(() => {
         const allClausesAssigned =
           clauses.length > 0 &&
           clauses.every((_, i) => sectionClausesFromSubgraph[i]?.divisionMember != null);

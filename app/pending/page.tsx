@@ -118,8 +118,8 @@ export default function PendingPage() {
       if (secIdx < 0) return;
       const clauseIdx = sections[secIdx]?.clauses?.findIndex((c) => String(c.id) === String(clauseId)) ?? -1;
       if (clauseIdx < 0) return;
-      setSelection(contractId, secIdx, clauseIdx);
-      router.push('/assignments/clause');
+      setSelection(contractId, secIdx, clauseIdx, null, 'clauses');
+      router.push('/clause-assignments/clause');
     } catch (e) {
       console.error('Failed to open clause:', e);
     } finally {
@@ -141,7 +141,7 @@ export default function PendingPage() {
       const clauseIdx = sections[secIdx]?.clauses?.findIndex((c) => String(c.id) === String(clauseId)) ?? -1;
       if (clauseIdx < 0) return;
       setSelection(contractId, secIdx, clauseIdx);
-      router.push('/assignments/clause');
+      router.push('/section-assignments/clause');
     } catch (e) {
       console.error('Failed to open clause:', e);
     } finally {
@@ -267,7 +267,7 @@ export default function PendingPage() {
       filterStatus="pending"
       onCreateContract={handleCreateContract}
       onViewContract={onViewContract}
-      getViewPath={isDivisionLeaderForList ? () => '/assignments' : undefined}
+      getViewPath={isDivisionLeaderForList ? () => '/section-assignments' : undefined}
       showCreateButton={userRole === USER_ROLE.LEGAL_TEAM}
       showCreateWhenEmpty={false}
     />

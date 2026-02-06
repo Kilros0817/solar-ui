@@ -202,7 +202,7 @@ export function MyAssignments() {
                       className="h-8 w-8 shrink-0"
                       onClick={() => {
                         setSelectedContract(String(c.id));
-                        router.push('/assignments');
+                        router.push('/clause-assignments/clauses');
                       }}
                       title="View assignments"
                     >

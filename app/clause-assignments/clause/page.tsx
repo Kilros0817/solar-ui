@@ -14,12 +14,12 @@ import { submitClauseToLeader } from '@/utils/interact';
 import { toast } from 'sonner';
 import type { DocSection } from '@/app/data/interfaces';
 
-export default function ClauseEditPage() {
+export default function ClauseAssignmentsClausePage() {
   const router = useRouter();
   const config = useConfig();
   const { address } = useConnection();
   const { userRole } = useUser();
-  const { selectedContractId, selectedSectionIndex, selectedClauseIndex } = useAssignment();
+  const { selectedContractId, selectedSectionIndex, selectedClauseIndex, selectedClauseCid, selectedFromRoute } = useAssignment();
   const { profile, loadDoc, getDoc, loadingDocId, loadingProfile, error: contextError, refetchDoc } = useContractDoc();
   const contractId = selectedContractId ?? '';
   const sectionIndex = selectedSectionIndex ?? -1;
@@ -27,14 +27,12 @@ export default function ClauseEditPage() {
   const [sectionName, setSectionName] = useState('');
   const [clauseContent, setClauseContent] = useState('');
   const [docClauseId, setDocClauseId] = useState<string>('');
-  /** Subgraph Clause entity id (numeric) for submitClause contract call */
   const [subgraphClauseId, setSubgraphClauseId] = useState<number | null>(null);
   const [contentLoaded, setContentLoaded] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    const allowed = userRole === USER_ROLE.DIVISION_LEADER || userRole === USER_ROLE.DIVISION_MEMBER;
-    if (userRole !== null && !allowed) {
+    if (userRole !== null && userRole !== USER_ROLE.DIVISION_MEMBER) {
       router.replace('/my-contracts');
       return;
     }
@@ -42,7 +40,7 @@ export default function ClauseEditPage() {
 
   useEffect(() => {
     if (!selectedContractId || selectedSectionIndex == null || selectedSectionIndex < 0 || selectedClauseIndex == null || selectedClauseIndex < 0) {
-      router.replace('/assignments');
+      router.replace('/clause-assignments');
       return;
     }
     loadDoc(selectedContractId);
@@ -50,7 +48,7 @@ export default function ClauseEditPage() {
 
   useEffect(() => {
     setContentLoaded(false);
-  }, [contractId, sectionIndex, clauseIndex]);
+  }, [contractId, sectionIndex, clauseIndex, selectedClauseCid]);
 
   const doc = contractId ? getDoc(contractId) : undefined;
   const loading =
@@ -63,11 +61,27 @@ export default function ClauseEditPage() {
 
   useEffect(() => {
     if (!doc || sectionIndex < 0 || clauseIndex < 0 || contentLoaded) return;
+
     const rawSections = (doc as { sections?: Array<{ clauses?: Array<{ id?: string }> }> }).sections ?? [];
     const sectionAt = rawSections[sectionIndex];
     const clauseAt = sectionAt?.clauses?.[clauseIndex];
     const sgId = clauseAt?.id != null ? Number(clauseAt.id) : null;
     if (sgId != null && !Number.isNaN(sgId)) setSubgraphClauseId(sgId);
+
+    if (selectedClauseCid) {
+      setSectionName(`Section ${sectionIndex + 1}`);
+      fetch(`${URLs.TBGateWay}${selectedClauseCid}`)
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          const content = typeof data?.clauseContent === 'string' ? data.clauseContent : '';
+          setClauseContent(content);
+          setDocClauseId(data?.clauseId ?? '');
+        })
+        .catch(() => setClauseContent(''))
+        .finally(() => setContentLoaded(true));
+      return;
+    }
+
     if (!doc.cid) {
       setSectionName(`Section ${sectionIndex + 1}`);
       setClauseContent('');
@@ -94,21 +108,20 @@ export default function ClauseEditPage() {
         setClauseContent('');
       })
       .finally(() => setContentLoaded(true));
-  }, [doc, sectionIndex, clauseIndex, contentLoaded]);
+  }, [doc, sectionIndex, clauseIndex, contentLoaded, selectedClauseCid]);
 
   const contractTitle = doc?.title ?? 'Untitled';
   const divisionLabel = profile ? (DIVISION_LABELS[profile.dcategory] ?? `Division #${profile.dcategory}`) : '';
-  const isDivisionLeader = userRole === USER_ROLE.DIVISION_LEADER;
-  const isDivisionMember = userRole === USER_ROLE.DIVISION_MEMBER;
-  const backHref = isDivisionLeader ? '/assignments/section' : '/assignments';
-  const backLabel = isDivisionLeader ? 'Back to section' : 'Back to Assignments';
+
+  const isEditMode = selectedFromRoute === 'clauses' && !selectedClauseCid;
+  const backHref = selectedFromRoute === 'clauses' ? '/clause-assignments/clauses' : selectedFromRoute === 'review' ? '/clause-assignments/review' : selectedFromRoute === 'approved' ? '/clause-assignments/approved' : '/clause-assignments';
+  const backLabel = selectedFromRoute === 'clauses' ? 'Back to Clauses' : selectedFromRoute === 'review' ? 'Back to Review' : selectedFromRoute === 'approved' ? 'Back to Approved' : 'Back to Clause Assignments';
 
   const handleRequestReview = async () => {
     if (!config || !address || subgraphClauseId == null) {
       toast.error('Missing wallet or clause data');
       return;
     }
-
     setSubmitting(true);
     try {
       const assignedDate = new Date().toISOString();
@@ -134,12 +147,11 @@ export default function ClauseEditPage() {
         toast.error('Invalid upload response');
         return;
       }
-
       const success = await submitClauseToLeader(config, address, subgraphClauseId, clauseCids[0]);
       if (success) {
         toast.success('Clause submitted for review');
         await refetchDoc(contractId);
-        router.push('/assignments');
+        router.push('/clause-assignments/clauses');
       } else {
         toast.error('Failed to submit clause');
       }
@@ -151,8 +163,7 @@ export default function ClauseEditPage() {
     }
   };
 
-  if (userRole !== null && !isDivisionMember && !isDivisionLeader) {
-    router.replace('/assignments');
+  if (userRole !== null && userRole !== USER_ROLE.DIVISION_MEMBER) {
     return null;
   }
 
@@ -196,19 +207,19 @@ export default function ClauseEditPage() {
 
       <Card className="gap-2">
         <CardHeader>
-          <CardTitle className="text-lg">{isDivisionLeader ? 'View clause content' : 'Edit clause content'}</CardTitle>
+          <CardTitle className="text-lg">{isEditMode ? 'Edit clause content' : 'View clause content'}</CardTitle>
         </CardHeader>
-        <CardContent className="">
-            <textarea
-              id="clause-content"
-              value={clauseContent}
-              onChange={(e) => !isDivisionLeader && setClauseContent(e.target.value)}
-              readOnly={isDivisionLeader}
-              rows={8}
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 min-h-[160px] "
-              placeholder="Enter clause content..."
-            />
-          {isDivisionMember && (
+        <CardContent>
+          <textarea
+            id="clause-content"
+            value={clauseContent}
+            onChange={(e) => isEditMode && setClauseContent(e.target.value)}
+            readOnly={!isEditMode}
+            rows={8}
+            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 min-h-[160px]"
+            placeholder="Enter clause content..."
+          />
+          {isEditMode && (
             <div className="flex justify-end mt-2">
               <Button onClick={handleRequestReview} disabled={submitting}>
                 {submitting ? 'Submitting...' : 'Request Review'}

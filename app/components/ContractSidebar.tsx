@@ -43,13 +43,17 @@ export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
   const { address } = useConnection();
   const { userRole, setUserRole } = useUser();
   const { contracts } = useContracts();
-  const [divisionMemberClauseCount, setDivisionMemberClauseCount] = useState<number | null>(null);
-  const [divisionMemberRejectedCount, setDivisionMemberRejectedCount] = useState<number | null>(null);
+  const [divisionMemberCounts, setDivisionMemberCounts] = useState<{
+    all: number;
+    pending: number;
+    review: number;
+    approved: number;
+    rejected: number;
+  } | null>(null);
 
   useEffect(() => {
     if (userRole !== USER_ROLE.DIVISION_MEMBER || !address) {
-      setDivisionMemberClauseCount(null);
-      setDivisionMemberRejectedCount(null);
+      setDivisionMemberCounts(null);
       return;
     }
     let cancelled = false;
@@ -57,14 +61,24 @@ export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
       .then((clauses) => {
         if (cancelled) return;
         const list = Array.isArray(clauses) ? clauses : [];
-        setDivisionMemberClauseCount(list.length);
-        const rejected = list.filter((c: { status?: number }) => c.status === 3);
-        setDivisionMemberRejectedCount(rejected.length);
+        const counts = {
+          all: list.length,
+          pending: list.filter((c: { status?: number }) => c.status === 0).length,
+          review: list.filter((c: { status?: number }) => c.status === 1).length,
+          approved: list.filter((c: { status?: number }) => c.status === 2).length,
+          rejected: list.filter((c: { status?: number }) => c.status === 3).length,
+        };
+        setDivisionMemberCounts(counts);
       })
       .catch(() => {
         if (!cancelled) {
-          setDivisionMemberClauseCount(0);
-          setDivisionMemberRejectedCount(0);
+          setDivisionMemberCounts({
+            all: 0,
+            pending: 0,
+            review: 0,
+            approved: 0,
+            rejected: 0,
+          });
         }
       });
     return () => { cancelled = true; };
@@ -79,11 +93,15 @@ export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
     '/approved': 'approved',
     '/esigned': 'esigned',
     '/templates': 'templates',
-    '/my-assignments': 'my-assignments',
-    '/my-assignments/rejected': 'rejected-tasks',
-    '/assignments': 'my-contracts',
-    '/assignments/section': 'my-contracts',
-    '/assignments/clause': 'my-contracts',
+    '/clause-assignments': 'clause-assignments',
+    '/clause-assignments/review': 'review',
+    '/clause-assignments/clauses': 'clause-assignments',
+    '/clause-assignments/clause': 'review',
+    '/clause-assignments/approved': 'approved',
+    '/clause-assignments/rejected': 'rejected-tasks',
+    '/section-assignments': 'section-assignments',
+    '/section-assignments/section': 'section-assignments',
+    '/section-assignments/clause': 'section-assignments',
     '/divisions': 'team',
     '/pending-users': 'pending-users',
   };
@@ -108,11 +126,11 @@ export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
       ];
     }
 
-    // Division Lead - Assigned sections and team management
+    // Division Lead - Section assignments and team management
     if (userRole === USER_ROLE.DIVISION_LEADER) {
       return [
         { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, count: null },
-        { id: 'my-contracts', label: 'All Assignments', icon: ClipboardList, count: counts.all },
+        { id: 'section-assignments', label: 'Section Assignments', icon: ClipboardList, count: counts.all },
         { id: 'pending', label: 'Pending', icon: Clock, count: counts.pending },
         { id: 'review', label: 'Review', icon: FileSearch, count: counts.divisionRequest },
         { id: 'approved', label: 'Approved', icon: CheckCircle, count: counts.approved },
@@ -121,15 +139,17 @@ export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
       ];
     }
 
-    // Division Member - Only assigned work (My Assignments below Dashboard, Rejected below Approved)
+    // Division Member - Clause assignments from getContractsByDivisionMember
+    // Clause Assignments = all; Pending = status 0; Review = status 1; Approved = status 2; Rejected = status 3
     if (userRole === USER_ROLE.DIVISION_MEMBER) {
+      const dm = divisionMemberCounts;
       return [
         { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, count: null },
-        { id: 'my-assignments', label: 'My Assignments', icon: ClipboardList, count: divisionMemberClauseCount },
-        { id: 'pending', label: 'Pending', icon: Clock, count: counts.pending },
-        { id: 'review', label: 'Review', icon: FileSearch, count: counts.divisionRequest },
-        { id: 'approved', label: 'Approved', icon: CheckCircle, count: counts.approved },
-        { id: 'rejected-tasks', label: 'Rejected', icon: Archive, count: divisionMemberRejectedCount },
+        { id: 'clause-assignments', label: 'Clause Assignments', icon: ClipboardList, count: dm?.all ?? null },
+        { id: 'pending', label: 'Pending', icon: Clock, count: dm?.pending ?? null },
+        { id: 'review', label: 'Review', icon: FileSearch, count: dm?.review ?? null },
+        { id: 'approved', label: 'Approved', icon: CheckCircle, count: dm?.approved ?? null },
+        { id: 'rejected-tasks', label: 'Rejected', icon: Archive, count: dm?.rejected ?? null },
         { id: 'templates', label: 'Division Templates', icon: FolderOpen, count: null },
       ];
     }
@@ -195,18 +215,18 @@ export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
         {menuItems.map((item) => {
           const isActive = currentTab === item.id;
           const handleClick = () => {
-            // Navigate to routes for tabs
+            // Navigate to routes for tabs (role-specific routes)
             const routeMap: Record<string, string> = {
               'dashboard': '/dashboard',
               'my-contracts': '/my-contracts',
               'pending': '/pending',
-              'review': '/review',
-              'approved': '/approved',
+              'review': userRole === USER_ROLE.DIVISION_MEMBER ? '/clause-assignments/review' : '/review',
+              'approved': userRole === USER_ROLE.DIVISION_MEMBER ? '/clause-assignments/approved' : '/approved',
               'esigned': '/esigned',
               'templates': '/templates',
-              'my-assignments': '/my-assignments',
-              'rejected-tasks': '/my-assignments/rejected',
-              'assignments': '/assignments',
+              'clause-assignments': '/clause-assignments',
+              'section-assignments': '/section-assignments',
+              'rejected-tasks': '/clause-assignments/rejected',
               'pending-users': '/pending-users',
               'team': '/divisions',
             };

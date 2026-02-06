@@ -24,7 +24,7 @@ export default function MyContractsPage() {
     } else if (userRole === USER_ROLE.NO_ROLE) {
       router.push('/register');
     } else if (userRole === USER_ROLE.DIVISION_MEMBER) {
-      router.replace('/my-assignments');
+      router.replace('/clause-assignments');
     }
   }, [userRole, router]);
 
@@ -40,7 +40,7 @@ export default function MyContractsPage() {
   };
 
   const isDivisionLeader = userRole === USER_ROLE.DIVISION_LEADER;
-  const viewPath = isDivisionLeader ? () => '/assignments' : undefined;
+  const viewPath = isDivisionLeader ? () => '/section-assignments' : undefined;
   const onViewAssignment = isDivisionLeader
     ? (contractId: number) => setSelectedContract(String(contractId))
     : undefined;
