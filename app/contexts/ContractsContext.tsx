@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { useConnection } from 'wagmi';
-import { getAllContracts, getContractsByDivisionLeader } from '@/utils/subgraph';
+import { getAllContracts, getSectionsByDivisionLeader } from '@/utils/subgraph';
 import { useUser } from './UserContext';
 import { USER_ROLE } from '@/utils/constants';
 import { DIVISION_LABELS } from '@/utils/constants';
@@ -66,7 +66,7 @@ export function ContractsProvider({ children }: { children: React.ReactNode }) {
     setError(null);
     try {
       if (isDivisionLeader && address) {
-        const sections = await getContractsByDivisionLeader(address.toLowerCase());
+        const sections = await getSectionsByDivisionLeader(address.toLowerCase());
         const docToSectionCount = new Map<string, number>();
         const docToDoc = new Map<string, Record<string, unknown>>();
         (sections || []).forEach((s: { doc?: { id: string } }) => {

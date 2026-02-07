@@ -291,7 +291,7 @@ export const getContractById = async (id: string | number) => {
   }
 };
 
-export const getContractsByDivisionLeader = async (divisionLeaderId: string) => {
+export const getSectionsByDivisionLeader = async (divisionLeaderId: string) => {
   const query = `{
     sections(where: {divisionLeader: "${divisionLeaderId}"}) {
       id
@@ -329,7 +329,7 @@ export const getContractsByDivisionLeader = async (divisionLeaderId: string) => 
     const sections = (res.data as any).sections || [];
     return sections;
   } catch (e) {
-    console.log(e, "============error in get contracts by division leader from subgraph============");
+    console.log(e, "============error in get sections by division leader from subgraph============");
     return [];
   }
 }

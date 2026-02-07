@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useConnection } from 'wagmi';
 import { Card, CardContent } from '@/app/components/ui/card';
 import { Button } from '@/app/components/ui/button';
-import { getContractsByDivisionLeader, getContractById } from '@/utils/subgraph';
+import { getSectionsByDivisionLeader, getContractById } from '@/utils/subgraph';
 import { getCurrentUserProfile } from '@/utils/subgraph';
 import { DIVISION_LABELS, USER_ROLE } from '@/utils/constants';
 import { useUser } from '@/app/contexts/UserContext';
@@ -52,7 +52,7 @@ export default function SectionAssignmentsPendingPage() {
         if (profile?.dcategory) {
           setDivisionLabel(DIVISION_LABELS[profile.dcategory] ?? `Division #${profile.dcategory}`);
         }
-        const sections = await getContractsByDivisionLeader(address);
+        const sections = await getSectionsByDivisionLeader(address);
         const list = Array.isArray(sections) ? sections : [];
         const flat: PendingClauseLeader[] = [];
         list.forEach((sec: { id: string; clauses?: Array<{ id: string; status?: number }>; doc?: { id: string; title?: string } }) => {

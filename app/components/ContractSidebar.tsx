@@ -18,6 +18,7 @@ import {
   RefreshCw,
   FileSearch,
   PenLine,
+  UserPlus,
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useUser, UserRole } from '../contexts/UserContext';
@@ -90,6 +91,7 @@ export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
     '/my-contracts': 'my-contracts',
     '/pending': 'pending',
     '/clause-assignments/pending': 'pending',
+    '/section-assignments/unallocated': 'internal-unallocated',
     '/section-assignments/pending': 'internal-pending',
     '/section-assignments/review': 'internal-review',
     '/section-assignments/approved': 'internal-approved',
@@ -142,6 +144,7 @@ export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
         { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, count: null },
         { type: 'header', label: 'Internal Review' },
         { type: 'item', id: 'internal-all', label: 'All', route: '/section-assignments', icon: ClipboardList, count: counts.all },
+        { type: 'item', id: 'internal-unallocated', label: 'Unallocated', route: '/section-assignments/unallocated', icon: UserPlus, count: null },
         { type: 'item', id: 'internal-pending', label: 'Pending', route: '/section-assignments/pending', icon: Clock, count: counts.pending },
         { type: 'item', id: 'internal-review', label: 'Review', route: '/section-assignments/review', icon: FileSearch, count: counts.divisionRequest },
         { type: 'item', id: 'internal-approved', label: 'Approved', route: '/section-assignments/approved', icon: CheckCircle, count: counts.approved },

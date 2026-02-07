@@ -57,6 +57,7 @@ export function LayoutWrapper({ children }: LayoutWrapperProps) {
       'team': '/divisions',
       // Division Leader Internal Review
       'internal-all': '/section-assignments',
+      'internal-unallocated': '/section-assignments/unallocated',
       'internal-pending': '/section-assignments/pending',
       'internal-review': '/section-assignments/review',
       'internal-approved': '/section-assignments/approved',
