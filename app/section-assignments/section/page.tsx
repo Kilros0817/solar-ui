@@ -13,6 +13,7 @@ import { getDivisionMembersByDivisionId } from '@/utils/subgraph';
 import { assignClausesToMembers } from '@/utils/interact';
 import { useContractDoc } from '@/app/contexts/ContractDocContext';
 import { useAssignment } from '@/app/contexts/AssignmentContext';
+import { useSectionContent } from '@/app/contexts/SectionContentContext';
 import { DIVISION_LABELS, USER_ROLE, URLs } from '@/utils/constants';
 import { useUser } from '@/app/contexts/UserContext';
 import { toast } from 'sonner';
@@ -32,8 +33,9 @@ export default function SectionAssignmentsSectionPage() {
   const config = useConfig();
   const { address } = useConnection();
   const { userRole } = useUser();
-  const { selectedContractId, selectedSectionIndex, setSelectedClause } = useAssignment();
+  const { selectedContractId, selectedSectionIndex, setSelection } = useAssignment();
   const { profile, loadDoc, getDoc, loadingDocId, loadingProfile, error: contextError, refetchDoc } = useContractDoc();
+  const { getSectionContent } = useSectionContent();
   const contractId = selectedContractId ?? '';
   const sectionIndex = selectedSectionIndex ?? -1;
   const [sectionName, setSectionName] = useState('');
@@ -44,6 +46,7 @@ export default function SectionAssignmentsSectionPage() {
   const [sectionIdFromSubgraph, setSectionIdFromSubgraph] = useState<number | null>(null);
   const [sectionContentLoaded, setSectionContentLoaded] = useState(false);
   const [reassigningClauseIndex, setReassigningClauseIndex] = useState<number | null>(null);
+  const [clauseContentOverrides, setClauseContentOverrides] = useState<Record<number, string>>({});
 
   useEffect(() => {
     if (userRole !== null && userRole !== USER_ROLE.DIVISION_LEADER) {
@@ -63,6 +66,7 @@ export default function SectionAssignmentsSectionPage() {
   useEffect(() => {
     setSectionIdFromSubgraph(null);
     setSectionContentLoaded(false);
+    setClauseContentOverrides({});
   }, [contractId, sectionIndex]);
 
   const doc = contractId ? getDoc(contractId) : undefined;
@@ -111,6 +115,14 @@ export default function SectionAssignmentsSectionPage() {
 
   useEffect(() => {
     if (!doc || sectionContentLoaded) return;
+    const sectionId = doc.sections?.[sectionIndex]?.id != null ? String(doc.sections[sectionIndex].id) : null;
+    const cached = sectionId ? getSectionContent(sectionId) : undefined;
+    if (cached) {
+      setSectionName(cached.sectionName);
+      setClauses(cached.sectionContent?.map((c) => ({ clauseId: c.clauseId, clauseContent: c.clauseContent ?? '' })) ?? []);
+      setSectionContentLoaded(true);
+      return;
+    }
     if (!doc.cid) {
       setSectionName(`Section ${sectionIndex + 1}`);
       setClauses([]);
@@ -135,6 +147,35 @@ export default function SectionAssignmentsSectionPage() {
         setClauses([]);
       })
       .finally(() => setSectionContentLoaded(true));
+  }, [doc, sectionIndex, sectionContentLoaded, getSectionContent]);
+
+  // For allocated clauses (have division member), load content from clause CID; unallocated use section CID content already in clauses
+  useEffect(() => {
+    if (!sectionContentLoaded || !doc || sectionIndex < 0) return;
+    const rawSections = doc.sections ?? [];
+    const sec = rawSections[sectionIndex];
+    const subgraphClauses = (sec?.clauses ?? []) as Array<{ id?: string; cid?: string | null; divisionMember?: unknown }>;
+    const toFetch: { index: number; cid: string }[] = [];
+    subgraphClauses.forEach((c, i) => {
+      if (c?.divisionMember != null && c?.cid) {
+        toFetch.push({ index: i, cid: c.cid });
+      }
+    });
+    if (toFetch.length === 0) return;
+    let cancelled = false;
+    toFetch.forEach(({ index, cid }) => {
+      fetch(`${URLs.TBGateWay}${cid}`)
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (cancelled) return;
+          const content = typeof data?.clauseContent === 'string' ? data.clauseContent : '';
+          setClauseContentOverrides((prev) => ({ ...prev, [index]: content }));
+        })
+        .catch(() => {
+          if (!cancelled) setClauseContentOverrides((prev) => ({ ...prev, [index]: '' }));
+        });
+    });
+    return () => { cancelled = true; };
   }, [doc, sectionIndex, sectionContentLoaded]);
 
   const handleAssign = async () => {
@@ -277,7 +318,9 @@ export default function SectionAssignmentsSectionPage() {
                   >
                     <div className="flex-1 min-w-0 space-y-3">
                     <p className="text-sm leading-relaxed text-foreground">
-                      {clause.clauseContent}
+                      {clauseContentOverrides[i] !== undefined
+                        ? clauseContentOverrides[i]
+                        : clause.clauseContent}
                     </p>
                     <p className="text-xs text-muted-foreground">
                       Assigned to: <span className="font-medium text-foreground">{assignedLabel}</span>
@@ -359,7 +402,18 @@ export default function SectionAssignmentsSectionPage() {
                       size="icon"
                       className="h-8 w-8 shrink-0"
                       onClick={() => {
-                        setSelectedClause(i);
+                        const fromRoute =
+                          clauseStatus === 0
+                            ? 'pending'
+                            : clauseStatus === 1
+                              ? 'review'
+                              : clauseStatus === 2
+                                ? 'approved'
+                                : clauseStatus === 3
+                                  ? 'rejected'
+                                  : null;
+                        const clauseCid = (clauseData as { cid?: string | null } | undefined)?.cid ?? null;
+                        setSelection(contractId, sectionIndex, i, clauseCid, fromRoute);
                         router.push('/section-assignments/clause');
                       }}
                       title="View clause"

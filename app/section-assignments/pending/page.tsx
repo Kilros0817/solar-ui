@@ -14,10 +14,18 @@ import { FileText, Loader2, Eye } from 'lucide-react';
 
 type PendingClauseLeader = {
   id: string;
+  cid?: string | null;
   status: number;
   sectionId: string;
   section: { id: string; doc: { id: string; title?: string } };
+  divisionMember?: { id: string; firstName?: string; lastName?: string; email?: string } | null;
 };
+
+function getMemberLabel(m: PendingClauseLeader['divisionMember']): string {
+  if (!m) return '—';
+  const name = [m.firstName, m.lastName].filter(Boolean).join(' ').trim();
+  return name || m.email || m.id || '—';
+}
 
 export default function SectionAssignmentsPendingPage() {
   const router = useRouter();
@@ -55,16 +63,27 @@ export default function SectionAssignmentsPendingPage() {
         const sections = await getSectionsByDivisionLeader(address);
         const list = Array.isArray(sections) ? sections : [];
         const flat: PendingClauseLeader[] = [];
-        list.forEach((sec: { id: string; clauses?: Array<{ id: string; status?: number }>; doc?: { id: string; title?: string } }) => {
+        list.forEach((sec: {
+          id: string;
+          clauses?: Array<{
+            id: string;
+            cid?: string | null;
+            status?: number;
+            divisionMember?: { id: string; firstName?: string; lastName?: string; email?: string } | null;
+          }>;
+          doc?: { id: string; title?: string };
+        }) => {
           const sectionId = sec.id;
           const doc = sec.doc;
-          (sec.clauses ?? []).forEach((c: { id: string; status?: number }) => {
+          (sec.clauses ?? []).forEach((c) => {
             if (c.status === 0) {
               flat.push({
                 id: c.id,
+                cid: c.cid ?? null,
                 status: 0,
                 sectionId,
                 section: { id: sectionId, doc: doc ?? { id: '', title: '' } },
+                divisionMember: c.divisionMember ?? null,
               });
             }
           });
@@ -93,7 +112,7 @@ export default function SectionAssignmentsPendingPage() {
       if (secIdx < 0) return;
       const clauseIdx = sections[secIdx]?.clauses?.findIndex((c) => String(c.id) === String(clauseId)) ?? -1;
       if (clauseIdx < 0) return;
-      setSelection(contractId, secIdx, clauseIdx);
+      setSelection(contractId, secIdx, clauseIdx, item.cid ?? null);
       router.push('/section-assignments/clause');
     } catch (e) {
       console.error('Failed to open clause:', e);
@@ -134,14 +153,30 @@ export default function SectionAssignmentsPendingPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fill, 400px)' }}>
+        <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))' }}>
           {pendingLeader.map((item) => (
             <Card key={item.id} className="flex flex-col w-full">
               <CardContent className="p-4 flex flex-col gap-3 flex-1">
-                <span className="font-medium text-sm truncate">
-                  {item.section?.doc?.title ?? 'Untitled'}
-                </span>
-                <p className="text-xs text-muted-foreground">Section ID: {item.section?.id ?? '—'}</p>
+                <div className="space-y-1">
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    Document
+                  </p>
+                  <p className="font-medium text-sm truncate" title={item.section?.doc?.title ?? 'Untitled'}>
+                    {item.section?.doc?.title ?? 'Untitled'}
+                  </p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    Section ID
+                  </p>
+                  <p className="text-sm text-muted-foreground">{item.section?.id ?? '—'}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    Division member
+                  </p>
+                  <p className="text-sm text-muted-foreground">{getMemberLabel(item.divisionMember)}</p>
+                </div>
                 <div className="flex justify-end mt-auto pt-2 border-t">
                   <Button
                     variant="outline"

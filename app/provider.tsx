@@ -9,6 +9,7 @@ import { NewContractProvider } from './contexts/NewContractContext'
 import { ContractsProvider } from './contexts/ContractsContext'
 import { ContractDocProvider } from './contexts/ContractDocContext'
 import { AssignmentProvider } from './contexts/AssignmentContext'
+import { SectionContentProvider } from './contexts/SectionContentContext'
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import Web3AuthConnectorInstance from "@/utils/Web3AuthConnectorInstance";
@@ -66,9 +67,11 @@ const TBProvider: React.FC<TBProviderProps> = ({ children }: TBProviderProps) =>
                 <NewContractProvider>
                   <ContractsProvider>
                     <ContractDocProvider>
-                      <AssignmentProvider>
-                        {children}
-                      </AssignmentProvider>
+                      <SectionContentProvider>
+                        <AssignmentProvider>
+                          {children}
+                        </AssignmentProvider>
+                      </SectionContentProvider>
                     </ContractDocProvider>
                   </ContractsProvider>
                 </NewContractProvider>

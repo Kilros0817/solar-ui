@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/app/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card';
-import { ArrowLeft, FileText, Loader2 } from 'lucide-react';
+import { ArrowLeft, FileText, Loader2, CheckCircle, XCircle } from 'lucide-react';
 import { useContractDoc } from '@/app/contexts/ContractDocContext';
 import { useAssignment } from '@/app/contexts/AssignmentContext';
 import { DIVISION_LABELS, USER_ROLE, URLs } from '@/utils/constants';
@@ -14,7 +14,7 @@ import type { DocSection } from '@/app/data/interfaces';
 export default function SectionAssignmentsClausePage() {
   const router = useRouter();
   const { userRole } = useUser();
-  const { selectedContractId, selectedSectionIndex, selectedClauseIndex, selectedClauseCid } = useAssignment();
+  const { selectedContractId, selectedSectionIndex, selectedClauseIndex, selectedClauseCid, selectedFromRoute } = useAssignment();
   const { profile, loadDoc, getDoc, loadingDocId, loadingProfile, error: contextError } = useContractDoc();
   const contractId = selectedContractId ?? '';
   const sectionIndex = selectedSectionIndex ?? -1;
@@ -112,9 +112,9 @@ export default function SectionAssignmentsClausePage() {
   if (error) {
     return (
       <div className="p-6 space-y-6">
-        <Button variant="ghost" onClick={() => router.push('/section-assignments/section')} className="gap-2">
+        <Button variant="ghost" onClick={() => router.back()} className="gap-2">
           <ArrowLeft className="h-4 w-4" />
-          Back to section
+          Back
         </Button>
         <p className="text-muted-foreground">{error}</p>
       </div>
@@ -123,9 +123,9 @@ export default function SectionAssignmentsClausePage() {
 
   return (
     <div className="p-6 space-y-6">
-      <Button variant="ghost" onClick={() => router.push('/section-assignments/section')} className="gap-2">
+      <Button variant="ghost" onClick={() => router.back()} className="gap-2">
         <ArrowLeft className="h-4 w-4" />
-        Back to section
+        Back
       </Button>
 
       <div className="flex items-start gap-4">
@@ -143,7 +143,7 @@ export default function SectionAssignmentsClausePage() {
         <CardHeader>
           <CardTitle className="text-lg">View clause content</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
           <textarea
             id="clause-content"
             value={clauseContent}
@@ -152,6 +152,18 @@ export default function SectionAssignmentsClausePage() {
             className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 min-h-[160px]"
             placeholder="Enter clause content..."
           />
+          {selectedFromRoute === 'review' && (
+            <div className="flex items-center gap-3 pt-2 border-t">
+              <Button variant="default" className="gap-2" onClick={() => {}}>
+                <CheckCircle className="h-4 w-4" />
+                Approve
+              </Button>
+              <Button variant="outline" className="gap-2 text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => {}}>
+                <XCircle className="h-4 w-4" />
+                Reject
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

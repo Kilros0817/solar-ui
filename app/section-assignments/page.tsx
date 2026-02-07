@@ -9,6 +9,7 @@ import { Input } from '@/app/components/ui/input';
 import { Loader2, FileText, ClipboardList, Eye, Search } from 'lucide-react';
 import { getSectionsByDivisionLeader, getContractById } from '@/utils/subgraph';
 import { useAssignment } from '@/app/contexts/AssignmentContext';
+import { useSectionContent } from '@/app/contexts/SectionContentContext';
 import { USER_ROLE } from '@/utils/constants';
 import { useUser } from '@/app/contexts/UserContext';
 
@@ -39,7 +40,7 @@ function getClauseCounts(clauses: SectionFromApi['clauses']) {
     else if (s === 2) approved++;
     else if (s === 3) rejected++;
   });
-  return { total: list.length, assigned, submitted, approved, rejected };
+  return { assigned, submitted, approved, rejected, fromSubgraph: list.length };
 }
 
 function getClientLabel(doc: SectionFromApi['doc']) {
@@ -54,6 +55,7 @@ export default function SectionAssignmentsPage() {
   const { address } = useConnection();
   const { userRole } = useUser();
   const { setSelectedContract, setSelectedSection } = useAssignment();
+  const { loadSectionContent, getTotalClauses } = useSectionContent();
   const [sections, setSections] = useState<SectionFromApi[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -93,6 +95,15 @@ export default function SectionAssignmentsPage() {
       });
     return () => { cancelled = true; };
   }, [address, userRole]);
+
+  // Load section content (IPFS) for each section so we have total clauses; cache in context
+  useEffect(() => {
+    if (sections.length === 0) return;
+    sections.forEach((section) => {
+      const docId = section.doc?.id;
+      if (docId) loadSectionContent(section.id, docId);
+    });
+  }, [sections, loadSectionContent]);
 
   const filteredSections = sections.filter((sec) => {
     const title = (sec.doc?.title ?? '').toLowerCase();
@@ -178,6 +189,9 @@ export default function SectionAssignmentsPage() {
         <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))' }}>
           {filteredSections.map((section) => {
             const counts = getClauseCounts(section.clauses);
+            const totalFromContent = getTotalClauses(section.id);
+            const total = totalFromContent ?? counts.fromSubgraph;
+            const unallocated = totalFromContent != null ? Math.max(0, totalFromContent - counts.fromSubgraph) : null;
             const contractTitle = section.doc?.title ?? 'Untitled';
             const client = getClientLabel(section.doc);
             const isViewing = viewingId === section.id;
@@ -205,7 +219,10 @@ export default function SectionAssignmentsPage() {
                       <span>Section ID: {section.id}</span>
                     </div>
                     <div className="flex flex-wrap gap-2 text-xs text-muted-foreground mt-1.5">
-                      <span className="text-blue-600">Total: {counts.total}</span>
+                      <span className="text-blue-600">Total: {total}</span>
+                      {unallocated != null && (
+                        <span className="text-muted-foreground">Unallocated: {unallocated}</span>
+                      )}
                       <span className="text-yellow-600">Assigned: {counts.assigned}</span>
                       <span className="text-orange-600">Submitted: {counts.submitted}</span>
                       <span className="text-green-600">Approved: {counts.approved}</span>

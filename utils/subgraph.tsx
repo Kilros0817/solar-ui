@@ -269,6 +269,7 @@ export const getContractById = async (id: string | number) => {
         }
         clauses {
           id
+          cid
           status
           assignedAt
           divisionMember {

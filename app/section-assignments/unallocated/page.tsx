@@ -9,6 +9,7 @@ import { Input } from '@/app/components/ui/input';
 import { Loader2, FileText, ClipboardList, Eye, Search } from 'lucide-react';
 import { getSectionsByDivisionLeader, getContractById } from '@/utils/subgraph';
 import { useAssignment } from '@/app/contexts/AssignmentContext';
+import { useSectionContent } from '@/app/contexts/SectionContentContext';
 import { USER_ROLE } from '@/utils/constants';
 import { useUser } from '@/app/contexts/UserContext';
 
@@ -46,6 +47,7 @@ export default function SectionAssignmentsUnallocatedPage() {
   const { address } = useConnection();
   const { userRole } = useUser();
   const { setSelectedContract, setSelectedSection } = useAssignment();
+  const { loadSectionContent } = useSectionContent();
   const [sections, setSections] = useState<SectionFromApi[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -85,6 +87,15 @@ export default function SectionAssignmentsUnallocatedPage() {
       });
     return () => { cancelled = true; };
   }, [address, userRole]);
+
+  // Load section content into context so total/unallocated are available elsewhere
+  useEffect(() => {
+    if (sections.length === 0) return;
+    sections.forEach((section) => {
+      const docId = section.doc?.id;
+      if (docId) loadSectionContent(section.id, docId);
+    });
+  }, [sections, loadSectionContent]);
 
   // Flatten to unallocated clauses with section + doc context
   const unallocatedItems: Array<{ clause: ClauseFromApi; section: SectionFromApi }> = [];
