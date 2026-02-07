@@ -89,6 +89,8 @@ export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
     '/dashboard': 'dashboard',
     '/my-contracts': 'my-contracts',
     '/pending': 'pending',
+    '/clause-assignments/pending': 'pending',
+    '/section-assignments/pending': 'pending',
     '/review': 'review',
     '/approved': 'approved',
     '/esigned': 'esigned',
@@ -102,6 +104,8 @@ export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
     '/section-assignments': 'section-assignments',
     '/section-assignments/section': 'section-assignments',
     '/section-assignments/clause': 'section-assignments',
+    '/section-assignments/review': 'review',
+    '/section-assignments/approved': 'approved',
     '/divisions': 'team',
     '/pending-users': 'pending-users',
   };
@@ -216,12 +220,30 @@ export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
           const isActive = currentTab === item.id;
           const handleClick = () => {
             // Navigate to routes for tabs (role-specific routes)
+            const pendingRoute =
+              userRole === USER_ROLE.DIVISION_MEMBER
+                ? '/clause-assignments/pending'
+                : userRole === USER_ROLE.DIVISION_LEADER
+                  ? '/section-assignments/pending'
+                  : '/pending';
+            const reviewRoute =
+              userRole === USER_ROLE.DIVISION_MEMBER
+                ? '/clause-assignments/review'
+                : userRole === USER_ROLE.DIVISION_LEADER
+                  ? '/section-assignments/review'
+                  : '/review';
+            const approvedRoute =
+              userRole === USER_ROLE.DIVISION_MEMBER
+                ? '/clause-assignments/approved'
+                : userRole === USER_ROLE.DIVISION_LEADER
+                  ? '/section-assignments/approved'
+                  : '/approved';
             const routeMap: Record<string, string> = {
               'dashboard': '/dashboard',
               'my-contracts': '/my-contracts',
-              'pending': '/pending',
-              'review': userRole === USER_ROLE.DIVISION_MEMBER ? '/clause-assignments/review' : '/review',
-              'approved': userRole === USER_ROLE.DIVISION_MEMBER ? '/clause-assignments/approved' : '/approved',
+              'pending': pendingRoute,
+              'review': reviewRoute,
+              'approved': approvedRoute,
               'esigned': '/esigned',
               'templates': '/templates',
               'clause-assignments': '/clause-assignments',

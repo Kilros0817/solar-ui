@@ -30,12 +30,30 @@ export function LayoutWrapper({ children }: LayoutWrapperProps) {
 
   // Handle sidebar tab changes
   const handleTabChange = (tab: string) => {
+    const pendingRoute =
+      userRole === USER_ROLE.DIVISION_MEMBER
+        ? '/clause-assignments/pending'
+        : userRole === USER_ROLE.DIVISION_LEADER
+          ? '/section-assignments/pending'
+          : '/pending';
+    const reviewRoute =
+      userRole === USER_ROLE.DIVISION_MEMBER
+        ? '/clause-assignments/review'
+        : userRole === USER_ROLE.DIVISION_LEADER
+          ? '/section-assignments/review'
+          : '/review';
+    const approvedRoute =
+      userRole === USER_ROLE.DIVISION_MEMBER
+        ? '/clause-assignments/approved'
+        : userRole === USER_ROLE.DIVISION_LEADER
+          ? '/section-assignments/approved'
+          : '/approved';
     const routeMap: Record<string, string> = {
       'dashboard': '/dashboard',
       'my-contracts': '/my-contracts',
-      'pending': '/pending',
-      'review': '/review',
-      'approved': '/approved',
+      'pending': pendingRoute,
+      'review': reviewRoute,
+      'approved': approvedRoute,
       'esigned': '/esigned',
       'templates': '/templates',
       'clause-assignments': '/clause-assignments',
