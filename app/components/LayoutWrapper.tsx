@@ -33,21 +33,15 @@ export function LayoutWrapper({ children }: LayoutWrapperProps) {
     const pendingRoute =
       userRole === USER_ROLE.DIVISION_MEMBER
         ? '/clause-assignments/pending'
-        : userRole === USER_ROLE.DIVISION_LEADER
-          ? '/section-assignments/pending'
-          : '/pending';
+        : '/pending';
     const reviewRoute =
       userRole === USER_ROLE.DIVISION_MEMBER
         ? '/clause-assignments/review'
-        : userRole === USER_ROLE.DIVISION_LEADER
-          ? '/section-assignments/review'
-          : '/review';
+        : '/review';
     const approvedRoute =
       userRole === USER_ROLE.DIVISION_MEMBER
         ? '/clause-assignments/approved'
-        : userRole === USER_ROLE.DIVISION_LEADER
-          ? '/section-assignments/approved'
-          : '/approved';
+        : '/approved';
     const routeMap: Record<string, string> = {
       'dashboard': '/dashboard',
       'my-contracts': '/my-contracts',
@@ -61,6 +55,18 @@ export function LayoutWrapper({ children }: LayoutWrapperProps) {
       'rejected-tasks': '/clause-assignments/rejected',
       'pending-users': '/pending-users',
       'team': '/divisions',
+      // Division Leader Internal Review
+      'internal-all': '/section-assignments',
+      'internal-pending': '/section-assignments/pending',
+      'internal-review': '/section-assignments/review',
+      'internal-approved': '/section-assignments/approved',
+      'internal-rejected': '/section-assignments/rejected',
+      // Division Leader Legal Review
+      'legal-all': '/legal-review',
+      'legal-pending': '/legal-review/pending',
+      'legal-review-tab': '/legal-review/review',
+      'legal-approved': '/legal-review/approved',
+      'legal-rejected': '/legal-review/rejected',
     };
 
     const route = routeMap[tab];

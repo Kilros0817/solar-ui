@@ -84,13 +84,16 @@ export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
     return () => { cancelled = true; };
   }, [userRole, address]);
 
-  // Map routes to tab IDs
+  // Map routes to tab IDs (for active state)
   const routeToTabMap: Record<string, string> = {
     '/dashboard': 'dashboard',
     '/my-contracts': 'my-contracts',
     '/pending': 'pending',
     '/clause-assignments/pending': 'pending',
-    '/section-assignments/pending': 'pending',
+    '/section-assignments/pending': 'internal-pending',
+    '/section-assignments/review': 'internal-review',
+    '/section-assignments/approved': 'internal-approved',
+    '/section-assignments/rejected': 'internal-rejected',
     '/review': 'review',
     '/approved': 'approved',
     '/esigned': 'esigned',
@@ -101,11 +104,14 @@ export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
     '/clause-assignments/clause': 'review',
     '/clause-assignments/approved': 'approved',
     '/clause-assignments/rejected': 'rejected-tasks',
-    '/section-assignments': 'section-assignments',
-    '/section-assignments/section': 'section-assignments',
-    '/section-assignments/clause': 'section-assignments',
-    '/section-assignments/review': 'review',
-    '/section-assignments/approved': 'approved',
+    '/section-assignments': 'internal-all',
+    '/section-assignments/section': 'internal-all',
+    '/section-assignments/clause': 'internal-all',
+    '/legal-review': 'legal-all',
+    '/legal-review/pending': 'legal-pending',
+    '/legal-review/review': 'legal-review-tab',
+    '/legal-review/approved': 'legal-approved',
+    '/legal-review/rejected': 'legal-rejected',
     '/divisions': 'team',
     '/pending-users': 'pending-users',
   };
@@ -130,14 +136,22 @@ export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
       ];
     }
 
-    // Division Lead - Section assignments and team management
+    // Division Lead - Internal Review + Legal Review with submenus
     if (userRole === USER_ROLE.DIVISION_LEADER) {
       return [
         { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, count: null },
-        { id: 'section-assignments', label: 'Section Assignments', icon: ClipboardList, count: counts.all },
-        { id: 'pending', label: 'Pending', icon: Clock, count: counts.pending },
-        { id: 'review', label: 'Review', icon: FileSearch, count: counts.divisionRequest },
-        { id: 'approved', label: 'Approved', icon: CheckCircle, count: counts.approved },
+        { type: 'header', label: 'Internal Review' },
+        { type: 'item', id: 'internal-all', label: 'All', route: '/section-assignments', icon: ClipboardList, count: counts.all },
+        { type: 'item', id: 'internal-pending', label: 'Pending', route: '/section-assignments/pending', icon: Clock, count: counts.pending },
+        { type: 'item', id: 'internal-review', label: 'Review', route: '/section-assignments/review', icon: FileSearch, count: counts.divisionRequest },
+        { type: 'item', id: 'internal-approved', label: 'Approved', route: '/section-assignments/approved', icon: CheckCircle, count: counts.approved },
+        { type: 'item', id: 'internal-rejected', label: 'Rejected', route: '/section-assignments/rejected', icon: Archive, count: null },
+        { type: 'header', label: 'Legal Review' },
+        { type: 'item', id: 'legal-all', label: 'All sections', route: '/legal-review', icon: FileText, count: null },
+        { type: 'item', id: 'legal-pending', label: 'Pending', route: '/legal-review/pending', icon: Clock, count: counts.pending },
+        { type: 'item', id: 'legal-review-tab', label: 'Review', route: '/legal-review/review', icon: FileSearch, count: counts.divisionRequest },
+        { type: 'item', id: 'legal-approved', label: 'Approved', route: '/legal-review/approved', icon: CheckCircle, count: counts.approved },
+        { type: 'item', id: 'legal-rejected', label: 'Rejected', route: '/legal-review/rejected', icon: Archive, count: null },
         { id: 'templates', label: 'Division Templates', icon: FolderOpen, count: null },
         { id: 'team', label: 'My Team', icon: Users, count: null },
       ];
@@ -216,28 +230,56 @@ export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
       </div>
       
       <nav className="flex-1 min-h-0 overflow-y-auto p-4 space-y-1">
-        {menuItems.map((item) => {
-          const isActive = currentTab === item.id;
+        {menuItems.map((item, index) => {
+          // Division Leader: grouped menu (header or submenu item)
+          if ('type' in item && item.type === 'header') {
+            return (
+              <div
+                key={`header-${index}-${item.label}`}
+                className="pt-3 pb-1.5 px-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider first:pt-0"
+              >
+                {item.label}
+              </div>
+            );
+          }
+          if ('type' in item && item.type === 'item') {
+            const sub = item as { id: string; route: string; label: string; icon: typeof ClipboardList; count: number | null };
+            const isActive = currentTab === sub.id;
+            const Icon = sub.icon;
+            return (
+              <Button
+                key={sub.id}
+                variant={isActive ? "secondary" : "ghost"}
+                className={`w-full justify-start h-10 ml-4 pl-3 ${isActive ? 'bg-brand-primary/20 border-brand-secondary/60' : 'brand-hover'}`}
+                onClick={() => router.push(sub.route)}
+              >
+                <Icon className="h-4 w-4 mr-3 shrink-0" />
+                <span className="flex-1 text-left">{sub.label}</span>
+                {sub.count != null && sub.count > 0 && (
+                  <Badge variant="secondary" className="ml-auto">
+                    {sub.count}
+                  </Badge>
+                )}
+              </Button>
+            );
+          }
+
+          // Flat menu (other roles or DL dashboard/templates/team)
+          const flatItem = item as { id: string; label: string; icon: typeof LayoutDashboard; count: number | null };
+          const isActive = currentTab === flatItem.id;
           const handleClick = () => {
-            // Navigate to routes for tabs (role-specific routes)
             const pendingRoute =
               userRole === USER_ROLE.DIVISION_MEMBER
                 ? '/clause-assignments/pending'
-                : userRole === USER_ROLE.DIVISION_LEADER
-                  ? '/section-assignments/pending'
-                  : '/pending';
+                : '/pending';
             const reviewRoute =
               userRole === USER_ROLE.DIVISION_MEMBER
                 ? '/clause-assignments/review'
-                : userRole === USER_ROLE.DIVISION_LEADER
-                  ? '/section-assignments/review'
-                  : '/review';
+                : '/review';
             const approvedRoute =
               userRole === USER_ROLE.DIVISION_MEMBER
                 ? '/clause-assignments/approved'
-                : userRole === USER_ROLE.DIVISION_LEADER
-                  ? '/section-assignments/approved'
-                  : '/approved';
+                : '/approved';
             const routeMap: Record<string, string> = {
               'dashboard': '/dashboard',
               'my-contracts': '/my-contracts',
@@ -247,32 +289,31 @@ export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
               'esigned': '/esigned',
               'templates': '/templates',
               'clause-assignments': '/clause-assignments',
-              'section-assignments': '/section-assignments',
               'rejected-tasks': '/clause-assignments/rejected',
               'pending-users': '/pending-users',
               'team': '/divisions',
             };
-            const route = routeMap[item.id];
+            const route = routeMap[flatItem.id];
             if (route) {
               router.push(route);
             } else {
-              // Fallback to onTabChange for backward compatibility
-              onTabChange(item.id);
+              onTabChange(flatItem.id);
             }
           };
 
+          const FlatIcon = flatItem.icon;
           return (
             <Button
-              key={item.id}
+              key={flatItem.id}
               variant={isActive ? "secondary" : "ghost"}
               className={`w-full justify-start h-10 ${isActive ? 'bg-brand-primary/20 border-brand-secondary/60' : 'brand-hover'}`}
               onClick={handleClick}
             >
-              <item.icon className="h-4 w-4 mr-3" />
-              <span className="flex-1 text-left">{item.label}</span>
-              {item.count && (
+              <FlatIcon className="h-4 w-4 mr-3" />
+              <span className="flex-1 text-left">{flatItem.label}</span>
+              {flatItem.count != null && flatItem.count > 0 && (
                 <Badge variant="secondary" className="ml-auto">
-                  {item.count}
+                  {flatItem.count}
                 </Badge>
               )}
             </Button>
