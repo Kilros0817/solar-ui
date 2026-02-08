@@ -7,6 +7,8 @@ import { Button } from '@/app/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card';
 import { ArrowLeft, FileText, Loader2 } from 'lucide-react';
 import { useContractDoc } from '@/app/contexts/ContractDocContext';
+import { useContracts } from '@/app/contexts/ContractsContext';
+import { useSubgraphRefresh } from '@/app/contexts/SubgraphRefreshContext';
 import { useAssignment } from '@/app/contexts/AssignmentContext';
 import { DIVISION_LABELS, USER_ROLE, URLs } from '@/utils/constants';
 import { useUser } from '@/app/contexts/UserContext';
@@ -21,6 +23,8 @@ export default function ClauseAssignmentsClausePage() {
   const { userRole } = useUser();
   const { selectedContractId, selectedSectionIndex, selectedClauseIndex, selectedClauseCid, selectedFromRoute } = useAssignment();
   const { profile, loadDoc, getDoc, loadingDocId, loadingProfile, error: contextError, refetchDoc } = useContractDoc();
+  const { refetch: refetchContracts } = useContracts();
+  const { refresh: refreshSubgraph } = useSubgraphRefresh();
   const contractId = selectedContractId ?? '';
   const sectionIndex = selectedSectionIndex ?? -1;
   const clauseIndex = selectedClauseIndex ?? -1;
@@ -114,8 +118,8 @@ export default function ClauseAssignmentsClausePage() {
   const divisionLabel = profile ? (DIVISION_LABELS[profile.dcategory] ?? `Division #${profile.dcategory}`) : '';
 
   const isEditMode = selectedFromRoute === 'clauses' && !selectedClauseCid;
-  const backHref = selectedFromRoute === 'clauses' ? '/clause-assignments/clauses' : selectedFromRoute === 'review' ? '/clause-assignments/review' : selectedFromRoute === 'approved' ? '/clause-assignments/approved' : '/clause-assignments';
-  const backLabel = selectedFromRoute === 'clauses' ? 'Back to Clauses' : selectedFromRoute === 'review' ? 'Back to Review' : selectedFromRoute === 'approved' ? 'Back to Approved' : 'Back to Clause Assignments';
+  const backHref = selectedFromRoute === 'clauses' ? '/clause-assignments/clauses' : selectedFromRoute === 'review' ? '/clause-assignments/review' : selectedFromRoute === 'approved' ? '/clause-assignments/approved' : selectedFromRoute === 'rejected' ? '/clause-assignments/rejected' : '/clause-assignments';
+  const backLabel = selectedFromRoute === 'clauses' ? 'Back to Clauses' : selectedFromRoute === 'review' ? 'Back to Review' : selectedFromRoute === 'approved' ? 'Back to Approved' : selectedFromRoute === 'rejected' ? 'Back to Rejected' : 'Back to Clause Assignments';
 
   const handleRequestReview = async () => {
     if (!config || !address || subgraphClauseId == null) {
@@ -151,6 +155,8 @@ export default function ClauseAssignmentsClausePage() {
       if (success) {
         toast.success('Clause submitted for review');
         await refetchDoc(contractId);
+        await refetchContracts();
+        refreshSubgraph();
         router.push('/clause-assignments/clauses');
       } else {
         toast.error('Failed to submit clause');

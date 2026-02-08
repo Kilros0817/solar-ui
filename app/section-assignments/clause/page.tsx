@@ -5,13 +5,15 @@ import { useRouter } from 'next/navigation';
 import { useConfig, useConnection } from 'wagmi';
 import { Button } from '@/app/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card';
-import { ArrowLeft, FileText, Loader2, CheckCircle, XCircle } from 'lucide-react';
+import { ArrowLeft, FileText, Loader2, CheckCircle, XCircle, UserPlus } from 'lucide-react';
 import { useContractDoc } from '@/app/contexts/ContractDocContext';
+import { useContracts } from '@/app/contexts/ContractsContext';
+import { useSubgraphRefresh } from '@/app/contexts/SubgraphRefreshContext';
 import { useAssignment } from '@/app/contexts/AssignmentContext';
 import { DIVISION_LABELS, USER_ROLE, URLs } from '@/utils/constants';
 import { useUser } from '@/app/contexts/UserContext';
 import { approveClauseWithSectionUpdate } from '@/utils/utility';
-import { rejectClause } from '@/utils/interact';
+import { rejectClause, reassignClause } from '@/utils/interact';
 import { toast } from 'sonner';
 import type { DocSection } from '@/app/data/interfaces';
 
@@ -22,13 +24,15 @@ export default function SectionAssignmentsClausePage() {
   const { userRole } = useUser();
   const { selectedContractId, selectedSectionIndex, selectedClauseIndex, selectedClauseCid, selectedFromRoute } = useAssignment();
   const { profile, loadDoc, getDoc, loadingDocId, loadingProfile, error: contextError, refetchDoc } = useContractDoc();
+  const { refetch: refetchContracts } = useContracts();
+  const { refresh: refreshSubgraph } = useSubgraphRefresh();
   const contractId = selectedContractId ?? '';
   const sectionIndex = selectedSectionIndex ?? -1;
   const clauseIndex = selectedClauseIndex ?? -1;
   const [sectionName, setSectionName] = useState('');
   const [clauseContent, setClauseContent] = useState('');
   const [contentLoaded, setContentLoaded] = useState(false);
-  const [actionLoading, setActionLoading] = useState<'approve' | 'reject' | null>(null);
+  const [actionLoading, setActionLoading] = useState<'approve' | 'reject' | 'reassign' | null>(null);
 
   useEffect(() => {
     if (userRole !== null && userRole !== USER_ROLE.DIVISION_LEADER) {
@@ -117,10 +121,10 @@ export default function SectionAssignmentsClausePage() {
     setActionLoading('approve');
     try {
       const res = await fetch(`${URLs.TBGateWay}${doc.cid}`);
-      const data = await res.ok ? res.json() : null;
+      const data = res.ok ? (await res.json()) as { sections?: DocSection[] } : null;
       const sections: DocSection[] = data?.sections ?? [];
       const section = sections[sectionIndex];
-      if (!section?.sectionName || !section?.sectionContent) {
+      if (!section?.sectionName) {
         toast.error('Could not load section data');
         return;
       }
@@ -128,13 +132,15 @@ export default function SectionAssignmentsClausePage() {
         config,
         address,
         clauseIdOnChain,
-        { sectionName: section.sectionName, sectionContent: section.sectionContent },
+        { sectionName: section.sectionName, sectionContent: section.sectionContent ?? [] },
         clauseIndex,
         clauseContent,
       );
       if (ok) {
         toast.success('Clause approved');
         await refetchDoc(contractId);
+        await refetchContracts();
+        refreshSubgraph();
         router.back();
       } else {
         toast.error('Failed to approve clause');
@@ -158,6 +164,8 @@ export default function SectionAssignmentsClausePage() {
       if (ok) {
         toast.success('Clause rejected');
         await refetchDoc(contractId);
+        await refetchContracts();
+        refreshSubgraph();
         router.back();
       } else {
         toast.error('Failed to reject clause');
@@ -165,6 +173,31 @@ export default function SectionAssignmentsClausePage() {
     } catch (e) {
       console.error('Reject error:', e);
       toast.error(e instanceof Error ? e.message : 'Failed to reject clause');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleReassign = async () => {
+    if (!config || !address || Number.isNaN(clauseIdOnChain)) {
+      toast.error('Missing data to reassign');
+      return;
+    }
+    setActionLoading('reassign');
+    try {
+      const ok = await reassignClause(config, address, clauseIdOnChain);
+      if (ok) {
+        toast.success('Clause reassigned');
+        await refetchDoc(contractId);
+        await refetchContracts();
+        refreshSubgraph();
+        router.back();
+      } else {
+        toast.error('Failed to reassign clause');
+      }
+    } catch (e) {
+      console.error('Reassign error:', e);
+      toast.error(e instanceof Error ? e.message : 'Failed to reassign clause');
     } finally {
       setActionLoading(null);
     }
@@ -244,6 +277,19 @@ export default function SectionAssignmentsClausePage() {
               >
                 {actionLoading === 'reject' ? <Loader2 className="h-4 w-4 animate-spin" /> : <XCircle className="h-4 w-4" />}
                 {actionLoading === 'reject' ? 'Rejecting...' : 'Reject'}
+              </Button>
+            </div>
+          )}
+          {selectedFromRoute === 'rejected' && (
+            <div className="flex items-center gap-3 pt-2 border-t">
+              <Button
+                variant="outline"
+                className="gap-2 cursor-pointer"
+                disabled={actionLoading !== null}
+                onClick={handleReassign}
+              >
+                {actionLoading === 'reassign' ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserPlus className="h-4 w-4" />}
+                {actionLoading === 'reassign' ? 'Reassigning...' : 'Reassign'}
               </Button>
             </div>
           )}

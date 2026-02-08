@@ -255,3 +255,17 @@ export const rejectClause = async (
   }
   return false;
 }
+
+// reassign clause
+export const reassignClause = async (
+  config: any,
+  account: string,
+  clauseId: number,
+) => {
+  const res = await runSponsorTx(config, account, "reassignClause", [clauseId]);
+  if (res.isSuccess) {
+    return true;
+  }
+  return false;
+}
+

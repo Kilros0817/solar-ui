@@ -226,7 +226,7 @@ export default function SectionAssignmentsUnallocatedPage() {
                     <Button
                       variant="default"
                       size="sm"
-                      className="gap-1.5"
+                      className="gap-1.5 cursor-pointer"
                       disabled={isViewing}
                       onClick={() => handleViewSection(section)}
                     >

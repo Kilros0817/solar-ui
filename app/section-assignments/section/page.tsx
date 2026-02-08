@@ -12,6 +12,8 @@ import { ArrowLeft, FileText, Loader2, UserPlus, RefreshCw, Eye } from 'lucide-r
 import { getDivisionMembersByDivisionId } from '@/utils/subgraph';
 import { assignClausesToMembers } from '@/utils/interact';
 import { useContractDoc } from '@/app/contexts/ContractDocContext';
+import { useContracts } from '@/app/contexts/ContractsContext';
+import { useSubgraphRefresh } from '@/app/contexts/SubgraphRefreshContext';
 import { useAssignment } from '@/app/contexts/AssignmentContext';
 import { useSectionContent } from '@/app/contexts/SectionContentContext';
 import { DIVISION_LABELS, USER_ROLE, URLs } from '@/utils/constants';
@@ -35,6 +37,8 @@ export default function SectionAssignmentsSectionPage() {
   const { userRole } = useUser();
   const { selectedContractId, selectedSectionIndex, setSelection } = useAssignment();
   const { profile, loadDoc, getDoc, loadingDocId, loadingProfile, error: contextError, refetchDoc } = useContractDoc();
+  const { refetch: refetchContracts } = useContracts();
+  const { refresh: refreshSubgraph } = useSubgraphRefresh();
   const { getSectionContent } = useSectionContent();
   const contractId = selectedContractId ?? '';
   const sectionIndex = selectedSectionIndex ?? -1;
@@ -230,6 +234,8 @@ export default function SectionAssignmentsSectionPage() {
       if (success) {
         toast.success('Assignments submitted successfully');
         await refetchDoc(contractId);
+        await refetchContracts();
+        refreshSubgraph();
       } else {
         toast.error('Failed to submit assignments');
       }
@@ -400,7 +406,7 @@ export default function SectionAssignmentsSectionPage() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8 shrink-0"
+                      className="h-8 w-8 shrink-0 cursor-pointer"
                       onClick={() => {
                         const fromRoute =
                           clauseStatus === 0

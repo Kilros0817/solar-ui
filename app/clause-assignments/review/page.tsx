@@ -9,6 +9,7 @@ import { FileText, Loader2, Eye, ClipboardList } from 'lucide-react';
 import { getContractsByDivisionMember, getContractById } from '@/utils/subgraph';
 import { useUser } from '@/app/contexts/UserContext';
 import { useAssignment } from '@/app/contexts/AssignmentContext';
+import { useSubgraphRefresh } from '@/app/contexts/SubgraphRefreshContext';
 import { USER_ROLE, URLs } from '@/utils/constants';
 
 type ClauseWithSection = {
@@ -33,6 +34,7 @@ export default function ClauseAssignmentsReviewPage() {
   const { address } = useConnection();
   const { userRole } = useUser();
   const { setSelection } = useAssignment();
+  const { refreshCounter } = useSubgraphRefresh();
   const [loading, setLoading] = useState(true);
   const [clauses, setClauses] = useState<ClauseWithSection[]>([]);
   const [clauseContents, setClauseContents] = useState<Record<string, string>>({});
@@ -66,7 +68,7 @@ export default function ClauseAssignmentsReviewPage() {
         if (!cancelled) setLoading(false);
       });
     return () => { cancelled = true; };
-  }, [address]);
+  }, [address, refreshCounter]);
 
   useEffect(() => {
     const withCid = clauses.filter((c) => c.cid);
@@ -201,7 +203,7 @@ export default function ClauseAssignmentsReviewPage() {
                   <Button
                     variant="outline"
                     size="sm"
-                    className="w-full gap-2"
+                    className="w-full gap-2 cursor-pointer"
                     onClick={() => handleViewClause(clause)}
                     disabled={navigatingClauseId === clause.id}
                   >

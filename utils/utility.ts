@@ -81,15 +81,44 @@ export const formatRelativeDate = (dateStr: number): string => {
   return date.toLocaleDateString();
 };
 
+/** Normalize sectionContent from gateway (may be array of { clauseId, clauseContent } or strings) to Clause[]. */
+function normalizeSectionContent(
+  raw: unknown,
+  minLength: number
+): Array<{ clauseId: string; clauseContent: string }> {
+  const arr = Array.isArray(raw) ? raw : [];
+  const result: Array<{ clauseId: string; clauseContent: string }> = [];
+  for (let i = 0; i < Math.max(arr.length, minLength); i++) {
+    const item = arr[i];
+    if (item && typeof item === 'object' && 'clauseContent' in item) {
+      result.push({
+        clauseId: typeof (item as { clauseId?: string }).clauseId === 'string' ? (item as { clauseId: string }).clauseId : `clause-${i}`,
+        clauseContent: typeof (item as { clauseContent?: string }).clauseContent === 'string' ? (item as { clauseContent: string }).clauseContent : '',
+      });
+    } else if (typeof item === 'string') {
+      result.push({ clauseId: `clause-${i}`, clauseContent: item });
+    } else {
+      result.push({ clauseId: `clause-${i}`, clauseContent: '' });
+    }
+  }
+  return result;
+}
+
 /** Build new section JSON with the clause at clauseIndex replaced by newClauseContent (for approve flow). */
 export const buildSectionWithReplacedClause = (
   currentSection: { sectionName: string; sectionContent: Array<{ clauseId: string; clauseContent: string }> },
   clauseIndex: number,
   newClauseContent: string,
 ): { sectionName: string; sectionContent: Array<{ clauseId: string; clauseContent: string }> } => {
-  const sectionContent = (currentSection.sectionContent ?? []).map((c, i) =>
-    i === clauseIndex ? { clauseId: c.clauseId, clauseContent: newClauseContent } : { ...c }
-  );
+  const content = currentSection.sectionContent ?? [];
+  const sectionContent = content.length <= clauseIndex
+    ? [...content, ...Array.from({ length: clauseIndex - content.length + 1 }, (_, i) => ({
+        clauseId: `clause-${content.length + i}`,
+        clauseContent: content.length + i === clauseIndex ? newClauseContent : '',
+      }))]
+    : content.map((c, i) =>
+        i === clauseIndex ? { clauseId: c.clauseId ?? `clause-${i}`, clauseContent: newClauseContent } : { clauseId: c.clauseId ?? `clause-${i}`, clauseContent: c.clauseContent ?? '' }
+      );
   return { sectionName: currentSection.sectionName, sectionContent };
 };
 
@@ -116,11 +145,19 @@ export const approveClauseWithSectionUpdate = async (
   config: any,
   account: string,
   clauseId: number,
-  currentSection: { sectionName: string; sectionContent: Array<{ clauseId: string; clauseContent: string }> },
+  currentSection: { sectionName: string; sectionContent?: unknown },
   clauseIndex: number,
   newClauseContent: string,
 ): Promise<boolean> => {
-  const newSection = buildSectionWithReplacedClause(currentSection, clauseIndex, newClauseContent);
+  const normalizedContent = normalizeSectionContent(
+    currentSection.sectionContent,
+    clauseIndex + 1
+  );
+  const normalizedSection = {
+    sectionName: currentSection.sectionName,
+    sectionContent: normalizedContent,
+  };
+  const newSection = buildSectionWithReplacedClause(normalizedSection, clauseIndex, newClauseContent);
   const sectionCid = await uploadSectionToPinata(newSection);
   return approveClause(config, account, clauseId, sectionCid);
 };

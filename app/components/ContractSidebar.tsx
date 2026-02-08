@@ -23,6 +23,7 @@ import {
 import { cn } from '../lib/utils';
 import { useUser, UserRole } from '../contexts/UserContext';
 import { useContracts } from '../contexts/ContractsContext';
+import { useSubgraphRefresh } from '../contexts/SubgraphRefreshContext';
 import { USER_ROLE } from '@/utils/constants';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
@@ -44,6 +45,7 @@ export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
   const { address } = useConnection();
   const { userRole, setUserRole } = useUser();
   const { contracts } = useContracts();
+  const { refreshCounter } = useSubgraphRefresh();
   const [divisionMemberCounts, setDivisionMemberCounts] = useState<{
     all: number;
     pending: number;
@@ -90,7 +92,7 @@ export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
         }
       });
     return () => { cancelled = true; };
-  }, [userRole, address]);
+  }, [userRole, address, refreshCounter]);
 
   useEffect(() => {
     if (userRole !== USER_ROLE.DIVISION_LEADER || !address) {
@@ -121,7 +123,7 @@ export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
         if (!cancelled) setDivisionLeaderClauseCounts(null);
       });
     return () => { cancelled = true; };
-  }, [userRole, address]);
+  }, [userRole, address, refreshCounter]);
 
   // Map routes to tab IDs (for active state)
   const routeToTabMap: Record<string, string> = {

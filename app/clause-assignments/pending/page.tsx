@@ -10,6 +10,7 @@ import { getCurrentUserProfile } from '@/utils/subgraph';
 import { DIVISION_LABELS, USER_ROLE } from '@/utils/constants';
 import { useUser } from '@/app/contexts/UserContext';
 import { useAssignment } from '@/app/contexts/AssignmentContext';
+import { useSubgraphRefresh } from '@/app/contexts/SubgraphRefreshContext';
 import { FileText, Loader2, Pencil } from 'lucide-react';
 
 type PendingClauseMember = {
@@ -23,6 +24,7 @@ export default function ClauseAssignmentsPendingPage() {
   const { address } = useConnection();
   const { userRole } = useUser();
   const { setSelection } = useAssignment();
+  const { refreshCounter } = useSubgraphRefresh();
   const [loading, setLoading] = useState(true);
   const [pendingMember, setPendingMember] = useState<PendingClauseMember[]>([]);
   const [divisionLabel, setDivisionLabel] = useState('');
@@ -62,7 +64,7 @@ export default function ClauseAssignmentsPendingPage() {
       }
     };
     run();
-  }, [address, userRole]);
+  }, [address, userRole, refreshCounter]);
 
   const handleWorkOnMember = async (item: PendingClauseMember) => {
     const contractId = item.section?.doc?.id;

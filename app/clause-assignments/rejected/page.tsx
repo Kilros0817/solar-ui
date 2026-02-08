@@ -5,17 +5,28 @@ import { useRouter } from 'next/navigation';
 import { useConnection } from 'wagmi';
 import { Card, CardContent } from '@/app/components/ui/card';
 import { Button } from '@/app/components/ui/button';
-import { Badge } from '@/app/components/ui/badge';
-import { ArrowLeft, FileText, Loader2, Pencil, AlertCircle } from 'lucide-react';
+import { FileText, Loader2, Eye, ClipboardList, AlertCircle } from 'lucide-react';
 import { getCurrentUserProfile, getContractsByDivisionMember, getContractById } from '@/utils/subgraph';
-import { DIVISION_LABELS, USER_ROLE } from '@/utils/constants';
+import { DIVISION_LABELS, USER_ROLE, URLs } from '@/utils/constants';
 import { useUser } from '@/app/contexts/UserContext';
 import { useAssignment } from '@/app/contexts/AssignmentContext';
+import { useSubgraphRefresh } from '@/app/contexts/SubgraphRefreshContext';
 
-type RejectedClause = {
+type ClauseWithSection = {
   id: string;
-  status: number;
-  section: { id: string; doc: { id: string; title?: string } };
+  cid?: string;
+  status?: number;
+  assignedAt?: string;
+  section?: {
+    id: string;
+    status?: number;
+    doc?: {
+      id: string;
+      title?: string;
+      status?: number;
+      client?: { firstName?: string; lastName?: string };
+    };
+  };
 };
 
 export default function ClauseAssignmentsRejectedPage() {
@@ -23,11 +34,13 @@ export default function ClauseAssignmentsRejectedPage() {
   const { address } = useConnection();
   const { userRole } = useUser();
   const { setSelection } = useAssignment();
+  const { refreshCounter } = useSubgraphRefresh();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [divisionLabel, setDivisionLabel] = useState('');
-  const [rejected, setRejected] = useState<RejectedClause[]>([]);
-  const [workingOnId, setWorkingOnId] = useState<string | null>(null);
+  const [clauses, setClauses] = useState<ClauseWithSection[]>([]);
+  const [clauseContents, setClauseContents] = useState<Record<string, string>>({});
+  const [navigatingClauseId, setNavigatingClauseId] = useState<string | null>(null);
 
   useEffect(() => {
     if (userRole !== null && userRole !== USER_ROLE.DIVISION_MEMBER) {
@@ -48,53 +61,83 @@ export default function ClauseAssignmentsRejectedPage() {
         const profile = await getCurrentUserProfile(address);
         if (!profile?.dcategory || Number(profile.dcategory) === 0) {
           setError('You are not assigned to a division.');
-          setRejected([]);
+          setClauses([]);
           setLoading(false);
           return;
         }
         const memberDcategory = Number(profile.dcategory);
         setDivisionLabel(DIVISION_LABELS[memberDcategory] ?? `Division #${memberDcategory}`);
 
-        const clauses = await getContractsByDivisionMember(address);
-        const list = Array.isArray(clauses) ? clauses : [];
-        const rejectedOnly = list.filter((c: { status?: number }) => c.status === 3) as RejectedClause[];
-        setRejected(rejectedOnly);
+        const list = await getContractsByDivisionMember(address);
+        const arr = Array.isArray(list) ? list : [];
+        const rejectedOnly = arr.filter((c: ClauseWithSection) => c.status === 3);
+        setClauses(rejectedOnly);
       } catch (e) {
         console.error('Failed to load rejected tasks:', e);
         setError('Failed to load rejected tasks.');
-        setRejected([]);
+        setClauses([]);
       } finally {
         setLoading(false);
       }
     };
     run();
-  }, [address]);
+  }, [address, refreshCounter]);
 
-  const handleWorkOn = async (item: RejectedClause) => {
-    const contractId = item.section?.doc?.id;
-    const sectionId = item.section?.id;
-    const clauseId = item.id;
-    if (!contractId || !sectionId || !clauseId) return;
-    setWorkingOnId(item.id);
+  useEffect(() => {
+    const withCid = clauses.filter((c) => c.cid);
+    if (withCid.length === 0) return;
+    let cancelled = false;
+    const fetchAll = async () => {
+      const next: Record<string, string> = {};
+      for (const clause of withCid) {
+        if (cancelled) return;
+        try {
+          const res = await fetch(`${URLs.TBGateWay}${clause.cid}`);
+          if (!res.ok) continue;
+          const data = await res.json();
+          const content =
+            typeof data?.clauseContent === 'string' ? data.clauseContent : '';
+          next[clause.id] = content || '';
+        } catch {
+          next[clause.id] = '';
+        }
+      }
+      if (!cancelled) setClauseContents((prev) => ({ ...prev, ...next }));
+    };
+    fetchAll();
+    return () => { cancelled = true; };
+  }, [clauses]);
+
+  const handleViewClause = async (clause: ClauseWithSection) => {
+    const docId = clause.section?.doc?.id;
+    const sectionId = clause.section?.id;
+    if (!docId || !sectionId) return;
+    setNavigatingClauseId(clause.id);
     try {
-      const doc = await getContractById(contractId);
-      const sections = (doc as { sections?: Array<{ id?: string; clauses?: Array<{ id?: string }> }> })?.sections ?? [];
-      const secIdx = sections.findIndex((s) => String(s.id) === String(sectionId));
-      if (secIdx < 0) {
-        setWorkingOnId(null);
+      const doc = await getContractById(docId);
+      if (!doc?.sections) {
+        setNavigatingClauseId(null);
         return;
       }
-      const clauseIdx = sections[secIdx]?.clauses?.findIndex((c) => String(c.id) === String(clauseId)) ?? -1;
-      if (clauseIdx < 0) {
-        setWorkingOnId(null);
+      const sectionIndex = doc.sections.findIndex(
+        (s: { id?: string }) => String(s.id) === String(sectionId)
+      );
+      if (sectionIndex < 0) {
+        setNavigatingClauseId(null);
         return;
       }
-      setSelection(contractId, secIdx, clauseIdx, null, 'clauses');
+      const section = doc.sections[sectionIndex] as { clauses?: Array<{ id?: string }> };
+      const clauseIndex = (section.clauses ?? []).findIndex(
+        (c: { id?: string }) => String(c.id) === String(clause.id)
+      );
+      if (clauseIndex < 0) {
+        setNavigatingClauseId(null);
+        return;
+      }
+      setSelection(docId, sectionIndex, clauseIndex, clause.cid ?? null, 'rejected');
       router.push('/clause-assignments/clause');
-    } catch (e) {
-      console.error('Failed to open clause:', e);
     } finally {
-      setWorkingOnId(null);
+      setNavigatingClauseId(null);
     }
   };
 
@@ -124,24 +167,28 @@ export default function ClauseAssignmentsRejectedPage() {
     );
   }
 
+  const contractTitle = (c: ClauseWithSection) =>
+    c.section?.doc?.title ?? 'Untitled';
+  const clientName = (c: ClauseWithSection) => {
+    const client = c.section?.doc?.client;
+    return client
+      ? [client.firstName, client.lastName].filter(Boolean).join(' ').trim() || '—'
+      : '—';
+  };
+
   return (
     <div className="p-6 space-y-6">
-      <Button variant="ghost" onClick={() => router.push('/clause-assignments')} className="gap-2">
-        <ArrowLeft className="h-4 w-4" />
-        Back to Clause Assignments
-      </Button>
-
       <div>
         <h1 className="text-3xl font-bold">Rejected</h1>
         <p className="text-muted-foreground mt-1">
-          Clauses returned for revision ({divisionLabel})
+          Clauses returned for revision {divisionLabel ? `— ${divisionLabel}` : ''}
         </p>
       </div>
 
-      {rejected.length === 0 ? (
+      {clauses.length === 0 ? (
         <Card>
           <CardContent className="py-12 flex flex-col items-center justify-center text-center">
-            <FileText className="h-12 w-12 text-muted-foreground mb-3" />
+            <ClipboardList className="h-12 w-12 text-muted-foreground mb-3" />
             <p className="font-medium">No rejected clauses</p>
             <p className="text-sm text-muted-foreground">
               Clauses rejected by your division leader will appear here for you to revise and resubmit.
@@ -149,31 +196,50 @@ export default function ClauseAssignmentsRejectedPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fill, 400px)' }}>
-          {rejected.map((item) => (
-            <Card key={item.id} className="flex flex-col w-full">
-              <CardContent className="p-4 flex flex-col gap-3 flex-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="font-medium text-sm truncate">
-                    {item.section?.doc?.title ?? 'Untitled'}
-                  </span>
-                  <Badge variant="destructive" className="shrink-0">
-                    Rejected
-                  </Badge>
+        <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+          {clauses.map((clause) => (
+            <Card
+              key={clause.id}
+              className="rounded-lg border bg-muted/30 hover:border-brand-secondary/50 transition-colors"
+            >
+              <CardContent className="p-4 space-y-3">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-brand-secondary/10 flex items-center justify-center shrink-0">
+                    <FileText className="h-5 w-5 text-brand-secondary" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-foreground truncate">
+                      {contractTitle(clause)}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Client: {clientName(clause)}
+                    </p>
+                  </div>
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  Section ID: {item.section?.id ?? '—'}
-                </p>
-                <div className="flex justify-end mt-auto pt-2 border-t">
+                {clause.cid && (
+                  <div className="rounded border bg-background/50 p-3">
+                    <p
+                      className="text-sm text-foreground line-clamp-2"
+                      title={clauseContents[clause.id] || undefined}
+                    >
+                      {clauseContents[clause.id] ?? 'Loading...'}
+                    </p>
+                  </div>
+                )}
+                <div className="pt-2 border-t">
                   <Button
-                    variant="default"
+                    variant="outline"
                     size="sm"
-                    className="gap-1.5 shrink-0"
-                    disabled={workingOnId === item.id}
-                    onClick={() => handleWorkOn(item)}
+                    className="w-full gap-2 cursor-pointer"
+                    onClick={() => handleViewClause(clause)}
+                    disabled={navigatingClauseId === clause.id}
                   >
-                    <Pencil className="h-3.5 w-3.5" />
-                    {workingOnId === item.id ? 'Opening...' : 'Work on'}
+                    {navigatingClauseId === clause.id ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                    View
                   </Button>
                 </div>
               </CardContent>

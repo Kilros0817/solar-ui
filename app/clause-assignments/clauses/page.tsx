@@ -10,6 +10,7 @@ import { ArrowLeft, FileText, Loader2, Eye, Pencil, ClipboardList } from 'lucide
 import { getContractsByDivisionMember, getContractById } from '@/utils/subgraph';
 import { useUser } from '@/app/contexts/UserContext';
 import { useAssignment } from '@/app/contexts/AssignmentContext';
+import { useSubgraphRefresh } from '@/app/contexts/SubgraphRefreshContext';
 import { USER_ROLE, URLs } from '@/utils/constants';
 import { formatRelativeDate } from '@/utils/utility';
 
@@ -29,6 +30,7 @@ export default function ClauseAssignmentsClausesPage() {
   const { address } = useConnection();
   const { userRole } = useUser();
   const { selectedContractId, setSelection } = useAssignment();
+  const { refreshCounter } = useSubgraphRefresh();
   const [loading, setLoading] = useState(true);
   const [clauses, setClauses] = useState<ClauseWithSection[]>([]);
   const [clauseContents, setClauseContents] = useState<Record<string, string>>({});
@@ -91,7 +93,7 @@ export default function ClauseAssignmentsClausesPage() {
         if (!cancelled) setLoading(false);
       });
     return () => { cancelled = true; };
-  }, [address, selectedContractId]);
+  }, [address, selectedContractId, refreshCounter]);
 
   useEffect(() => {
     const withCid = clauses.filter((c) => c.cid);
@@ -245,7 +247,7 @@ export default function ClauseAssignmentsClausesPage() {
                       <Button
                         variant="outline"
                         size="sm"
-                        className="w-full gap-2"
+                        className="w-full gap-2 cursor-pointer"
                         onClick={() => handleView(clause)}
                         disabled={!indicesMap[clause.id]}
                       >

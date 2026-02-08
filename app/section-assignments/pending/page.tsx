@@ -10,6 +10,7 @@ import { getCurrentUserProfile } from '@/utils/subgraph';
 import { DIVISION_LABELS, USER_ROLE } from '@/utils/constants';
 import { useUser } from '@/app/contexts/UserContext';
 import { useAssignment } from '@/app/contexts/AssignmentContext';
+import { useSubgraphRefresh } from '@/app/contexts/SubgraphRefreshContext';
 import { FileText, Loader2, Eye } from 'lucide-react';
 
 type PendingClauseLeader = {
@@ -32,6 +33,7 @@ export default function SectionAssignmentsPendingPage() {
   const { address } = useConnection();
   const { userRole } = useUser();
   const { setSelection } = useAssignment();
+  const { refreshCounter } = useSubgraphRefresh();
   const [loading, setLoading] = useState(true);
   const [pendingLeader, setPendingLeader] = useState<PendingClauseLeader[]>([]);
   const [divisionLabel, setDivisionLabel] = useState('');
@@ -97,7 +99,7 @@ export default function SectionAssignmentsPendingPage() {
       }
     };
     run();
-  }, [address, userRole]);
+  }, [address, userRole, refreshCounter]);
 
   const handleViewLeader = async (item: PendingClauseLeader) => {
     const contractId = item.section?.doc?.id;
@@ -181,7 +183,7 @@ export default function SectionAssignmentsPendingPage() {
                   <Button
                     variant="outline"
                     size="sm"
-                    className="gap-1.5 shrink-0"
+                    className="gap-1.5 shrink-0 cursor-pointer"
                     disabled={workingId === item.id}
                     onClick={() => handleViewLeader(item)}
                   >
