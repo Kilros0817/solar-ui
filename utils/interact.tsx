@@ -229,3 +229,29 @@ export const submitClauseToLeader = async (
   return false;
 }
 
+// approve clause (caller must pass sectionCid from utility.uploadSectionToPinata after building section with utility.buildSectionWithReplacedClause)
+export const approveClause = async (
+  config: any,
+  account: string,
+  clauseId: number,
+  sectionCid: string,
+) => {
+  const res = await runSponsorTx(config, account, "leaderReviewClause", [clauseId, true, sectionCid]);
+  if (res.isSuccess) {
+    return true;
+  }
+  return false;
+}
+
+// reject clause
+export const rejectClause = async (
+  config: any,
+  account: string,
+  clauseId: number,
+) => {
+  const res = await runSponsorTx(config, account, "leaderReviewClause", [clauseId, false, ""]);
+  if (res.isSuccess) {
+    return true;
+  }
+  return false;
+}

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useConfig, useConnection } from 'wagmi';
 import { Button } from '@/app/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card';
 import { ArrowLeft, FileText, Loader2, CheckCircle, XCircle } from 'lucide-react';
@@ -9,19 +10,25 @@ import { useContractDoc } from '@/app/contexts/ContractDocContext';
 import { useAssignment } from '@/app/contexts/AssignmentContext';
 import { DIVISION_LABELS, USER_ROLE, URLs } from '@/utils/constants';
 import { useUser } from '@/app/contexts/UserContext';
+import { approveClauseWithSectionUpdate } from '@/utils/utility';
+import { rejectClause } from '@/utils/interact';
+import { toast } from 'sonner';
 import type { DocSection } from '@/app/data/interfaces';
 
 export default function SectionAssignmentsClausePage() {
   const router = useRouter();
+  const config = useConfig();
+  const { address } = useConnection();
   const { userRole } = useUser();
   const { selectedContractId, selectedSectionIndex, selectedClauseIndex, selectedClauseCid, selectedFromRoute } = useAssignment();
-  const { profile, loadDoc, getDoc, loadingDocId, loadingProfile, error: contextError } = useContractDoc();
+  const { profile, loadDoc, getDoc, loadingDocId, loadingProfile, error: contextError, refetchDoc } = useContractDoc();
   const contractId = selectedContractId ?? '';
   const sectionIndex = selectedSectionIndex ?? -1;
   const clauseIndex = selectedClauseIndex ?? -1;
   const [sectionName, setSectionName] = useState('');
   const [clauseContent, setClauseContent] = useState('');
   const [contentLoaded, setContentLoaded] = useState(false);
+  const [actionLoading, setActionLoading] = useState<'approve' | 'reject' | null>(null);
 
   useEffect(() => {
     if (userRole !== null && userRole !== USER_ROLE.DIVISION_LEADER) {
@@ -97,6 +104,72 @@ export default function SectionAssignmentsClausePage() {
   const contractTitle = doc?.title ?? 'Untitled';
   const divisionLabel = profile ? (DIVISION_LABELS[profile.dcategory] ?? `Division #${profile.dcategory}`) : '';
 
+  const rawSections = doc?.sections ?? [];
+  const sectionAt = rawSections[sectionIndex];
+  const clauseAt = sectionAt?.clauses?.[clauseIndex];
+  const clauseIdOnChain = clauseAt?.id != null ? Number(clauseAt.id) : NaN;
+
+  const handleApprove = async () => {
+    if (!config || !address || !doc?.cid || Number.isNaN(clauseIdOnChain)) {
+      toast.error('Missing data to approve');
+      return;
+    }
+    setActionLoading('approve');
+    try {
+      const res = await fetch(`${URLs.TBGateWay}${doc.cid}`);
+      const data = await res.ok ? res.json() : null;
+      const sections: DocSection[] = data?.sections ?? [];
+      const section = sections[sectionIndex];
+      if (!section?.sectionName || !section?.sectionContent) {
+        toast.error('Could not load section data');
+        return;
+      }
+      const ok = await approveClauseWithSectionUpdate(
+        config,
+        address,
+        clauseIdOnChain,
+        { sectionName: section.sectionName, sectionContent: section.sectionContent },
+        clauseIndex,
+        clauseContent,
+      );
+      if (ok) {
+        toast.success('Clause approved');
+        await refetchDoc(contractId);
+        router.back();
+      } else {
+        toast.error('Failed to approve clause');
+      }
+    } catch (e) {
+      console.error('Approve error:', e);
+      toast.error(e instanceof Error ? e.message : 'Failed to approve clause');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleReject = async () => {
+    if (!config || !address || Number.isNaN(clauseIdOnChain)) {
+      toast.error('Missing data to reject');
+      return;
+    }
+    setActionLoading('reject');
+    try {
+      const ok = await rejectClause(config, address, clauseIdOnChain);
+      if (ok) {
+        toast.success('Clause rejected');
+        await refetchDoc(contractId);
+        router.back();
+      } else {
+        toast.error('Failed to reject clause');
+      }
+    } catch (e) {
+      console.error('Reject error:', e);
+      toast.error(e instanceof Error ? e.message : 'Failed to reject clause');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   if (userRole !== null && userRole !== USER_ROLE.DIVISION_LEADER) {
     return null;
   }
@@ -154,13 +227,23 @@ export default function SectionAssignmentsClausePage() {
           />
           {selectedFromRoute === 'review' && (
             <div className="flex items-center gap-3 pt-2 border-t">
-              <Button variant="default" className="gap-2" onClick={() => {}}>
-                <CheckCircle className="h-4 w-4" />
-                Approve
+              <Button
+                variant="default"
+                className="gap-2"
+                disabled={actionLoading !== null}
+                onClick={handleApprove}
+              >
+                {actionLoading === 'approve' ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4" />}
+                {actionLoading === 'approve' ? 'Approving...' : 'Approve'}
               </Button>
-              <Button variant="outline" className="gap-2 text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => {}}>
-                <XCircle className="h-4 w-4" />
-                Reject
+              <Button
+                variant="outline"
+                className="gap-2 text-destructive hover:text-destructive hover:bg-destructive/10"
+                disabled={actionLoading !== null}
+                onClick={handleReject}
+              >
+                {actionLoading === 'reject' ? <Loader2 className="h-4 w-4 animate-spin" /> : <XCircle className="h-4 w-4" />}
+                {actionLoading === 'reject' ? 'Rejecting...' : 'Reject'}
               </Button>
             </div>
           )}

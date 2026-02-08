@@ -1,5 +1,6 @@
-import { TBDelegator } from "./constants";
+import { TBDelegator, URLs } from "./constants";
 import { toast } from "sonner";
+import { approveClause } from "./interact";
 
 /**
  * Checks if an address has EIP-7702 delegation to TBDelegator
@@ -78,4 +79,48 @@ export const isValidEmail = (email: string): boolean => {
 export const formatRelativeDate = (dateStr: number): string => {
   const date = new Date(dateStr * 1000);
   return date.toLocaleDateString();
+};
+
+/** Build new section JSON with the clause at clauseIndex replaced by newClauseContent (for approve flow). */
+export const buildSectionWithReplacedClause = (
+  currentSection: { sectionName: string; sectionContent: Array<{ clauseId: string; clauseContent: string }> },
+  clauseIndex: number,
+  newClauseContent: string,
+): { sectionName: string; sectionContent: Array<{ clauseId: string; clauseContent: string }> } => {
+  const sectionContent = (currentSection.sectionContent ?? []).map((c, i) =>
+    i === clauseIndex ? { clauseId: c.clauseId, clauseContent: newClauseContent } : { ...c }
+  );
+  return { sectionName: currentSection.sectionName, sectionContent };
+};
+
+/** Upload a single section to Pinata (UploadAPI) and return its CID. */
+export const uploadSectionToPinata = async (section: {
+  sectionName: string;
+  sectionContent: Array<{ clauseId: string; clauseContent: string }>;
+}): Promise<string> => {
+  const res = await fetch(`${URLs.UploadAPI}/sections`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ sections: [section] }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error ?? "Failed to upload section");
+  const sectionCidPairs = data.sectionCids ?? [];
+  const cid = sectionCidPairs[0]?.cid;
+  if (!cid) throw new Error("No section CID returned");
+  return cid;
+};
+
+/** Approve clause: build new section JSON (replaced clause content), upload to Pinata, then call leaderReviewClause. */
+export const approveClauseWithSectionUpdate = async (
+  config: any,
+  account: string,
+  clauseId: number,
+  currentSection: { sectionName: string; sectionContent: Array<{ clauseId: string; clauseContent: string }> },
+  clauseIndex: number,
+  newClauseContent: string,
+): Promise<boolean> => {
+  const newSection = buildSectionWithReplacedClause(currentSection, clauseIndex, newClauseContent);
+  const sectionCid = await uploadSectionToPinata(newSection);
+  return approveClause(config, account, clauseId, sectionCid);
 };
