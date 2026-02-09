@@ -300,6 +300,11 @@ export const getSectionsByDivisionLeader = async (divisionLeaderId: string) => {
       cid
       assignedAt
       status
+      divisionLeader {
+        dcategory
+        firstName
+        lastName
+      }
       clauses {
         id
         cid
@@ -346,6 +351,7 @@ export const getContractsByDivisionMember = async (divisionMemberId: string) => 
       status
       section {
         id
+        cid
         status
         doc {
           id

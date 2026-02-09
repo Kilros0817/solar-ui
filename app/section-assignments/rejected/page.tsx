@@ -1,16 +1,15 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useConfig, useConnection } from 'wagmi';
 import { Card, CardContent } from '@/app/components/ui/card';
 import { Button } from '@/app/components/ui/button';
-import { getSectionsByDivisionLeader, getContractById } from '@/utils/subgraph';
-import { getCurrentUserProfile } from '@/utils/subgraph';
 import { reassignClause } from '@/utils/interact';
 import { DIVISION_LABELS, USER_ROLE } from '@/utils/constants';
 import { useUser } from '@/app/contexts/UserContext';
 import { useAssignment } from '@/app/contexts/AssignmentContext';
+import { useDivisionLeaderSections } from '@/app/contexts/DivisionLeaderSectionsContext';
 import { useContractDoc } from '@/app/contexts/ContractDocContext';
 import { useContracts } from '@/app/contexts/ContractsContext';
 import { useSubgraphRefresh } from '@/app/contexts/SubgraphRefreshContext';
@@ -40,54 +39,32 @@ export default function SectionAssignmentsRejectedPage() {
   const { setSelection } = useAssignment();
   const { refetchDoc } = useContractDoc();
   const { refetch: refetchContracts } = useContracts();
-  const { refresh: refreshSubgraph, refreshCounter } = useSubgraphRefresh();
-  const [loading, setLoading] = useState(true);
-  const [clauses, setClauses] = useState<RejectedClauseLeader[]>([]);
+  const { refresh: refreshSubgraph } = useSubgraphRefresh();
+  const { sections, loading, getDocFromSections, getSectionIndex } = useDivisionLeaderSections();
   const [divisionLabel, setDivisionLabel] = useState('');
   const [workingId, setWorkingId] = useState<string | null>(null);
   const [reassigningId, setReassigningId] = useState<string | null>(null);
 
-  const loadRejectedClauses = useCallback(async () => {
-    if (!address || userRole !== USER_ROLE.DIVISION_LEADER) return;
-    try {
-      const profile = await getCurrentUserProfile(address);
-      if (profile?.dcategory) {
-        setDivisionLabel(DIVISION_LABELS[profile.dcategory] ?? `Division #${profile.dcategory}`);
-      }
-      const sections = await getSectionsByDivisionLeader(address);
-      const list = Array.isArray(sections) ? sections : [];
-      const flat: RejectedClauseLeader[] = [];
-      list.forEach((sec: {
-        id: string;
-        clauses?: Array<{
-          id: string;
-          cid?: string | null;
-          status?: number;
-          divisionMember?: { id: string; firstName?: string; lastName?: string; email?: string } | null;
-        }>;
-        doc?: { id: string; title?: string };
-      }) => {
-        const sectionId = sec.id;
-        const doc = sec.doc;
-        (sec.clauses ?? []).forEach((c) => {
-          if (c.status === 3) {
-            flat.push({
-              id: c.id,
-              cid: c.cid ?? null,
-              status: 3,
-              sectionId,
-              section: { id: sectionId, doc: doc ?? { id: '', title: '' } },
-              divisionMember: c.divisionMember ?? null,
-            });
-          }
-        });
+  const clauses = useMemo(() => {
+    const flat: RejectedClauseLeader[] = [];
+    sections.forEach((sec) => {
+      const sectionId = sec.id;
+      const doc = sec.doc;
+      (sec.clauses ?? []).forEach((c) => {
+        if (c.status === 3) {
+          flat.push({
+            id: c.id,
+            cid: (c as { cid?: string | null }).cid ?? null,
+            status: 3,
+            sectionId,
+            section: { id: sectionId, doc: doc ?? { id: '', title: '' } },
+            divisionMember: (c as { divisionMember?: RejectedClauseLeader['divisionMember'] }).divisionMember ?? null,
+          });
+        }
       });
-      setClauses(flat);
-    } catch (e) {
-      console.error('Failed to load rejected clauses:', e);
-      setClauses([]);
-    }
-  }, [address, userRole, refreshCounter]);
+    });
+    return flat;
+  }, [sections]);
 
   useEffect(() => {
     if (userRole !== null && userRole !== USER_ROLE.DIVISION_LEADER) {
@@ -101,13 +78,11 @@ export default function SectionAssignmentsRejectedPage() {
   }, [userRole, router]);
 
   useEffect(() => {
-    if (!address || userRole !== USER_ROLE.DIVISION_LEADER) {
-      setLoading(false);
-      return;
+    if (userRole === USER_ROLE.DIVISION_LEADER && sections.length > 0 && !divisionLabel) {
+      const dcat = (sections[0] as { divisionLeader?: { dcategory?: number } })?.divisionLeader?.dcategory;
+      if (dcat != null) setDivisionLabel(DIVISION_LABELS[dcat] ?? `Division #${dcat}`);
     }
-    setLoading(true);
-    loadRejectedClauses().finally(() => setLoading(false));
-  }, [address, userRole, loadRejectedClauses]);
+  }, [userRole, sections, divisionLabel]);
 
   const handleReassign = async (item: RejectedClauseLeader) => {
     if (!config || !address) {
@@ -129,7 +104,6 @@ export default function SectionAssignmentsRejectedPage() {
           if (contractId) await refetchDoc(contractId);
           await refetchContracts();
           refreshSubgraph();
-          await loadRejectedClauses();
         }, 3000);
       } else {
         toast.error('Failed to reassign clause');
@@ -142,26 +116,27 @@ export default function SectionAssignmentsRejectedPage() {
     }
   };
 
-  const handleViewClause = async (item: RejectedClauseLeader) => {
+  const handleViewClause = (item: RejectedClauseLeader) => {
     const contractId = item.section?.doc?.id;
     const sectionId = item.section?.id;
     const clauseId = item.id;
     if (!contractId || !sectionId || !clauseId) return;
     setWorkingId(item.id);
-    try {
-      const doc = await getContractById(contractId);
-      const sections = (doc as { sections?: Array<{ id?: string; clauses?: Array<{ id?: string }> }> })?.sections ?? [];
-      const secIdx = sections.findIndex((s) => String(s.id) === String(sectionId));
-      if (secIdx < 0) return;
-      const clauseIdx = sections[secIdx]?.clauses?.findIndex((c) => String(c.id) === String(clauseId)) ?? -1;
-      if (clauseIdx < 0) return;
-      setSelection(contractId, secIdx, clauseIdx, item.cid ?? null, 'rejected');
-      router.push('/section-assignments/clause');
-    } catch (e) {
-      console.error('Failed to open clause:', e);
-    } finally {
+    const doc = getDocFromSections(contractId);
+    const secIdx = getSectionIndex(contractId, sectionId);
+    if (!doc || secIdx < 0) {
       setWorkingId(null);
+      return;
     }
+    const sec = doc.sections[secIdx];
+    const clauseIdx = (sec?.clauses ?? []).findIndex((c) => String((c as { id?: string }).id) === String(clauseId));
+    if (clauseIdx < 0) {
+      setWorkingId(null);
+      return;
+    }
+    setSelection(contractId, secIdx, clauseIdx, item.cid ?? null, 'rejected');
+    router.push('/section-assignments/clause');
+    setWorkingId(null);
   };
 
   if (userRole !== USER_ROLE.DIVISION_LEADER) {

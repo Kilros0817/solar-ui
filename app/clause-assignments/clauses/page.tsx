@@ -1,16 +1,14 @@
 'use client'
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { useConnection } from 'wagmi';
 import { Card, CardContent } from '@/app/components/ui/card';
 import { Button } from '@/app/components/ui/button';
 import { Badge } from '@/app/components/ui/badge';
 import { ArrowLeft, FileText, Loader2, Eye, Pencil, ClipboardList } from 'lucide-react';
-import { getContractsByDivisionMember, getContractById } from '@/utils/subgraph';
 import { useUser } from '@/app/contexts/UserContext';
 import { useAssignment } from '@/app/contexts/AssignmentContext';
-import { useSubgraphRefresh } from '@/app/contexts/SubgraphRefreshContext';
+import { useDivisionMemberClauses } from '@/app/contexts/DivisionMemberClausesContext';
 import { USER_ROLE, URLs } from '@/utils/constants';
 import { formatRelativeDate } from '@/utils/utility';
 
@@ -27,16 +25,38 @@ type ClauseWithSection = {
 
 export default function ClauseAssignmentsClausesPage() {
   const router = useRouter();
-  const { address } = useConnection();
   const { userRole } = useUser();
   const { selectedContractId, setSelection } = useAssignment();
-  const { refreshCounter } = useSubgraphRefresh();
-  const [loading, setLoading] = useState(true);
-  const [clauses, setClauses] = useState<ClauseWithSection[]>([]);
+  const { clauses: allClauses, loading, getDocFromClauses, getIndicesForClause } = useDivisionMemberClauses();
   const [clauseContents, setClauseContents] = useState<Record<string, string>>({});
-  const [contractTitle, setContractTitle] = useState('');
-  const [clientName, setClientName] = useState('');
-  const [indicesMap, setIndicesMap] = useState<Record<string, { sectionIndex: number; clauseIndex: number }>>({});
+
+  const clauses = useMemo(
+    () =>
+      selectedContractId
+        ? allClauses.filter((c) => String(c.section?.doc?.id) === String(selectedContractId))
+        : [],
+    [allClauses, selectedContractId]
+  );
+
+  const doc = useMemo(
+    () => (selectedContractId ? getDocFromClauses(selectedContractId) : null),
+    [selectedContractId, getDocFromClauses]
+  );
+
+  const contractTitle = doc?.title ?? 'Untitled';
+  const clientName = doc?.client
+    ? [doc.client.firstName, doc.client.lastName].filter(Boolean).join(' ').trim() || '—'
+    : '—';
+
+  const indicesMap = useMemo(() => {
+    const map: Record<string, { sectionIndex: number; clauseIndex: number }> = {};
+    if (!selectedContractId) return map;
+    clauses.forEach((c) => {
+      const idx = getIndicesForClause(selectedContractId, c.id);
+      if (idx) map[c.id] = idx;
+    });
+    return map;
+  }, [selectedContractId, clauses, getIndicesForClause]);
 
   useEffect(() => {
     if (userRole !== null && userRole !== USER_ROLE.DIVISION_MEMBER) {
@@ -51,49 +71,6 @@ export default function ClauseAssignmentsClausesPage() {
       return;
     }
   }, [selectedContractId, router]);
-
-  useEffect(() => {
-    if (!address || !selectedContractId) {
-      setLoading(false);
-      return;
-    }
-    let cancelled = false;
-    setLoading(true);
-    Promise.all([
-      getContractsByDivisionMember(address),
-      getContractById(selectedContractId),
-    ])
-      .then(([clauseList, doc]) => {
-        if (cancelled) return;
-        const list = Array.isArray(clauseList) ? clauseList : [];
-        const forContract = list.filter(
-          (c: ClauseWithSection) => c.section?.doc?.id === selectedContractId
-        );
-        setClauses(forContract);
-
-        const client = doc?.client;
-        setContractTitle(doc?.title ?? 'Untitled');
-        setClientName(
-          client ? [client.firstName, client.lastName].filter(Boolean).join(' ').trim() || '—' : '—'
-        );
-
-        const map: Record<string, { sectionIndex: number; clauseIndex: number }> = {};
-        const rawSections = (doc as { sections?: Array<{ id?: string; clauses?: Array<{ id?: string }> }> })?.sections ?? [];
-        rawSections.forEach((sec, sectionIndex) => {
-          (sec.clauses ?? []).forEach((c, clauseIndex) => {
-            if (c.id) map[String(c.id)] = { sectionIndex, clauseIndex };
-          });
-        });
-        setIndicesMap(map);
-      })
-      .catch(() => {
-        if (!cancelled) setClauses([]);
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => { cancelled = true; };
-  }, [address, selectedContractId, refreshCounter]);
 
   useEffect(() => {
     const withCid = clauses.filter((c) => c.cid);

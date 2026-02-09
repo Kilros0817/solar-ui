@@ -1,15 +1,13 @@
 'use client'
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { useConnection } from 'wagmi';
 import { Card, CardContent } from '@/app/components/ui/card';
 import { Button } from '@/app/components/ui/button';
 import { FileText, Loader2, Eye, ClipboardList } from 'lucide-react';
-import { getContractsByDivisionMember, getContractById } from '@/utils/subgraph';
 import { useUser } from '@/app/contexts/UserContext';
 import { useAssignment } from '@/app/contexts/AssignmentContext';
-import { useSubgraphRefresh } from '@/app/contexts/SubgraphRefreshContext';
+import { useDivisionMemberClauses } from '@/app/contexts/DivisionMemberClausesContext';
 import { USER_ROLE, URLs } from '@/utils/constants';
 
 type ClauseWithSection = {
@@ -31,14 +29,16 @@ type ClauseWithSection = {
 
 export default function ClauseAssignmentsReviewPage() {
   const router = useRouter();
-  const { address } = useConnection();
   const { userRole } = useUser();
   const { setSelection } = useAssignment();
-  const { refreshCounter } = useSubgraphRefresh();
-  const [loading, setLoading] = useState(true);
-  const [clauses, setClauses] = useState<ClauseWithSection[]>([]);
+  const { clauses: allClauses, loading, getIndicesForClause } = useDivisionMemberClauses();
   const [clauseContents, setClauseContents] = useState<Record<string, string>>({});
   const [navigatingClauseId, setNavigatingClauseId] = useState<string | null>(null);
+
+  const clauses = useMemo(
+    () => allClauses.filter((c) => (c as ClauseWithSection).status === 1) as ClauseWithSection[],
+    [allClauses]
+  );
 
   useEffect(() => {
     if (userRole !== null && userRole !== USER_ROLE.DIVISION_MEMBER) {
@@ -46,29 +46,6 @@ export default function ClauseAssignmentsReviewPage() {
       return;
     }
   }, [userRole, router]);
-
-  useEffect(() => {
-    if (!address) {
-      setLoading(false);
-      return;
-    }
-    let cancelled = false;
-    setLoading(true);
-    getContractsByDivisionMember(address)
-      .then((list) => {
-        if (cancelled) return;
-        const arr = Array.isArray(list) ? list : [];
-        const status1 = arr.filter((c: ClauseWithSection) => c.status === 1);
-        setClauses(status1);
-      })
-      .catch(() => {
-        if (!cancelled) setClauses([]);
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => { cancelled = true; };
-  }, [address, refreshCounter]);
 
   useEffect(() => {
     const withCid = clauses.filter((c) => c.cid);
@@ -95,37 +72,18 @@ export default function ClauseAssignmentsReviewPage() {
     return () => { cancelled = true; };
   }, [clauses]);
 
-  const handleViewClause = async (clause: ClauseWithSection) => {
+  const handleViewClause = (clause: ClauseWithSection) => {
     const docId = clause.section?.doc?.id;
-    const sectionId = clause.section?.id;
-    if (!docId || !sectionId) return;
+    if (!docId || !clause.id) return;
     setNavigatingClauseId(clause.id);
-    try {
-      const doc = await getContractById(docId);
-      if (!doc?.sections) {
-        setNavigatingClauseId(null);
-        return;
-      }
-      const sectionIndex = doc.sections.findIndex(
-        (s: { id?: string }) => String(s.id) === String(sectionId)
-      );
-      if (sectionIndex < 0) {
-        setNavigatingClauseId(null);
-        return;
-      }
-      const section = doc.sections[sectionIndex] as { clauses?: Array<{ id?: string }> };
-      const clauseIndex = (section.clauses ?? []).findIndex(
-        (c: { id?: string }) => String(c.id) === String(clause.id)
-      );
-      if (clauseIndex < 0) {
-        setNavigatingClauseId(null);
-        return;
-      }
-      setSelection(docId, sectionIndex, clauseIndex, clause.cid ?? null, 'review');
-      router.push('/clause-assignments/clause');
-    } finally {
+    const idx = getIndicesForClause(docId, clause.id);
+    if (!idx) {
       setNavigatingClauseId(null);
+      return;
     }
+    setSelection(docId, idx.sectionIndex, idx.clauseIndex, clause.cid ?? null, 'review');
+    router.push('/clause-assignments/clause');
+    setNavigatingClauseId(null);
   };
 
   if (userRole !== null && userRole !== USER_ROLE.DIVISION_MEMBER) {

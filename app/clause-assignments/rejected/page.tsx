@@ -1,16 +1,14 @@
 'use client'
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { useConnection } from 'wagmi';
 import { Card, CardContent } from '@/app/components/ui/card';
 import { Button } from '@/app/components/ui/button';
 import { FileText, Loader2, Eye, ClipboardList, AlertCircle } from 'lucide-react';
-import { getCurrentUserProfile, getContractsByDivisionMember, getContractById } from '@/utils/subgraph';
-import { DIVISION_LABELS, USER_ROLE, URLs } from '@/utils/constants';
+import { USER_ROLE, URLs } from '@/utils/constants';
 import { useUser } from '@/app/contexts/UserContext';
 import { useAssignment } from '@/app/contexts/AssignmentContext';
-import { useSubgraphRefresh } from '@/app/contexts/SubgraphRefreshContext';
+import { useDivisionMemberClauses } from '@/app/contexts/DivisionMemberClausesContext';
 
 type ClauseWithSection = {
   id: string;
@@ -31,16 +29,19 @@ type ClauseWithSection = {
 
 export default function ClauseAssignmentsRejectedPage() {
   const router = useRouter();
-  const { address } = useConnection();
   const { userRole } = useUser();
   const { setSelection } = useAssignment();
-  const { refreshCounter } = useSubgraphRefresh();
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [divisionLabel, setDivisionLabel] = useState('');
-  const [clauses, setClauses] = useState<ClauseWithSection[]>([]);
+  const { clauses: allClauses, loading, getIndicesForClause } = useDivisionMemberClauses();
   const [clauseContents, setClauseContents] = useState<Record<string, string>>({});
   const [navigatingClauseId, setNavigatingClauseId] = useState<string | null>(null);
+
+  const clauses = useMemo(
+    () => allClauses.filter((c) => (c as ClauseWithSection).status === 3) as ClauseWithSection[],
+    [allClauses]
+  );
+
+  const divisionLabel = '';
+  const error: string | null = null;
 
   useEffect(() => {
     if (userRole !== null && userRole !== USER_ROLE.DIVISION_MEMBER) {
@@ -48,40 +49,6 @@ export default function ClauseAssignmentsRejectedPage() {
       return;
     }
   }, [userRole, router]);
-
-  useEffect(() => {
-    if (!address) {
-      setLoading(false);
-      return;
-    }
-    const run = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const profile = await getCurrentUserProfile(address);
-        if (!profile?.dcategory || Number(profile.dcategory) === 0) {
-          setError('You are not assigned to a division.');
-          setClauses([]);
-          setLoading(false);
-          return;
-        }
-        const memberDcategory = Number(profile.dcategory);
-        setDivisionLabel(DIVISION_LABELS[memberDcategory] ?? `Division #${memberDcategory}`);
-
-        const list = await getContractsByDivisionMember(address);
-        const arr = Array.isArray(list) ? list : [];
-        const rejectedOnly = arr.filter((c: ClauseWithSection) => c.status === 3);
-        setClauses(rejectedOnly);
-      } catch (e) {
-        console.error('Failed to load rejected tasks:', e);
-        setError('Failed to load rejected tasks.');
-        setClauses([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-    run();
-  }, [address, refreshCounter]);
 
   useEffect(() => {
     const withCid = clauses.filter((c) => c.cid);
@@ -108,37 +75,18 @@ export default function ClauseAssignmentsRejectedPage() {
     return () => { cancelled = true; };
   }, [clauses]);
 
-  const handleViewClause = async (clause: ClauseWithSection) => {
+  const handleViewClause = (clause: ClauseWithSection) => {
     const docId = clause.section?.doc?.id;
-    const sectionId = clause.section?.id;
-    if (!docId || !sectionId) return;
+    if (!docId || !clause.id) return;
     setNavigatingClauseId(clause.id);
-    try {
-      const doc = await getContractById(docId);
-      if (!doc?.sections) {
-        setNavigatingClauseId(null);
-        return;
-      }
-      const sectionIndex = doc.sections.findIndex(
-        (s: { id?: string }) => String(s.id) === String(sectionId)
-      );
-      if (sectionIndex < 0) {
-        setNavigatingClauseId(null);
-        return;
-      }
-      const section = doc.sections[sectionIndex] as { clauses?: Array<{ id?: string }> };
-      const clauseIndex = (section.clauses ?? []).findIndex(
-        (c: { id?: string }) => String(c.id) === String(clause.id)
-      );
-      if (clauseIndex < 0) {
-        setNavigatingClauseId(null);
-        return;
-      }
-      setSelection(docId, sectionIndex, clauseIndex, clause.cid ?? null, 'rejected');
-      router.push('/clause-assignments/clause');
-    } finally {
+    const idx = getIndicesForClause(docId, clause.id);
+    if (!idx) {
       setNavigatingClauseId(null);
+      return;
     }
+    setSelection(docId, idx.sectionIndex, idx.clauseIndex, clause.cid ?? null, 'rejected');
+    router.push('/clause-assignments/clause');
+    setNavigatingClauseId(null);
   };
 
   if (userRole !== null && userRole !== USER_ROLE.DIVISION_MEMBER) {

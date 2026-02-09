@@ -3,6 +3,9 @@
 import React, { createContext, useContext, useCallback, useState, useRef } from 'react';
 import { getContractById } from '@/utils/subgraph';
 import { URLs } from '@/utils/constants';
+import { useUser } from './UserContext';
+import { useDivisionLeaderSections } from './DivisionLeaderSectionsContext';
+import { USER_ROLE } from '@/utils/constants';
 
 export type SectionContentItem = {
   sectionName: string;
@@ -26,6 +29,8 @@ interface SectionContentContextType {
 const SectionContentContext = createContext<SectionContentContextType | undefined>(undefined);
 
 export function SectionContentProvider({ children }: { children: React.ReactNode }) {
+  const { userRole } = useUser();
+  const leaderSections = useDivisionLeaderSections();
   const [totalBySectionId, setTotalBySectionId] = useState<Record<string, number>>({});
   const [contentBySectionId, setContentBySectionId] = useState<Record<string, SectionContentItem>>({});
   const inFlightRef = useRef<Record<string, Promise<number>>>({});
@@ -46,6 +51,48 @@ export function SectionContentProvider({ children }: { children: React.ReactNode
       if (cached !== undefined) return cached;
       const existing = inFlightRef.current[sectionId];
       if (existing) return existing;
+
+      if (userRole === USER_ROLE.DIVISION_LEADER) {
+        const section = leaderSections.sections.find((s) => String(s.id) === String(sectionId));
+        if (!section) {
+          setTotalBySectionId((prev) => ({ ...prev, [sectionId]: 0 }));
+          return 0;
+        }
+        const sectionCid = (section as { cid?: string }).cid;
+        if (sectionCid) {
+          const promise = (async () => {
+            try {
+              const res = await fetch(`${URLs.TBGateWay}${sectionCid}`);
+              const data = res.ok ? await res.json() : null;
+              const sections = data?.sections ?? [];
+              const sectionData = sections[0];
+              const sectionContent = sectionData?.sectionContent?.filter((c: { clauseContent?: string }) => c.clauseContent) ?? [];
+              const total = sectionContent.length;
+              setTotalBySectionId((prev) => ({ ...prev, [sectionId]: total }));
+              setContentBySectionId((prev) => ({
+                ...prev,
+                [sectionId]: {
+                  sectionName: sectionData?.sectionName ?? `Section ${sectionId}`,
+                  sectionContent,
+                },
+              }));
+              return total;
+            } catch (e) {
+              console.error('Failed to load section content:', e);
+              setTotalBySectionId((prev) => ({ ...prev, [sectionId]: 0 }));
+              return 0;
+            } finally {
+              delete inFlightRef.current[sectionId];
+            }
+          })();
+          inFlightRef.current[sectionId] = promise;
+          return promise;
+        }
+        const fromSubgraph = (section as { clauses?: unknown[] })?.clauses?.length ?? 0;
+        setTotalBySectionId((prev) => ({ ...prev, [sectionId]: fromSubgraph }));
+        return fromSubgraph;
+      }
+
       const promise = (async () => {
       try {
         const doc = await getContractById(docId);
@@ -92,7 +139,7 @@ export function SectionContentProvider({ children }: { children: React.ReactNode
       inFlightRef.current[sectionId] = promise;
       return promise;
     },
-    [totalBySectionId]
+    [totalBySectionId, userRole, leaderSections.sections]
   );
 
   const clearCache = useCallback(() => {

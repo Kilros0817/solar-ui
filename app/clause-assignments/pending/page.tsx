@@ -1,16 +1,13 @@
 'use client'
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { useConnection } from 'wagmi';
 import { Card, CardContent } from '@/app/components/ui/card';
 import { Button } from '@/app/components/ui/button';
-import { getContractsByDivisionMember, getContractById } from '@/utils/subgraph';
-import { getCurrentUserProfile } from '@/utils/subgraph';
-import { DIVISION_LABELS, USER_ROLE } from '@/utils/constants';
+import { USER_ROLE } from '@/utils/constants';
 import { useUser } from '@/app/contexts/UserContext';
 import { useAssignment } from '@/app/contexts/AssignmentContext';
-import { useSubgraphRefresh } from '@/app/contexts/SubgraphRefreshContext';
+import { useDivisionMemberClauses } from '@/app/contexts/DivisionMemberClausesContext';
 import { FileText, Loader2, Pencil } from 'lucide-react';
 
 type PendingClauseMember = {
@@ -21,14 +18,17 @@ type PendingClauseMember = {
 
 export default function ClauseAssignmentsPendingPage() {
   const router = useRouter();
-  const { address } = useConnection();
   const { userRole } = useUser();
   const { setSelection } = useAssignment();
-  const { refreshCounter } = useSubgraphRefresh();
-  const [loading, setLoading] = useState(true);
-  const [pendingMember, setPendingMember] = useState<PendingClauseMember[]>([]);
-  const [divisionLabel, setDivisionLabel] = useState('');
+  const { clauses: allClauses, loading, getIndicesForClause } = useDivisionMemberClauses();
   const [workingId, setWorkingId] = useState<string | null>(null);
+
+  const pendingMember = useMemo(
+    () => allClauses.filter((c) => (c as { status?: number }).status === 0) as PendingClauseMember[],
+    [allClauses]
+  );
+
+  const divisionLabel = '';
 
   useEffect(() => {
     if (userRole === null) {
@@ -40,52 +40,19 @@ export default function ClauseAssignmentsPendingPage() {
     }
   }, [userRole, router]);
 
-  useEffect(() => {
-    if (!address || userRole !== USER_ROLE.DIVISION_MEMBER) {
-      setLoading(false);
+  const handleWorkOnMember = (item: PendingClauseMember) => {
+    const contractId = item.section?.doc?.id;
+    const clauseId = item.id;
+    if (!contractId || !clauseId) return;
+    setWorkingId(item.id);
+    const idx = getIndicesForClause(contractId, clauseId);
+    if (!idx) {
+      setWorkingId(null);
       return;
     }
-    const run = async () => {
-      setLoading(true);
-      try {
-        const profile = await getCurrentUserProfile(address);
-        if (profile?.dcategory) {
-          setDivisionLabel(DIVISION_LABELS[profile.dcategory] ?? `Division #${profile.dcategory}`);
-        }
-        const clauses = await getContractsByDivisionMember(address);
-        const list = Array.isArray(clauses) ? clauses : [];
-        const pending = list.filter((c: { status?: number }) => c.status === 0) as PendingClauseMember[];
-        setPendingMember(pending);
-      } catch (e) {
-        console.error('Failed to load pending:', e);
-        setPendingMember([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-    run();
-  }, [address, userRole, refreshCounter]);
-
-  const handleWorkOnMember = async (item: PendingClauseMember) => {
-    const contractId = item.section?.doc?.id;
-    const sectionId = item.section?.id;
-    const clauseId = item.id;
-    if (!contractId || !sectionId || !clauseId) return;
-    setWorkingId(item.id);
-    try {
-      const doc = await getContractById(contractId);
-      const sections = (doc as { sections?: Array<{ id?: string; clauses?: Array<{ id?: string }> }> })?.sections ?? [];
-      const secIdx = sections.findIndex((s) => String(s.id) === String(sectionId));
-      if (secIdx < 0) return;
-      const clauseIdx = sections[secIdx]?.clauses?.findIndex((c) => String(c.id) === String(clauseId)) ?? -1;
-      if (clauseIdx < 0) return;
-      setSelection(contractId, secIdx, clauseIdx, null, 'clauses');
-      router.push('/clause-assignments/clause');
-    } catch (e) {
-      console.error('Failed to open clause:', e);
-    } finally {
-      setWorkingId(null);
-    }
+    setSelection(contractId, idx.sectionIndex, idx.clauseIndex, null, 'clauses');
+    router.push('/clause-assignments/clause');
+    setWorkingId(null);
   };
 
   if (userRole === null || userRole === USER_ROLE.NO_ROLE || userRole !== USER_ROLE.DIVISION_MEMBER) {

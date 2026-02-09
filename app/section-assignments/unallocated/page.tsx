@@ -2,15 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useConnection } from 'wagmi';
 import { Button } from '@/app/components/ui/button';
 import { Card, CardContent } from '@/app/components/ui/card';
 import { Input } from '@/app/components/ui/input';
 import { Loader2, FileText, ClipboardList, Eye, Search } from 'lucide-react';
-import { getSectionsByDivisionLeader, getContractById } from '@/utils/subgraph';
 import { useAssignment } from '@/app/contexts/AssignmentContext';
 import { useSectionContent } from '@/app/contexts/SectionContentContext';
-import { useSubgraphRefresh } from '@/app/contexts/SubgraphRefreshContext';
+import { useDivisionLeaderSections } from '@/app/contexts/DivisionLeaderSectionsContext';
 import { USER_ROLE } from '@/utils/constants';
 import { useUser } from '@/app/contexts/UserContext';
 
@@ -33,13 +31,10 @@ function getClientLabel(doc: SectionFromApi['doc']) {
 
 export default function SectionAssignmentsUnallocatedPage() {
   const router = useRouter();
-  const { address } = useConnection();
   const { userRole } = useUser();
   const { setSelectedContract, setSelectedSection } = useAssignment();
   const { loadSectionContent, getTotalClauses } = useSectionContent();
-  const { refreshCounter } = useSubgraphRefresh();
-  const [sections, setSections] = useState<SectionFromApi[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { sections, loading, getSectionIndex } = useDivisionLeaderSections();
   const [searchTerm, setSearchTerm] = useState('');
   const [viewingId, setViewingId] = useState<string | null>(null);
 
@@ -53,30 +48,6 @@ export default function SectionAssignmentsUnallocatedPage() {
       return;
     }
   }, [userRole, router]);
-
-  useEffect(() => {
-    if (!address || userRole !== USER_ROLE.DIVISION_LEADER) {
-      setLoading(false);
-      return;
-    }
-    let cancelled = false;
-    setLoading(true);
-    getSectionsByDivisionLeader(address.toLowerCase())
-      .then((list) => {
-        if (cancelled) return;
-        setSections(Array.isArray(list) ? list : []);
-      })
-      .catch((e) => {
-        if (!cancelled) {
-          console.error('Failed to load sections:', e);
-          setSections([]);
-        }
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => { cancelled = true; };
-  }, [address, userRole, refreshCounter]);
 
   // Load section content (IPFS) so we have total clauses per section - same as main section-assignments page
   useEffect(() => {
@@ -105,32 +76,20 @@ export default function SectionAssignmentsUnallocatedPage() {
     return title.includes(searchTerm.toLowerCase()) || client.includes(searchTerm.toLowerCase());
   });
 
-  const handleViewSection = async (section: SectionFromApi) => {
+  const handleViewSection = (section: SectionFromApi) => {
     const docId = section.doc?.id;
     const sectionId = section.id;
     if (!docId) return;
     setViewingId(sectionId);
-    try {
-      const doc = await getContractById(docId);
-      if (!doc?.sections) {
-        setViewingId(null);
-        return;
-      }
-      const sectionIndex = (doc.sections as Array<{ id?: string }>).findIndex(
-        (s) => String(s.id) === String(sectionId)
-      );
-      if (sectionIndex < 0) {
-        setViewingId(null);
-        return;
-      }
-      setSelectedContract(docId);
-      setSelectedSection(sectionIndex);
-      router.push('/section-assignments/section');
-    } catch (e) {
-      console.error('Failed to open section:', e);
-    } finally {
+    const sectionIndex = getSectionIndex(docId, sectionId);
+    if (sectionIndex < 0) {
       setViewingId(null);
+      return;
     }
+    setSelectedContract(docId);
+    setSelectedSection(sectionIndex);
+    router.push('/section-assignments/section');
+    setViewingId(null);
   };
 
   if (userRole !== USER_ROLE.DIVISION_LEADER) {

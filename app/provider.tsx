@@ -7,10 +7,12 @@ import { createConfig, WagmiProvider, fallback, http, Config } from "wagmi";
 import { UserProvider } from './contexts/UserContext'
 import { NewContractProvider } from './contexts/NewContractContext'
 import { ContractsProvider } from './contexts/ContractsContext'
+import { SubgraphRefreshProvider } from './contexts/SubgraphRefreshContext'
+import { DivisionLeaderSectionsProvider } from './contexts/DivisionLeaderSectionsContext'
+import { DivisionMemberClausesProvider } from './contexts/DivisionMemberClausesContext'
 import { ContractDocProvider } from './contexts/ContractDocContext'
 import { AssignmentProvider } from './contexts/AssignmentContext'
 import { SectionContentProvider } from './contexts/SectionContentContext'
-import { SubgraphRefreshProvider } from './contexts/SubgraphRefreshContext'
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import Web3AuthConnectorInstance from "@/utils/Web3AuthConnectorInstance";
@@ -66,15 +68,19 @@ const TBProvider: React.FC<TBProviderProps> = ({ children }: TBProviderProps) =>
               <UserProvider>
                 <NewContractProvider>
                   <ContractsProvider>
-                    <ContractDocProvider>
-                      <SectionContentProvider>
-                        <SubgraphRefreshProvider>
-                          <AssignmentProvider>
-                            {children}
-                          </AssignmentProvider>
-                        </SubgraphRefreshProvider>
-                      </SectionContentProvider>
-                    </ContractDocProvider>
+                    <SubgraphRefreshProvider>
+                      <DivisionLeaderSectionsProvider>
+                        <DivisionMemberClausesProvider>
+                          <ContractDocProvider>
+                            <SectionContentProvider>
+                              <AssignmentProvider>
+                                {children}
+                              </AssignmentProvider>
+                            </SectionContentProvider>
+                          </ContractDocProvider>
+                        </DivisionMemberClausesProvider>
+                      </DivisionLeaderSectionsProvider>
+                    </SubgraphRefreshProvider>
                   </ContractsProvider>
                 </NewContractProvider>
               </UserProvider>

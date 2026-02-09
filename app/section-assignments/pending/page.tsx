@@ -1,16 +1,13 @@
 'use client'
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { useConnection } from 'wagmi';
 import { Card, CardContent } from '@/app/components/ui/card';
 import { Button } from '@/app/components/ui/button';
-import { getSectionsByDivisionLeader, getContractById } from '@/utils/subgraph';
-import { getCurrentUserProfile } from '@/utils/subgraph';
 import { DIVISION_LABELS, USER_ROLE } from '@/utils/constants';
 import { useUser } from '@/app/contexts/UserContext';
 import { useAssignment } from '@/app/contexts/AssignmentContext';
-import { useSubgraphRefresh } from '@/app/contexts/SubgraphRefreshContext';
+import { useDivisionLeaderSections } from '@/app/contexts/DivisionLeaderSectionsContext';
 import { FileText, Loader2, Eye } from 'lucide-react';
 
 type PendingClauseLeader = {
@@ -30,12 +27,9 @@ function getMemberLabel(m: PendingClauseLeader['divisionMember']): string {
 
 export default function SectionAssignmentsPendingPage() {
   const router = useRouter();
-  const { address } = useConnection();
   const { userRole } = useUser();
   const { setSelection } = useAssignment();
-  const { refreshCounter } = useSubgraphRefresh();
-  const [loading, setLoading] = useState(true);
-  const [pendingLeader, setPendingLeader] = useState<PendingClauseLeader[]>([]);
+  const { sections, loading, getDocFromSections, getSectionIndex } = useDivisionLeaderSections();
   const [divisionLabel, setDivisionLabel] = useState('');
   const [workingId, setWorkingId] = useState<string | null>(null);
 
@@ -50,77 +44,56 @@ export default function SectionAssignmentsPendingPage() {
     }
   }, [userRole, router]);
 
-  useEffect(() => {
-    if (!address || userRole !== USER_ROLE.DIVISION_LEADER) {
-      setLoading(false);
-      return;
-    }
-    const run = async () => {
-      setLoading(true);
-      try {
-        const profile = await getCurrentUserProfile(address);
-        if (profile?.dcategory) {
-          setDivisionLabel(DIVISION_LABELS[profile.dcategory] ?? `Division #${profile.dcategory}`);
-        }
-        const sections = await getSectionsByDivisionLeader(address);
-        const list = Array.isArray(sections) ? sections : [];
-        const flat: PendingClauseLeader[] = [];
-        list.forEach((sec: {
-          id: string;
-          clauses?: Array<{
-            id: string;
-            cid?: string | null;
-            status?: number;
-            divisionMember?: { id: string; firstName?: string; lastName?: string; email?: string } | null;
-          }>;
-          doc?: { id: string; title?: string };
-        }) => {
-          const sectionId = sec.id;
-          const doc = sec.doc;
-          (sec.clauses ?? []).forEach((c) => {
-            if (c.status === 0) {
-              flat.push({
-                id: c.id,
-                cid: c.cid ?? null,
-                status: 0,
-                sectionId,
-                section: { id: sectionId, doc: doc ?? { id: '', title: '' } },
-                divisionMember: c.divisionMember ?? null,
-              });
-            }
+  const pendingLeader = useMemo(() => {
+    const flat: PendingClauseLeader[] = [];
+    sections.forEach((sec) => {
+      const sectionId = sec.id;
+      const doc = sec.doc;
+      (sec.clauses ?? []).forEach((c) => {
+        if (c.status === 0) {
+          flat.push({
+            id: c.id,
+            cid: (c as { cid?: string | null }).cid ?? null,
+            status: 0,
+            sectionId,
+            section: { id: sectionId, doc: doc ?? { id: '', title: '' } },
+            divisionMember: (c as { divisionMember?: PendingClauseLeader['divisionMember'] }).divisionMember ?? null,
           });
-        });
-        setPendingLeader(flat);
-      } catch (e) {
-        console.error('Failed to load pending:', e);
-        setPendingLeader([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-    run();
-  }, [address, userRole, refreshCounter]);
+        }
+      });
+    });
+    return flat;
+  }, [sections]);
 
-  const handleViewLeader = async (item: PendingClauseLeader) => {
+  useEffect(() => {
+    if (userRole === USER_ROLE.DIVISION_LEADER && sections.length > 0 && !divisionLabel) {
+      const firstDoc = sections[0]?.doc as { id?: string } | undefined;
+      const dcat = (sections[0] as { divisionLeader?: { dcategory?: number } })?.divisionLeader?.dcategory;
+      if (dcat != null) setDivisionLabel(DIVISION_LABELS[dcat] ?? `Division #${dcat}`);
+    }
+  }, [userRole, sections, divisionLabel]);
+
+  const handleViewLeader = (item: PendingClauseLeader) => {
     const contractId = item.section?.doc?.id;
     const sectionId = item.section?.id;
     const clauseId = item.id;
     if (!contractId || !sectionId || !clauseId) return;
     setWorkingId(item.id);
-    try {
-      const doc = await getContractById(contractId);
-      const sections = (doc as { sections?: Array<{ id?: string; clauses?: Array<{ id?: string }> }> })?.sections ?? [];
-      const secIdx = sections.findIndex((s) => String(s.id) === String(sectionId));
-      if (secIdx < 0) return;
-      const clauseIdx = sections[secIdx]?.clauses?.findIndex((c) => String(c.id) === String(clauseId)) ?? -1;
-      if (clauseIdx < 0) return;
-      setSelection(contractId, secIdx, clauseIdx, item.cid ?? null);
-      router.push('/section-assignments/clause');
-    } catch (e) {
-      console.error('Failed to open clause:', e);
-    } finally {
+    const doc = getDocFromSections(contractId);
+    const secIdx = getSectionIndex(contractId, sectionId);
+    if (!doc || secIdx < 0) {
       setWorkingId(null);
+      return;
     }
+    const sec = doc.sections[secIdx];
+    const clauseIdx = (sec?.clauses ?? []).findIndex((c) => String((c as { id?: string }).id) === String(clauseId));
+    if (clauseIdx < 0) {
+      setWorkingId(null);
+      return;
+    }
+    setSelection(contractId, secIdx, clauseIdx, item.cid ?? null);
+    router.push('/section-assignments/clause');
+    setWorkingId(null);
   };
 
   if (userRole !== USER_ROLE.DIVISION_LEADER) {

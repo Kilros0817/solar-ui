@@ -4,13 +4,15 @@ import React, { createContext, useContext, useEffect, useState, useCallback } fr
 import { useConnection } from 'wagmi';
 import { getContractById, getCurrentUserProfile } from '@/utils/subgraph';
 import { useUser } from './UserContext';
+import { useDivisionLeaderSections } from './DivisionLeaderSectionsContext';
+import { useDivisionMemberClauses } from './DivisionMemberClausesContext';
 import { USER_ROLE } from '@/utils/constants';
 
 export type ContractDoc = Awaited<ReturnType<typeof getContractById>>;
 export type DivisionProfile = { dcategory: number } | null | undefined;
 
 interface ContractDocContextType {
-  docs: Record<string, ContractDoc>;
+  docs: Record<string, ContractDoc | null>;
   profile: DivisionProfile;
   loadingDocId: string | null;
   loadingProfile: boolean;
@@ -25,7 +27,9 @@ const ContractDocContext = createContext<ContractDocContextType | undefined>(und
 export function ContractDocProvider({ children }: { children: React.ReactNode }) {
   const { userRole } = useUser();
   const { address } = useConnection();
-  const [docs, setDocs] = useState<Record<string, ContractDoc>>({});
+  const leaderSections = useDivisionLeaderSections();
+  const memberClauses = useDivisionMemberClauses();
+  const [docs, setDocs] = useState<Record<string, ContractDoc | null>>({});
   const [profile, setProfile] = useState<DivisionProfile>(undefined);
   const [loadingDocId, setLoadingDocId] = useState<string | null>(null);
   const [loadingProfile, setLoadingProfile] = useState(false);
@@ -61,41 +65,79 @@ export function ContractDocProvider({ children }: { children: React.ReactNode })
     };
   }, [address, isDivisionUser]);
 
-  const loadDoc = useCallback(async (contractId: string) => {
-    if (!contractId) return;
-    if (docs[contractId] !== undefined) return;
-    setLoadingDocId(contractId);
-    setError(null);
-    try {
-      const doc = await getContractById(contractId);
-      setDocs((prev) => ({ ...prev, [contractId]: doc }));
-    } catch (e) {
-      console.error('Failed to load contract doc:', e);
-      setError(e instanceof Error ? e.message : 'Failed to load contract');
-    } finally {
-      setLoadingDocId(null);
-    }
-  }, [docs]);
+  const loadDoc = useCallback(
+    async (contractId: string) => {
+      if (!contractId) return;
+
+      if (userRole === USER_ROLE.DIVISION_LEADER) {
+        if (leaderSections.loading) return;
+        const doc = leaderSections.getDocFromSections(contractId) as ContractDoc | null;
+        setDocs((prev) => ({ ...prev, [contractId]: doc ?? null }));
+        return;
+      }
+
+      if (userRole === USER_ROLE.DIVISION_MEMBER) {
+        if (memberClauses.loading) return;
+        const doc = memberClauses.getDocFromClauses(contractId) as ContractDoc | null;
+        setDocs((prev) => ({ ...prev, [contractId]: doc ?? null }));
+        return;
+      }
+
+      if (docs[contractId] !== undefined) return;
+      setLoadingDocId(contractId);
+      setError(null);
+      try {
+        const doc = await getContractById(contractId);
+        setDocs((prev) => ({ ...prev, [contractId]: doc }));
+      } catch (e) {
+        console.error('Failed to load contract doc:', e);
+        setError(e instanceof Error ? e.message : 'Failed to load contract');
+        setDocs((prev) => ({ ...prev, [contractId]: null }));
+      } finally {
+        setLoadingDocId(null);
+      }
+    },
+    [docs, userRole, leaderSections.loading, leaderSections.getDocFromSections, memberClauses.loading, memberClauses.getDocFromClauses]
+  );
 
   const getDoc = useCallback(
     (contractId: string): ContractDoc | undefined | null => docs[contractId],
     [docs]
   );
 
-  const refetchDoc = useCallback(async (contractId: string) => {
-    if (!contractId) return;
-    setLoadingDocId(contractId);
-    setError(null);
-    try {
-      const doc = await getContractById(contractId);
-      setDocs((prev) => ({ ...prev, [contractId]: doc }));
-    } catch (e) {
-      console.error('Failed to refetch contract doc:', e);
-      setError(e instanceof Error ? e.message : 'Failed to refetch contract');
-    } finally {
-      setLoadingDocId(null);
-    }
-  }, []);
+  const refetchDoc = useCallback(
+    async (contractId: string) => {
+      if (!contractId) return;
+
+      if (userRole === USER_ROLE.DIVISION_LEADER) {
+        await leaderSections.refetch();
+        const doc = leaderSections.getDocFromSections(contractId) as ContractDoc | null;
+        setDocs((prev) => ({ ...prev, [contractId]: doc ?? null }));
+        return;
+      }
+
+      if (userRole === USER_ROLE.DIVISION_MEMBER) {
+        await memberClauses.refetch();
+        const doc = memberClauses.getDocFromClauses(contractId) as ContractDoc | null;
+        setDocs((prev) => ({ ...prev, [contractId]: doc ?? null }));
+        return;
+      }
+
+      setLoadingDocId(contractId);
+      setError(null);
+      try {
+        const doc = await getContractById(contractId);
+        setDocs((prev) => ({ ...prev, [contractId]: doc }));
+      } catch (e) {
+        console.error('Failed to refetch contract doc:', e);
+        setError(e instanceof Error ? e.message : 'Failed to refetch contract');
+        setDocs((prev) => ({ ...prev, [contractId]: null }));
+      } finally {
+        setLoadingDocId(null);
+      }
+    },
+    [userRole, leaderSections.refetch, leaderSections.getDocFromSections, memberClauses.refetch, memberClauses.getDocFromClauses]
+  );
 
   const value: ContractDocContextType = {
     docs,

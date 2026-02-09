@@ -1,8 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { useConnection } from 'wagmi';
 import {
   LayoutDashboard,
   FileText,
@@ -23,7 +22,6 @@ import {
 import { cn } from '../lib/utils';
 import { useUser, UserRole } from '../contexts/UserContext';
 import { useContracts } from '../contexts/ContractsContext';
-import { useSubgraphRefresh } from '../contexts/SubgraphRefreshContext';
 import { USER_ROLE } from '@/utils/constants';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
@@ -37,111 +35,60 @@ import {
 } from './ui/dropdown-menu';
 import { getContractCounts } from '../data/interfaces';
 import type { SidebarProps } from '../data/interfaces';
-import { getContractsByDivisionMember, getSectionsByDivisionLeader } from '@/utils/subgraph';
+import { useDivisionLeaderSections } from '@/app/contexts/DivisionLeaderSectionsContext';
+import { useDivisionMemberClauses } from '@/app/contexts/DivisionMemberClausesContext';
 import { useSectionContent } from '@/app/contexts/SectionContentContext';
 
 export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const { address } = useConnection();
   const { userRole, setUserRole } = useUser();
   const { contracts } = useContracts();
-  const { refreshCounter } = useSubgraphRefresh();
-  const [divisionMemberCounts, setDivisionMemberCounts] = useState<{
-    all: number;
-    pending: number;
-    review: number;
-    approved: number;
-    rejected: number;
-  } | null>(null);
-
-  const [divisionLeaderClauseCounts, setDivisionLeaderClauseCounts] = useState<{
-    pending: number;
-    review: number;
-    approved: number;
-    rejected: number;
-  } | null>(null);
-
-  const [divisionLeaderSections, setDivisionLeaderSections] = useState<
-    Array<{ id: string; clauses?: unknown[]; doc?: { id: string } }>
-  >([]);
-
+  const leaderSections = useDivisionLeaderSections();
+  const memberClauses = useDivisionMemberClauses();
   const { loadSectionContent, getTotalClauses } = useSectionContent();
 
-  useEffect(() => {
-    if (userRole !== USER_ROLE.DIVISION_MEMBER || !address) {
-      setDivisionMemberCounts(null);
-      return;
-    }
-    let cancelled = false;
-    getContractsByDivisionMember(address)
-      .then((clauses) => {
-        if (cancelled) return;
-        const list = Array.isArray(clauses) ? clauses : [];
-        const counts = {
-          all: list.length,
-          pending: list.filter((c: { status?: number }) => c.status === 0).length,
-          review: list.filter((c: { status?: number }) => c.status === 1).length,
-          approved: list.filter((c: { status?: number }) => c.status === 2).length,
-          rejected: list.filter((c: { status?: number }) => c.status === 3).length,
-        };
-        setDivisionMemberCounts(counts);
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setDivisionMemberCounts({
-            all: 0,
-            pending: 0,
-            review: 0,
-            approved: 0,
-            rejected: 0,
-          });
-        }
-      });
-    return () => { cancelled = true; };
-  }, [userRole, address, refreshCounter]);
+  const divisionMemberCounts =
+    userRole === USER_ROLE.DIVISION_MEMBER && memberClauses.clauses.length >= 0
+      ? (() => {
+          const list = memberClauses.clauses;
+          return {
+            all: list.length,
+            pending: list.filter((c) => (c as { status?: number }).status === 0).length,
+            review: list.filter((c) => (c as { status?: number }).status === 1).length,
+            approved: list.filter((c) => (c as { status?: number }).status === 2).length,
+            rejected: list.filter((c) => (c as { status?: number }).status === 3).length,
+          };
+        })()
+      : null;
 
-  useEffect(() => {
-    if (userRole !== USER_ROLE.DIVISION_LEADER || !address) {
-      setDivisionLeaderClauseCounts(null);
-      setDivisionLeaderSections([]);
-      return;
-    }
-    let cancelled = false;
-    getSectionsByDivisionLeader(address)
-      .then((sections) => {
-        if (cancelled) return;
-        const list = Array.isArray(sections) ? sections : [];
-        let pending = 0,
-          review = 0,
-          approved = 0,
-          rejected = 0;
-        list.forEach((sec: { clauses?: Array<{ status?: number }> }) => {
-          (sec.clauses ?? []).forEach((c: { status?: number }) => {
-            const s = typeof c.status === 'number' ? c.status : 0;
-            if (s === 0) pending++;
-            else if (s === 1) review++;
-            else if (s === 2) approved++;
-            else if (s === 3) rejected++;
+  const divisionLeaderClauseCounts =
+    userRole === USER_ROLE.DIVISION_LEADER && leaderSections.sections.length >= 0
+      ? (() => {
+          let pending = 0,
+            review = 0,
+            approved = 0,
+            rejected = 0;
+          leaderSections.sections.forEach((sec) => {
+            (sec.clauses ?? []).forEach((c) => {
+              const s = typeof (c as { status?: number }).status === 'number' ? (c as { status: number }).status : 0;
+              if (s === 0) pending++;
+              else if (s === 1) review++;
+              else if (s === 2) approved++;
+              else if (s === 3) rejected++;
+            });
           });
-        });
-        setDivisionLeaderClauseCounts({ pending, review, approved, rejected });
-        setDivisionLeaderSections(list);
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setDivisionLeaderClauseCounts(null);
-          setDivisionLeaderSections([]);
-        }
-      });
-    return () => { cancelled = true; };
-  }, [userRole, address, refreshCounter]);
+          return { pending, review, approved, rejected };
+        })()
+      : null;
+
+  const divisionLeaderSections = leaderSections.sections;
 
   // Load section content (IPFS) so we can compute unallocated = totalFromContent - subgraph count
   useEffect(() => {
     if (userRole !== USER_ROLE.DIVISION_LEADER || !divisionLeaderSections.length) return;
     divisionLeaderSections.forEach((sec) => {
-      const docId = sec.doc?.id;
+      const docId = (sec as { doc?: { id: string } }).doc?.id;
       if (docId) loadSectionContent(sec.id, docId);
     });
   }, [userRole, divisionLeaderSections, loadSectionContent]);
