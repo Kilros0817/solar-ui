@@ -154,10 +154,12 @@ export default function ClauseAssignmentsClausePage() {
       const success = await submitClauseToLeader(config, address, subgraphClauseId, clauseCids[0]);
       if (success) {
         toast.success('Clause submitted for review');
-        await refetchDoc(contractId);
-        await refetchContracts();
-        refreshSubgraph();
         router.push('/clause-assignments/clauses');
+        setTimeout(async () => {
+          await refetchDoc(contractId);
+          await refetchContracts();
+          refreshSubgraph();
+        }, 3000);
       } else {
         toast.error('Failed to submit clause');
       }

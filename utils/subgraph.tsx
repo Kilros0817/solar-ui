@@ -261,6 +261,7 @@ export const getContractById = async (id: string | number) => {
       createdAt
       sections {
         id
+        cid
         status
         divisionLeader {
           dcategory

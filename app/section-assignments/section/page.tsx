@@ -19,7 +19,6 @@ import { useSectionContent } from '@/app/contexts/SectionContentContext';
 import { DIVISION_LABELS, USER_ROLE, URLs } from '@/utils/constants';
 import { useUser } from '@/app/contexts/UserContext';
 import { toast } from 'sonner';
-import { zeroAddress } from 'viem';
 import type { Clause, DocSection, DivisionMember } from '@/app/data/interfaces';
 
 const getMemberLabel = (m: DivisionMember) =>
@@ -187,25 +186,29 @@ export default function SectionAssignmentsSectionPage() {
     setAssigning(true);
     const assignedDate = new Date().toISOString();
     try {
-      const divisionMembers = clauses.map((c) => {
+      // Only assigned clauses: build (memberAddress, payload) for clauses that have a member selected
+      const assigned: Array<{ memberAddress: string; clause: Clause }> = [];
+      for (const c of clauses) {
         const memberId = clauseAssignments[c.clauseId];
-        if (!memberId) return zeroAddress;
+        if (!memberId) continue;
         const member = members.find((m) => m.id === memberId);
-        return member?.id ?? zeroAddress;
-      });
+        const memberAddress = member?.id;
+        if (!memberAddress) continue;
+        assigned.push({ memberAddress, clause: c });
+      }
 
-      const clausePayloads = clauses.map((c) => {
-        const memberId = clauseAssignments[c.clauseId];
-        const divisionMemberAddress = memberId
-          ? (members.find((m) => m.id === memberId)?.id ?? zeroAddress)
-          : zeroAddress;
-        return {
-          clauseId: c.clauseId,
-          clauseContent: c.clauseContent,
-          divisionMemberAddress,
-          assignedDate,
-        };
-      });
+      if (assigned.length === 0) {
+        toast.error('Select at least one member for a clause');
+        setAssigning(false);
+        return;
+      }
+
+      const clausePayloads = assigned.map(({ memberAddress, clause }) => ({
+        clauseId: clause.clauseId,
+        clauseContent: clause.clauseContent,
+        divisionMemberAddress: memberAddress,
+        assignedDate,
+      }));
 
       const uploadRes = await fetch(`${URLs.UploadAPI}/clauses`, {
         method: 'POST',
@@ -218,11 +221,12 @@ export default function SectionAssignmentsSectionPage() {
         return;
       }
       const clauseCids = uploadData.clauseCids as string[];
-      if (!Array.isArray(clauseCids) || clauseCids.length !== clauses.length) {
+      if (!Array.isArray(clauseCids) || clauseCids.length !== assigned.length) {
         toast.error('Invalid response from upload');
         return;
       }
 
+      const divisionMembers = assigned.map((a) => a.memberAddress);
       const sectionId = sectionIdFromSubgraph;
       const success = await assignClausesToMembers(
         config,
@@ -233,9 +237,11 @@ export default function SectionAssignmentsSectionPage() {
       );
       if (success) {
         toast.success('Assignments submitted successfully');
-        await refetchDoc(contractId);
-        await refetchContracts();
-        refreshSubgraph();
+        setTimeout(async () => {
+          await refetchDoc(contractId);
+          await refetchContracts();
+          refreshSubgraph();
+        }, 3000);
       } else {
         toast.error('Failed to submit assignments');
       }

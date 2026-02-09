@@ -78,17 +78,19 @@ export default function SectionAssignmentsClausePage() {
       return;
     }
 
-    if (!doc.cid) {
+    const sectionAt = doc.sections?.[sectionIndex] as { cid?: string } | undefined;
+    const sectionCid = sectionAt?.cid;
+    if (!sectionCid) {
       setSectionName(`Section ${sectionIndex + 1}`);
       setClauseContent('');
       setContentLoaded(true);
       return;
     }
-    fetch(`${URLs.TBGateWay}${doc.cid}`)
+    fetch(`${URLs.TBGateWay}${sectionCid}`)
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         const sections: DocSection[] = data?.sections ?? [];
-        const section = sections[sectionIndex];
+        const section = sections[0];
         if (section?.sectionContent?.[clauseIndex]) {
           const clause = section.sectionContent[clauseIndex];
           setSectionName(section.sectionName ?? `Section ${sectionIndex + 1}`);
@@ -114,16 +116,17 @@ export default function SectionAssignmentsClausePage() {
   const clauseIdOnChain = clauseAt?.id != null ? Number(clauseAt.id) : NaN;
 
   const handleApprove = async () => {
-    if (!config || !address || !doc?.cid || Number.isNaN(clauseIdOnChain)) {
+    const sectionCid = (sectionAt as { cid?: string } | undefined)?.cid;
+    if (!config || !address || !sectionCid || Number.isNaN(clauseIdOnChain)) {
       toast.error('Missing data to approve');
       return;
     }
     setActionLoading('approve');
     try {
-      const res = await fetch(`${URLs.TBGateWay}${doc.cid}`);
+      const res = await fetch(`${URLs.TBGateWay}${sectionCid}`);
       const data = res.ok ? (await res.json()) as { sections?: DocSection[] } : null;
       const sections: DocSection[] = data?.sections ?? [];
-      const section = sections[sectionIndex];
+      const section = sections[0];
       if (!section?.sectionName) {
         toast.error('Could not load section data');
         return;
@@ -138,10 +141,12 @@ export default function SectionAssignmentsClausePage() {
       );
       if (ok) {
         toast.success('Clause approved');
-        await refetchDoc(contractId);
-        await refetchContracts();
-        refreshSubgraph();
         router.back();
+        setTimeout(async () => {
+          await refetchDoc(contractId);
+          await refetchContracts();
+          refreshSubgraph();
+        }, 3000);
       } else {
         toast.error('Failed to approve clause');
       }
@@ -163,10 +168,12 @@ export default function SectionAssignmentsClausePage() {
       const ok = await rejectClause(config, address, clauseIdOnChain);
       if (ok) {
         toast.success('Clause rejected');
-        await refetchDoc(contractId);
-        await refetchContracts();
-        refreshSubgraph();
         router.back();
+        setTimeout(async () => {
+          await refetchDoc(contractId);
+          await refetchContracts();
+          refreshSubgraph();
+        }, 3000);
       } else {
         toast.error('Failed to reject clause');
       }
@@ -188,10 +195,12 @@ export default function SectionAssignmentsClausePage() {
       const ok = await reassignClause(config, address, clauseIdOnChain);
       if (ok) {
         toast.success('Clause reassigned');
-        await refetchDoc(contractId);
-        await refetchContracts();
-        refreshSubgraph();
         router.back();
+        setTimeout(async () => {
+          await refetchDoc(contractId);
+          await refetchContracts();
+          refreshSubgraph();
+        }, 3000);
       } else {
         toast.error('Failed to reassign clause');
       }
