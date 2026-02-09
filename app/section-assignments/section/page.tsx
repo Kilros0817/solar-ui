@@ -336,7 +336,7 @@ export default function SectionAssignmentsSectionPage() {
                         <Badge
                           variant={
                             clauseStatus === 2
-                              ? 'default'
+                              ? 'destructive'
                               : clauseStatus === 3
                                 ? 'destructive'
                                 : 'secondary'

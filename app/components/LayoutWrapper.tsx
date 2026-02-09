@@ -62,8 +62,7 @@ export function LayoutWrapper({ children }: LayoutWrapperProps) {
       'internal-review': '/section-assignments/review',
       'internal-approved': '/section-assignments/approved',
       'internal-rejected': '/section-assignments/rejected',
-      // Division Leader Legal Review
-      'legal-all': '/legal-review',
+      // Division Leader Legal Review (no "All sections")
       'legal-pending': '/legal-review/pending',
       'legal-review-tab': '/legal-review/review',
       'legal-approved': '/legal-review/approved',

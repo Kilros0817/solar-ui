@@ -1768,6 +1768,10 @@
     color: var(--color-yellow-800);
   }
 
+  .bg-green-600 {
+    background-color: var(--color-green-600);
+  }
+  
   .italic {
     font-style: italic;
   }

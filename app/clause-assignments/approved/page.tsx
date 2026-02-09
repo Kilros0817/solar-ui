@@ -58,7 +58,7 @@ export default function ClauseAssignmentsApprovedPage() {
       .then((list) => {
         if (cancelled) return;
         const arr = Array.isArray(list) ? list : [];
-        const status2 = arr.filter((c: ClauseWithSection) => c.status === 2);
+        const status2 = arr.filter((c: ClauseWithSection) => Number(c.status) === 2);
         setClauses(status2);
       })
       .catch(() => {

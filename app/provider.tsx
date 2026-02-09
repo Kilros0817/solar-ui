@@ -17,7 +17,7 @@ import Web3AuthConnectorInstance from "@/utils/Web3AuthConnectorInstance";
 import { setWeb3AuthInstance } from "@/utils/Web3AuthStore";
 
 import { baseSepolia } from "viem/chains";
-import { BaseRPC1, BaseRPC2, BaseRPC3 } from "@/utils/constants";
+import { BaseRPC1, BaseRPC2 } from "@/utils/constants";
 import type { TBProviderProps } from './data/interfaces';
 
 const queryClient = new QueryClient();
@@ -40,7 +40,6 @@ const TBProvider: React.FC<TBProviderProps> = ({ children }: TBProviderProps) =>
             [baseSepolia.id]: fallback([
               http(BaseRPC1),
               http(BaseRPC2),
-              http(BaseRPC3),
             ]),
           },
           connectors: [

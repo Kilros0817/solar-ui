@@ -38,6 +38,7 @@ import {
 import { getContractCounts } from '../data/interfaces';
 import type { SidebarProps } from '../data/interfaces';
 import { getContractsByDivisionMember, getSectionsByDivisionLeader } from '@/utils/subgraph';
+import { useSectionContent } from '@/app/contexts/SectionContentContext';
 
 export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
   const router = useRouter();
@@ -60,6 +61,12 @@ export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
     approved: number;
     rejected: number;
   } | null>(null);
+
+  const [divisionLeaderSections, setDivisionLeaderSections] = useState<
+    Array<{ id: string; clauses?: unknown[]; doc?: { id: string } }>
+  >([]);
+
+  const { loadSectionContent, getTotalClauses } = useSectionContent();
 
   useEffect(() => {
     if (userRole !== USER_ROLE.DIVISION_MEMBER || !address) {
@@ -97,6 +104,7 @@ export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
   useEffect(() => {
     if (userRole !== USER_ROLE.DIVISION_LEADER || !address) {
       setDivisionLeaderClauseCounts(null);
+      setDivisionLeaderSections([]);
       return;
     }
     let cancelled = false;
@@ -118,12 +126,25 @@ export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
           });
         });
         setDivisionLeaderClauseCounts({ pending, review, approved, rejected });
+        setDivisionLeaderSections(list);
       })
       .catch(() => {
-        if (!cancelled) setDivisionLeaderClauseCounts(null);
+        if (!cancelled) {
+          setDivisionLeaderClauseCounts(null);
+          setDivisionLeaderSections([]);
+        }
       });
     return () => { cancelled = true; };
   }, [userRole, address, refreshCounter]);
+
+  // Load section content (IPFS) so we can compute unallocated = totalFromContent - subgraph count
+  useEffect(() => {
+    if (userRole !== USER_ROLE.DIVISION_LEADER || !divisionLeaderSections.length) return;
+    divisionLeaderSections.forEach((sec) => {
+      const docId = sec.doc?.id;
+      if (docId) loadSectionContent(sec.id, docId);
+    });
+  }, [userRole, divisionLeaderSections, loadSectionContent]);
 
   // Map routes to tab IDs (for active state)
   const routeToTabMap: Record<string, string> = {
@@ -149,7 +170,7 @@ export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
     '/section-assignments': 'internal-all',
     '/section-assignments/section': 'internal-all',
     '/section-assignments/clause': 'internal-all',
-    '/legal-review': 'legal-all',
+    '/legal-review': 'legal-pending',
     '/legal-review/pending': 'legal-pending',
     '/legal-review/review': 'legal-review-tab',
     '/legal-review/approved': 'legal-approved',
@@ -181,17 +202,26 @@ export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
     // Division Lead - Internal Review + Legal Review with submenus (clause counts for Internal Review)
     if (userRole === USER_ROLE.DIVISION_LEADER) {
       const dlCounts = divisionLeaderClauseCounts;
+      const unallocatedCount =
+        divisionLeaderSections.length > 0 &&
+        divisionLeaderSections.some((sec) => getTotalClauses(sec.id) !== undefined)
+          ? divisionLeaderSections.reduce<number>((sum, sec) => {
+              const totalFromContent = getTotalClauses(sec.id);
+              if (totalFromContent === undefined) return sum;
+              const fromSubgraph = (sec.clauses ?? []).length;
+              return sum + Math.max(0, totalFromContent - fromSubgraph);
+            }, 0)
+          : null;
       return [
         { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, count: null },
         { type: 'header', label: 'Internal Review' },
-        { type: 'item', id: 'internal-all', label: 'All', route: '/section-assignments', icon: ClipboardList, count: counts.all },
-        { type: 'item', id: 'internal-unallocated', label: 'Unallocated', route: '/section-assignments/unallocated', icon: UserPlus, count: null },
+        { type: 'item', id: 'internal-all', label: 'All Sections', route: '/section-assignments', icon: ClipboardList, count: counts.all },
+        { type: 'item', id: 'internal-unallocated', label: 'Unallocated', route: '/section-assignments/unallocated', icon: UserPlus, count: unallocatedCount },
         { type: 'item', id: 'internal-pending', label: 'Pending', route: '/section-assignments/pending', icon: Clock, count: dlCounts?.pending ?? null },
         { type: 'item', id: 'internal-review', label: 'Review', route: '/section-assignments/review', icon: FileSearch, count: dlCounts?.review ?? null },
         { type: 'item', id: 'internal-approved', label: 'Approved', route: '/section-assignments/approved', icon: CheckCircle, count: dlCounts?.approved ?? null },
         { type: 'item', id: 'internal-rejected', label: 'Rejected', route: '/section-assignments/rejected', icon: Archive, count: dlCounts?.rejected ?? null },
         { type: 'header', label: 'Legal Review' },
-        { type: 'item', id: 'legal-all', label: 'All sections', route: '/legal-review', icon: FileText, count: null },
         { type: 'item', id: 'legal-pending', label: 'Pending', route: '/legal-review/pending', icon: Clock, count: counts.pending },
         { type: 'item', id: 'legal-review-tab', label: 'Review', route: '/legal-review/review', icon: FileSearch, count: counts.divisionRequest },
         { type: 'item', id: 'legal-approved', label: 'Approved', route: '/legal-review/approved', icon: CheckCircle, count: counts.approved },

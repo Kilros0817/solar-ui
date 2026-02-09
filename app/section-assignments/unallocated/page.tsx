@@ -10,20 +10,13 @@ import { Loader2, FileText, ClipboardList, Eye, Search } from 'lucide-react';
 import { getSectionsByDivisionLeader, getContractById } from '@/utils/subgraph';
 import { useAssignment } from '@/app/contexts/AssignmentContext';
 import { useSectionContent } from '@/app/contexts/SectionContentContext';
+import { useSubgraphRefresh } from '@/app/contexts/SubgraphRefreshContext';
 import { USER_ROLE } from '@/utils/constants';
 import { useUser } from '@/app/contexts/UserContext';
 
-type ClauseFromApi = {
-  id: string;
-  cid?: string;
-  status?: number;
-  assignedAt?: number;
-  divisionMember?: { id: string; firstName?: string; lastName?: string; email?: string } | null;
-};
-
 type SectionFromApi = {
   id: string;
-  clauses?: ClauseFromApi[];
+  clauses?: Array<{ id: string }>;
   doc?: {
     id: string;
     title?: string;
@@ -38,16 +31,13 @@ function getClientLabel(doc: SectionFromApi['doc']) {
   return name || (c as { email?: string }).email || '—';
 }
 
-function isUnallocated(clause: ClauseFromApi) {
-  return !clause.divisionMember || !clause.divisionMember.id;
-}
-
 export default function SectionAssignmentsUnallocatedPage() {
   const router = useRouter();
   const { address } = useConnection();
   const { userRole } = useUser();
   const { setSelectedContract, setSelectedSection } = useAssignment();
-  const { loadSectionContent } = useSectionContent();
+  const { loadSectionContent, getTotalClauses } = useSectionContent();
+  const { refreshCounter } = useSubgraphRefresh();
   const [sections, setSections] = useState<SectionFromApi[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -86,9 +76,9 @@ export default function SectionAssignmentsUnallocatedPage() {
         if (!cancelled) setLoading(false);
       });
     return () => { cancelled = true; };
-  }, [address, userRole]);
+  }, [address, userRole, refreshCounter]);
 
-  // Load section content into context so total/unallocated are available elsewhere
+  // Load section content (IPFS) so we have total clauses per section - same as main section-assignments page
   useEffect(() => {
     if (sections.length === 0) return;
     sections.forEach((section) => {
@@ -97,15 +87,19 @@ export default function SectionAssignmentsUnallocatedPage() {
     });
   }, [sections, loadSectionContent]);
 
-  // Flatten to unallocated clauses with section + doc context
-  const unallocatedItems: Array<{ clause: ClauseFromApi; section: SectionFromApi }> = [];
+  // Same definition as main page: unallocated = total from section content (IPFS) minus clauses in subgraph
+  const sectionsWithUnallocated: Array<{ section: SectionFromApi; unallocatedCount: number }> = [];
   sections.forEach((section) => {
-    (section.clauses ?? []).filter(isUnallocated).forEach((clause) => {
-      unallocatedItems.push({ clause, section });
-    });
+    const totalFromContent = getTotalClauses(section.id);
+    if (totalFromContent == null) return;
+    const fromSubgraph = section.clauses?.length ?? 0;
+    const unallocatedCount = Math.max(0, totalFromContent - fromSubgraph);
+    if (unallocatedCount > 0) {
+      sectionsWithUnallocated.push({ section, unallocatedCount });
+    }
   });
 
-  const filteredItems = unallocatedItems.filter(({ section }) => {
+  const filteredItems = sectionsWithUnallocated.filter(({ section }) => {
     const title = (section.doc?.title ?? '').toLowerCase();
     const client = getClientLabel(section.doc).toLowerCase();
     return title.includes(searchTerm.toLowerCase()) || client.includes(searchTerm.toLowerCase());
@@ -176,23 +170,23 @@ export default function SectionAssignmentsUnallocatedPage() {
             <div className="rounded-full bg-muted p-4 mb-4">
               <FileText className="h-10 w-10 text-muted-foreground" />
             </div>
-            <h3 className="font-semibold text-lg mb-1">No unallocated clauses</h3>
+            <h3 className="font-semibold text-lg mb-1">No unallocated sections</h3>
             <p className="text-sm text-muted-foreground max-w-sm">
               {searchTerm
-                ? 'No unallocated clauses match your search.'
-                : 'All clauses in your sections are allocated to division members.'}
+                ? 'No sections with unallocated clause slots match your search.'
+                : 'All section clause slots are allocated (total from content matches subgraph).'}
             </p>
           </CardContent>
         </Card>
       ) : (
         <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))' }}>
-          {filteredItems.map(({ clause, section }) => {
+          {filteredItems.map(({ section }) => {
             const contractTitle = section.doc?.title ?? 'Untitled';
             const client = getClientLabel(section.doc);
             const isViewing = viewingId === section.id;
 
             return (
-              <Card key={`${section.id}-${clause.id}`} className="flex flex-col">
+              <Card key={section.id} className="flex flex-col">
                 <CardContent className="p-4 flex flex-col gap-3 flex-1">
                   <div className="space-y-1">
                     <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
@@ -209,18 +203,10 @@ export default function SectionAssignmentsUnallocatedPage() {
                     <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
                       Section
                     </p>
-                    <p className="text-sm text-muted-foreground">Section ID: {section.id}</p>
-                  </div>
-                  <div className="border-t pt-3 space-y-1">
-                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Clause
-                    </p>
-                    <p className="text-sm">Clause ID: {clause.id}</p>
-                    {clause.cid && (
-                      <p className="text-xs text-muted-foreground truncate" title={clause.cid}>
-                        CID: {clause.cid}
-                      </p>
-                    )}
+                    <div className="flex items-center gap-2 text-sm">
+                      <ClipboardList className="h-4 w-4 text-muted-foreground shrink-0" />
+                      <span>Section ID: {section.id}</span>
+                    </div>
                   </div>
                   <div className="flex justify-end mt-auto pt-2 border-t">
                     <Button
