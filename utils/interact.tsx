@@ -283,3 +283,18 @@ export const submitSectionToLegal = async (
   return false;
 }
 
+// legal team: approve or reject a section (newDocCid: pass updated doc CID for approve, or "" for reject)
+export const legalReviewSection = async (
+  config: any,
+  account: string,
+  sectionId: number,
+  approve: boolean,
+  newDocCid: string,
+) => {
+  const res = await runSponsorTx(config, account, "legalReviewSection", [sectionId, approve, newDocCid]);
+  if (res.isSuccess) {
+    return true;
+  }
+  return false;
+}
+

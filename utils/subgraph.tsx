@@ -268,18 +268,6 @@ export const getContractById = async (id: string | number) => {
           firstName
           lastName
         }
-        clauses {
-          id
-          cid
-          status
-          assignedAt
-          divisionMember {
-            id
-            firstName
-            lastName
-            email
-          }
-        }
       }
     }
   }`;

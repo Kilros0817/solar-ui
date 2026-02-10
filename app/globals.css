@@ -1771,6 +1771,10 @@
   .bg-green-600 {
     background-color: var(--color-green-600);
   }
+
+  .bg-green-800 {
+    background-color: var(--color-green-800);
+  }
   
   .italic {
     font-style: italic;

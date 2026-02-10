@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useConfig, useConnection } from 'wagmi';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
@@ -7,10 +8,14 @@ import { ContractDocumentTemplate } from './ContractDocumentTemplate';
 import { SectionReviewTab } from './SectionReviewTab';
 import { ArrowLeft, FileText, Calendar, DollarSign, Tag, ClipboardList, Building2 } from 'lucide-react';
 import { getContractById } from '@/utils/subgraph';
+import { legalReviewSection } from '@/utils/interact';
+import { uploadContractToPinata } from '@/utils/utility';
 import type { Contract, ContractDocPayload, ContractDetailsProps } from '../data/interfaces';
+import type { DivisionSection } from '../data/interfaces';
 import { useUser } from '../contexts/UserContext';
 import { USER_ROLE, CONTRACT_STATUS_LABELS, DIVISION_LABELS, URLs } from '@/utils/constants';
 import { formatRelativeDate } from '@/utils/utility';
+import { toast } from 'sonner';
 
 const mapDocumentToContract = (doc: any, index: number): Contract => {
   const client = doc.client;
@@ -30,33 +35,46 @@ const mapDocumentToContract = (doc: any, index: number): Contract => {
   };
 };
 
+const sectionStatusToReviewStatus = (status: number): 'pending' | 'approved' | 'rejected' => {
+  if (status === 2) return 'approved';
+  if (status === 3) return 'rejected';
+  return 'pending'; // 0 = not submitted, 1 = in review
+};
+
 export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps) {
+  const config = useConfig();
+  const { address } = useConnection();
   const [foundContract, setFoundContract] = useState<Contract | null>(null);
   const [rawDocument, setRawDocument] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [docContent, setDocContent] = useState<ContractDocPayload | null>(null);
   const [docLoading, setDocLoading] = useState(false);
   const [docError, setDocError] = useState<string | null>(null);
+  const [sectionContentBySectionId, setSectionContentBySectionId] = useState<
+    Record<string, { sectionName: string; content: string; sectionContent: Array<{ clauseId: string; clauseContent: string }> }>
+  >({});
+  const [reviewActionSectionId, setReviewActionSectionId] = useState<string | null>(null);
   const { userRole } = useUser();
 
-  useEffect(() => {
-    const fetchContract = async () => {
-      setLoading(true);
-      try {
-        const doc = await getContractById(contractId);
-        setRawDocument(doc ?? null);
-        const contract = doc ? mapDocumentToContract(doc, 0) : null;
-        setFoundContract(contract);
-      } catch (e) {
-        console.error('Failed to fetch contract:', e);
-        setFoundContract(null);
-        setRawDocument(null);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchContract();
+  const fetchContract = useCallback(async () => {
+    setLoading(true);
+    try {
+      const doc = await getContractById(contractId);
+      setRawDocument(doc ?? null);
+      const contract = doc ? mapDocumentToContract(doc, 0) : null;
+      setFoundContract(contract);
+    } catch (e) {
+      console.error('Failed to fetch contract:', e);
+      setFoundContract(null);
+      setRawDocument(null);
+    } finally {
+      setLoading(false);
+    }
   }, [contractId]);
+
+  useEffect(() => {
+    fetchContract();
+  }, [fetchContract]);
 
   useEffect(() => {
     if (!foundContract?.cid) {
@@ -84,29 +102,146 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
     fetchDoc();
   }, [foundContract?.cid]);
 
-  const sectionsByDivision = docContent?.sections?.length
-    ? [{
-        division: foundContract?.category || 'Contract',
-        sections: docContent.sections.map((s, i) => ({
-          id: `section-${i}`,
-          name: s.sectionName,
-          content: s.sectionContent?.map((c) => c.clauseContent).filter(Boolean).join('\n\n') || '',
-          status: 'pending' as const,
-          submittedBy: '—',
-          submittedDate: '—',
-          division: foundContract?.category || 'Contract',
-        })),
-      }]
-    : [];
+  // Load section content by section CID (for Section Review tab – subgraph sections)
+  useEffect(() => {
+    const sections = rawDocument?.sections ?? [];
+    if (sections.length === 0) {
+      setSectionContentBySectionId({});
+      return;
+    }
+    let cancelled = false;
+    const next: Record<string, { sectionName: string; content: string; sectionContent: Array<{ clauseId: string; clauseContent: string }> }> = {};
+    Promise.all(
+      sections.map(async (sec: { id: string; cid?: string | null }) => {
+        if (!sec.cid?.trim()) return;
+        try {
+          const res = await fetch(`${URLs.TBGateWay}${sec.cid}`);
+          if (!res.ok || cancelled) return;
+          const data = await res.json();
+          const name = data?.sectionName ?? `Section ${sec.id}`;
+          const sectionContent = (data?.sectionContent ?? []).map(
+            (c: { clauseId?: string; clauseContent?: string }) => ({
+              clauseId: typeof c?.clauseId === 'string' ? c.clauseId : '',
+              clauseContent: typeof c?.clauseContent === 'string' ? c.clauseContent : '',
+            })
+          );
+          const content = sectionContent.map((c: { clauseContent: string }) => c.clauseContent).filter(Boolean).join('\n\n');
+          next[sec.id] = { sectionName: name, content, sectionContent };
+        } catch {
+          // ignore
+        }
+      })
+    ).then(() => {
+      if (!cancelled) setSectionContentBySectionId((prev) => ({ ...prev, ...next }));
+    });
+    return () => { cancelled = true; };
+  }, [rawDocument?.sections]);
 
-  const handleApproveSection = (sectionId: string) => {
-    console.log('Approving section:', sectionId);
-    // In a real app, this would make an API call
+  // Section Review tab: build from subgraph sections, grouped by division
+  const sectionsByDivision: DivisionSection[] = useMemo(() => {
+    const sections = rawDocument?.sections ?? [];
+    if (sections.length === 0) return [];
+    const byDivision: Record<string, Array<{ id: string; name: string; content: string; status: 'pending' | 'approved' | 'rejected'; statusNum?: number; submittedBy: string; submittedDate: string; division: string; divisionLeaderName?: string }>> = {};
+    for (const sec of sections) {
+      const dcat = sec?.divisionLeader?.dcategory;
+      const divisionLabel = dcat != null && Number(dcat) > 0 ? (DIVISION_LABELS[Number(dcat)] ?? `Division ${dcat}`) : 'Contract';
+      const leader = sec?.divisionLeader as { firstName?: string; lastName?: string } | undefined;
+      const divisionLeaderName = leader
+        ? [leader.firstName, leader.lastName].filter(Boolean).join(' ').trim() || undefined
+        : undefined;
+      const contentMap = sectionContentBySectionId[sec.id];
+      if (!byDivision[divisionLabel]) byDivision[divisionLabel] = [];
+      const statusNum = typeof sec.status === 'number' ? sec.status : 0;
+      byDivision[divisionLabel].push({
+        id: String(sec.id),
+        name: contentMap?.sectionName ?? `Section ${sec.id}`,
+        content: contentMap?.content ?? '',
+        status: sectionStatusToReviewStatus(statusNum),
+        statusNum,
+        submittedBy: '—',
+        submittedDate: '—',
+        division: divisionLabel,
+        divisionLeaderName: divisionLeaderName || undefined,
+      });
+    }
+    return Object.entries(byDivision).map(([division, secs]) => ({ division, sections: secs }));
+  }, [rawDocument?.sections, sectionContentBySectionId]);
+
+  const handleApproveSection = async (sectionId: string) => {
+    if (!config || !address) {
+      toast.error('Wallet not connected');
+      return;
+    }
+    const sectionIdNum = Number(sectionId);
+    if (Number.isNaN(sectionIdNum)) {
+      toast.error('Invalid section');
+      return;
+    }
+    if (!docContent) {
+      toast.error('Document content not loaded');
+      return;
+    }
+    setReviewActionSectionId(sectionId);
+    try {
+      const rawSections = rawDocument?.sections ?? [];
+      const sectionIndex = rawSections.findIndex((s: { id: string }) => String(s.id) === String(sectionId));
+      const currentSections = docContent.sections ?? [];
+      const approvedSectionData = sectionContentBySectionId[sectionId];
+      const newSections =
+        sectionIndex >= 0 && approvedSectionData?.sectionContent?.length
+          ? currentSections.map((sec, i) =>
+              i === sectionIndex
+                ? { sectionName: approvedSectionData.sectionName, sectionContent: approvedSectionData.sectionContent }
+                : sec
+            )
+          : currentSections;
+      const newDocPayload = {
+        contractTitle: docContent.contractTitle,
+        client: docContent.client,
+        description: docContent.description,
+        price: docContent.price,
+        category: docContent.category,
+        sections: newSections,
+      };
+      const newDocCid = await uploadContractToPinata(newDocPayload);
+      const success = await legalReviewSection(config, address, sectionIdNum, true, newDocCid);
+      if (success) {
+        toast.success('Section approved');
+        await fetchContract();
+      } else {
+        toast.error('Failed to approve section');
+      }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Failed to approve section');
+    } finally {
+      setReviewActionSectionId(null);
+    }
   };
 
-  const handleRejectSection = (sectionId: string, reason: string) => {
-    console.log('Rejecting section:', sectionId, 'Reason:', reason);
-    // In a real app, this would make an API call
+  const handleRejectSection = async (sectionId: string, reason: string) => {
+    if (!config || !address) {
+      toast.error('Wallet not connected');
+      return;
+    }
+    const sectionIdNum = Number(sectionId);
+    if (Number.isNaN(sectionIdNum)) {
+      toast.error('Invalid section');
+      return;
+    }
+    setReviewActionSectionId(sectionId);
+    try {
+      const success = await legalReviewSection(config, address, sectionIdNum, false, '');
+      if (success) {
+        toast.success('Section rejected');
+        await fetchContract();
+      } else {
+        toast.error('Failed to reject section');
+      }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Failed to reject section');
+    } finally {
+      setReviewActionSectionId(null);
+    }
   };
 
   const involvedDivisions = (rawDocument?.sections ?? [])
@@ -295,7 +430,8 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
                 sections={sectionsByDivision}
                 onApprove={handleApproveSection}
                 onReject={handleRejectSection}
-                userRole={userRole || 0}
+                userRole={userRole ?? 0}
+                processingSectionId={reviewActionSectionId}
               />
             </TabsContent>
 

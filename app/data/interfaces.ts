@@ -123,9 +123,13 @@ export interface Section {
   name: string;
   content: string;
   status: 'pending' | 'approved' | 'rejected';
+  /** Raw section status from subgraph: 0 = Pending, 1 = Review, 2 = Approved, 3 = Rejected */
+  statusNum?: number;
   submittedBy: string;
   submittedDate: string;
   division: string;
+  /** Division leader display name (from subgraph) */
+  divisionLeaderName?: string;
   comments?: string;
 }
 
@@ -139,6 +143,7 @@ export interface SectionReviewTabProps {
   onApprove?: (sectionId: string) => void;
   onReject?: (sectionId: string, reason: string) => void;
   userRole: number;
+  processingSectionId?: string | null;
 }
 
 export interface SectionTemplateWithVersions {

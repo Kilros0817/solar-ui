@@ -140,6 +140,30 @@ export const uploadSectionToPinata = async (section: {
   return cid;
 };
 
+/** Upload contract/document to Pinata (UploadAPI) and return the doc CID. */
+export const uploadContractToPinata = async (payload: {
+  contractTitle?: string;
+  client?: string;
+  description?: string;
+  price?: string;
+  category?: string;
+  sections?: Array<{
+    sectionName: string;
+    sectionContent: Array<{ clauseId: string; clauseContent: string }>;
+  }>;
+}): Promise<string> => {
+  const res = await fetch(`${URLs.UploadAPI}/contract`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ contract: payload }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error ?? "Failed to upload contract");
+  const cid = data.cid;
+  if (!cid) throw new Error("No document CID returned");
+  return cid;
+};
+
 /** Approve clause: build new section JSON (replaced clause content), upload to Pinata, then call leaderReviewClause. */
 export const approveClauseWithSectionUpdate = async (
   config: any,

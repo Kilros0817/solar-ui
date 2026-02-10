@@ -3,7 +3,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
-import { Textarea } from './ui/textarea';
 import { 
   CheckCircle2, 
   XCircle, 
@@ -13,52 +12,62 @@ import {
   AlertCircle,
   Eye
 } from 'lucide-react';
-import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collapsible';
 import { useState } from 'react';
 import { USER_ROLE } from '@/utils/constants';
 import type { SectionReviewTabProps } from '../data/interfaces';
 
-export function SectionReviewTab({ 
-  sections, 
-  onApprove, 
+export function SectionReviewTab({
+  sections,
+  onApprove,
   onReject,
-  userRole 
+  userRole,
+  processingSectionId = null,
 }: SectionReviewTabProps) {
-  const [rejectReasons, setRejectReasons] = useState<Record<string, string>>({});
-  const [showRejectInput, setShowRejectInput] = useState<Record<string, boolean>>({});
   const [expandedDivisions, setExpandedDivisions] = useState<Record<string, boolean>>({});
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'approved':
-        return <Badge className="bg-green-100 text-green-800 border-green-200"><CheckCircle2 className="h-3 w-3 mr-1" />Approved</Badge>;
-      case 'rejected':
-        return <Badge className="bg-red-100 text-red-800 border-red-200"><XCircle className="h-3 w-3 mr-1" />Rejected</Badge>;
+  const getSectionStatusBadge = (statusNum?: number) => {
+    switch (statusNum) {
+      case 0:
+        return (
+          <Badge className="bg-slate-100 text-slate-800 border-slate-200">
+            <Clock className="h-3 w-3 mr-1" />
+            Assigned
+          </Badge>
+        );
+      case 1:
+        return (
+          <Badge className="bg-orange-100 text-orange-800 border-orange-200">
+            <Clock className="h-3 w-3 mr-1" />
+            Review
+          </Badge>
+        );
+      case 2:
+        return (
+          <Badge className="bg-green-100 text-green-800 border-green-200">
+            <CheckCircle2 className="h-3 w-3 mr-1" />
+            Approved
+          </Badge>
+        );
+      case 3:
+        return (
+          <Badge className="bg-red-100 text-red-800 border-red-200">
+            <XCircle className="h-3 w-3 mr-1" />
+            Rejected
+          </Badge>
+        );
       default:
-        return <Badge className="bg-orange-100 text-orange-800 border-orange-200"><Clock className="h-3 w-3 mr-1" />Pending</Badge>;
-    }
-  };
-
-  const handleReject = (sectionId: string) => {
-    const reason = rejectReasons[sectionId] || '';
-    if (reason.trim()) {
-      onReject?.(sectionId, reason);
-      setShowRejectInput({ ...showRejectInput, [sectionId]: false });
-      setRejectReasons({ ...rejectReasons, [sectionId]: '' });
+        return (
+          <Badge className="bg-slate-100 text-slate-800 border-slate-200">
+            <Clock className="h-3 w-3 mr-1" />
+            Assigned
+          </Badge>
+        );
     }
   };
 
   const toggleDivision = (division: string) => {
     setExpandedDivisions({ ...expandedDivisions, [division]: !expandedDivisions[division] });
-  };
-
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map(n => n[0])
-      .join('')
-      .toUpperCase();
   };
 
   // Show message for non-legal team members, but still allow tab to be visible
@@ -80,8 +89,8 @@ export function SectionReviewTab({
   return (
     <div className="space-y-4">
       {/* Summary Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
+      <div className="flex gap-4">
+        <Card className="flex-1">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
@@ -92,20 +101,33 @@ export function SectionReviewTab({
             </div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="flex-1">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Pending Review</p>
+                <p className="text-sm text-muted-foreground">Pending</p>
+                <p className="text-2xl font-bold text-amber-600">
+                  {sections.reduce((sum, div) => sum + div.sections.filter(s => s.statusNum === 0).length, 0)}
+                </p>
+              </div>
+              <Clock className="h-8 w-8 text-amber-600" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="flex-1">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Review</p>
                 <p className="text-2xl font-bold text-orange-600">
-                  {sections.reduce((sum, div) => sum + div.sections.filter(s => s.status === 'pending').length, 0)}
+                  {sections.reduce((sum, div) => sum + div.sections.filter(s => s.statusNum === 1).length, 0)}
                 </p>
               </div>
               <Clock className="h-8 w-8 text-orange-600" />
             </div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="flex-1">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
@@ -118,7 +140,7 @@ export function SectionReviewTab({
             </div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="flex-1">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
@@ -155,19 +177,9 @@ export function SectionReviewTab({
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      {getStatusBadge(
-                        divisionSection.sections.every(s => s.status === 'approved') 
-                          ? 'approved' 
-                          : divisionSection.sections.some(s => s.status === 'pending')
-                          ? 'pending'
-                          : 'rejected'
-                      )}
-                    </div>
                   </div>
                 </CardHeader>
               </CollapsibleTrigger>
-              
               <CollapsibleContent>
                 <CardContent className="pt-0 space-y-4">
                   {divisionSection.sections.map((section) => (
@@ -183,85 +195,42 @@ export function SectionReviewTab({
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-2">
                             <h4 className="font-semibold">{section.name}</h4>
-                            {getStatusBadge(section.status)}
+                            {getSectionStatusBadge(section.statusNum)}
                           </div>
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
-                            <Avatar className="h-5 w-5">
-                              <AvatarFallback className="text-xs">
-                                {getInitials(section.submittedBy)}
-                              </AvatarFallback>
-                            </Avatar>
-                            <span>Submitted by {section.submittedBy}</span>
-                            <span>•</span>
-                            <span>{section.submittedDate}</span>
-                          </div>
+                          {section.divisionLeaderName && (
+                            <p className="text-sm text-muted-foreground mb-3">
+                              Division leader: {section.divisionLeaderName}
+                            </p>
+                          )}
                           <div className="bg-white rounded p-3 border max-h-32 overflow-y-auto">
                             <p className="text-sm leading-relaxed line-clamp-3">{section.content}</p>
                           </div>
                         </div>
                       </div>
 
-                      {section.status === 'pending' && (
+                      {section.status === 'pending' && section.statusNum === 1 && (
                         <div className="flex items-end gap-2 pt-2 border-t">
-                          <div className="flex-1">
-                            {showRejectInput[section.id] ? (
-                              <div className="space-y-2">
-                                <Textarea
-                                  placeholder="Reason for rejection..."
-                                  value={rejectReasons[section.id] || ''}
-                                  onChange={(e) => setRejectReasons({ ...rejectReasons, [section.id]: e.target.value })}
-                                  className="min-h-[80px]"
-                                />
-                                <div className="flex gap-2">
-                                  <Button
-                                    size="sm"
-                                    variant="destructive"
-                                    onClick={() => handleReject(section.id)}
-                                    disabled={!rejectReasons[section.id]?.trim()}
-                                  >
-                                    <XCircle className="h-4 w-4 mr-2" />
-                                    Confirm Reject
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => {
-                                      setShowRejectInput({ ...showRejectInput, [section.id]: false });
-                                      setRejectReasons({ ...rejectReasons, [section.id]: '' });
-                                    }}
-                                  >
-                                    Cancel
-                                  </Button>
-                                </div>
-                              </div>
-                            ) : (
-                              <div className="flex gap-2">
-                                <Button
-                                  size="sm"
-                                  onClick={() => onApprove?.(section.id)}
-                                  className="!bg-green-600 !hover:bg-green-700 !text-white !border-green-600 shadow-sm font-medium"
-                                >
-                                  <CheckCircle2 className="h-4 w-4 mr-2" />
-                                  Approve
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="destructive"
-                                  onClick={() => setShowRejectInput({ ...showRejectInput, [section.id]: true })}
-                                >
-                                  <XCircle className="h-4 w-4 mr-2" />
-                                  Reject
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => {/* View full section */}}
-                                >
-                                  <Eye className="h-4 w-4 mr-2" />
-                                  View Full
-                                </Button>
-                              </div>
-                            )}
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              variant="approve"
+                              onClick={() => onApprove?.(section.id)}
+                              disabled={processingSectionId === section.id}
+                              className="cursor-pointer"
+                            >
+                              <CheckCircle2 className="h-4 w-4 mr-2" />
+                              {processingSectionId === section.id ? 'Processing...' : 'Approve'}
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => onReject?.(section.id, '')}
+                              disabled={processingSectionId === section.id}
+                              className="cursor-pointer"
+                            >
+                              <XCircle className="h-4 w-4 mr-2" />
+                              Reject
+                            </Button>
                           </div>
                         </div>
                       )}
