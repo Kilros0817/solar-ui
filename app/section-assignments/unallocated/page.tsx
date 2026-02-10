@@ -54,15 +54,21 @@ export default function SectionAssignmentsUnallocatedPage() {
     if (sections.length === 0) return;
     sections.forEach((section) => {
       const docId = section.doc?.id;
-      if (docId) loadSectionContent(section.id, docId);
+      const sectionId = String(section.id);
+      if (docId) loadSectionContent(sectionId, docId);
     });
   }, [sections, loadSectionContent]);
 
   // Same definition as main page: unallocated = total from section content (IPFS) minus clauses in subgraph
   const sectionsWithUnallocated: Array<{ section: SectionFromApi; unallocatedCount: number }> = [];
+  let sectionContentPending = false;
   sections.forEach((section) => {
-    const totalFromContent = getTotalClauses(section.id);
-    if (totalFromContent == null) return;
+    const sectionId = String(section.id);
+    const totalFromContent = getTotalClauses(sectionId);
+    if (totalFromContent == null) {
+      sectionContentPending = true;
+      return;
+    }
     const fromSubgraph = section.clauses?.length ?? 0;
     const unallocatedCount = Math.max(0, totalFromContent - fromSubgraph);
     if (unallocatedCount > 0) {
@@ -100,6 +106,15 @@ export default function SectionAssignmentsUnallocatedPage() {
     return (
       <div className="p-6 flex items-center justify-center min-h-[400px]">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (sections.length > 0 && sectionContentPending) {
+    return (
+      <div className="p-6 flex flex-col items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground mb-4" />
+        <p className="text-sm text-muted-foreground">Loading section content to compute unallocated…</p>
       </div>
     );
   }

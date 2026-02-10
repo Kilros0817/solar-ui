@@ -1,6 +1,6 @@
 'use client'
 
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import { useConnection } from 'wagmi';
 import { getContractById, getCurrentUserProfile } from '@/utils/subgraph';
 import { useUser } from './UserContext';
@@ -30,6 +30,8 @@ export function ContractDocProvider({ children }: { children: React.ReactNode })
   const leaderSections = useDivisionLeaderSections();
   const memberClauses = useDivisionMemberClauses();
   const [docs, setDocs] = useState<Record<string, ContractDoc | null>>({});
+  const docsRef = useRef(docs);
+  docsRef.current = docs;
   const [profile, setProfile] = useState<DivisionProfile>(undefined);
   const [loadingDocId, setLoadingDocId] = useState<string | null>(null);
   const [loadingProfile, setLoadingProfile] = useState(false);
@@ -83,7 +85,7 @@ export function ContractDocProvider({ children }: { children: React.ReactNode })
         return;
       }
 
-      if (docs[contractId] !== undefined) return;
+      if (docsRef.current[contractId] !== undefined) return;
       setLoadingDocId(contractId);
       setError(null);
       try {
@@ -97,7 +99,7 @@ export function ContractDocProvider({ children }: { children: React.ReactNode })
         setLoadingDocId(null);
       }
     },
-    [docs, userRole, leaderSections.loading, leaderSections.getDocFromSections, memberClauses.loading, memberClauses.getDocFromClauses]
+    [userRole, leaderSections.loading, leaderSections.getDocFromSections, memberClauses.loading, memberClauses.getDocFromClauses]
   );
 
   const getDoc = useCallback(

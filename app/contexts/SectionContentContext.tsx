@@ -64,15 +64,13 @@ export function SectionContentProvider({ children }: { children: React.ReactNode
             try {
               const res = await fetch(`${URLs.TBGateWay}${sectionCid}`);
               const data = res.ok ? await res.json() : null;
-              const sections = data?.sections ?? [];
-              const sectionData = sections[0];
-              const sectionContent = sectionData?.sectionContent?.filter((c: { clauseContent?: string }) => c.clauseContent) ?? [];
+              const sectionContent = data?.sectionContent?.filter((c: { clauseContent?: string }) => c.clauseContent) ?? [];
               const total = sectionContent.length;
               setTotalBySectionId((prev) => ({ ...prev, [sectionId]: total }));
               setContentBySectionId((prev) => ({
                 ...prev,
                 [sectionId]: {
-                  sectionName: sectionData?.sectionName ?? `Section ${sectionId}`,
+                  sectionName: data?.sectionName ?? `Section ${sectionId}`,
                   sectionContent,
                 },
               }));

@@ -38,7 +38,7 @@ export default function SectionAssignmentsSectionPage() {
   const { profile, loadDoc, getDoc, loadingDocId, loadingProfile, error: contextError, refetchDoc } = useContractDoc();
   const { refetch: refetchContracts } = useContracts();
   const { refresh: refreshSubgraph } = useSubgraphRefresh();
-  const { getSectionContent } = useSectionContent();
+  const { loadSectionContent, getSectionContent } = useSectionContent();
   const contractId = selectedContractId ?? '';
   const sectionIndex = selectedSectionIndex ?? -1;
   const [sectionName, setSectionName] = useState('');
@@ -119,6 +119,14 @@ export default function SectionAssignmentsSectionPage() {
   useEffect(() => {
     if (!doc || sectionContentLoaded) return;
     const sectionId = doc.sections?.[sectionIndex]?.id != null ? String(doc.sections[sectionIndex].id) : null;
+    if (sectionId && contractId) loadSectionContent(sectionId, contractId);
+  }, [doc, sectionIndex, contractId, loadSectionContent]);
+
+  useEffect(() => {
+    if (!doc || sectionContentLoaded) return;
+    const sectionId = doc.sections?.[sectionIndex]?.id != null ? String(doc.sections[sectionIndex].id) : null;
+    const sectionAt = doc.sections?.[sectionIndex] as { cid?: string } | undefined;
+    const sectionCid = sectionAt?.cid;
     const cached = sectionId ? getSectionContent(sectionId) : undefined;
     if (cached) {
       setSectionName(cached.sectionName);
@@ -126,13 +134,34 @@ export default function SectionAssignmentsSectionPage() {
       setSectionContentLoaded(true);
       return;
     }
-    if (!doc.cid) {
+    if (sectionCid) {
+      fetch(`${URLs.TBGateWay}${sectionCid}`)
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          const section = data as DocSection | null;
+          if (section?.sectionContent) {
+            setSectionName(section.sectionName ?? `Section ${sectionIndex + 1}`);
+            setClauses(section.sectionContent.filter((c) => c.clauseContent).map((c) => ({ clauseId: c.clauseId, clauseContent: c.clauseContent ?? '' })));
+          } else {
+            setSectionName(`Section ${sectionIndex + 1}`);
+            setClauses([]);
+          }
+        })
+        .catch(() => {
+          setSectionName(`Section ${sectionIndex + 1}`);
+          setClauses([]);
+        })
+        .finally(() => setSectionContentLoaded(true));
+      return;
+    }
+    const docCid = (doc as { cid?: string }).cid;
+    if (!docCid) {
       setSectionName(`Section ${sectionIndex + 1}`);
       setClauses([]);
       setSectionContentLoaded(true);
       return;
     }
-    fetch(`${URLs.TBGateWay}${doc.cid}`)
+    fetch(`${URLs.TBGateWay}${docCid}`)
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         const sections: DocSection[] = data?.sections ?? [];

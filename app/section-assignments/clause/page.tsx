@@ -89,8 +89,7 @@ export default function SectionAssignmentsClausePage() {
     fetch(`${URLs.TBGateWay}${sectionCid}`)
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
-        const sections: DocSection[] = data?.sections ?? [];
-        const section = sections[0];
+        const section = data as DocSection | null;
         if (section?.sectionContent?.[clauseIndex]) {
           const clause = section.sectionContent[clauseIndex];
           setSectionName(section.sectionName ?? `Section ${sectionIndex + 1}`);
@@ -124,9 +123,7 @@ export default function SectionAssignmentsClausePage() {
     setActionLoading('approve');
     try {
       const res = await fetch(`${URLs.TBGateWay}${sectionCid}`);
-      const data = res.ok ? (await res.json()) as { sections?: DocSection[] } : null;
-      const sections: DocSection[] = data?.sections ?? [];
-      const section = sections[0];
+      const section = res.ok ? (await res.json()) : null;
       if (!section?.sectionName) {
         toast.error('Could not load section data');
         return;

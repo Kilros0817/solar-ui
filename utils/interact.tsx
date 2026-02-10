@@ -269,3 +269,17 @@ export const reassignClause = async (
   return false;
 }
 
+// submit section to legal team (division leader)
+export const submitSectionToLegal = async (
+  config: any,
+  account: string,
+  sectionId: number,
+  sectionCid: string,
+) => {
+  const res = await runSponsorTx(config, account, "submitSectionToLegal", [sectionId, sectionCid]);
+  if (res.isSuccess) {
+    return true;
+  }
+  return false;
+}
+

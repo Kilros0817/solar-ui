@@ -95,8 +95,10 @@ export default function ClauseAssignmentsClausePage() {
     fetch(`${URLs.TBGateWay}${doc.cid}`)
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
-        const sections: DocSection[] = data?.sections ?? [];
-        const section = sections[sectionIndex];
+        const section =
+          data?.sectionName != null && Array.isArray(data?.sectionContent)
+            ? (data as DocSection)
+            : (data?.sections ?? [])[sectionIndex];
         if (section?.sectionContent?.[clauseIndex]) {
           const clause = section.sectionContent[clauseIndex];
           setSectionName(section.sectionName ?? `Section ${sectionIndex + 1}`);

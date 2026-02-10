@@ -84,6 +84,27 @@ export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
 
   const divisionLeaderSections = leaderSections.sections;
 
+  // For division leaders, compute section-level status counts for Legal Review menu
+  const divisionLeaderSectionStatusCounts =
+    userRole === USER_ROLE.DIVISION_LEADER && divisionLeaderSections.length >= 0
+      ? (() => {
+          let ready = 0; // status 0
+          let review = 0; // status 1
+          let approved = 0; // status 2
+          let rejected = 0; // status 3
+          divisionLeaderSections.forEach((sec) => {
+            const s = typeof (sec as { status?: number }).status === 'number'
+              ? (sec as { status: number }).status
+              : 0;
+            if (s === 0) ready++;
+            else if (s === 1) review++;
+            else if (s === 2) approved++;
+            else if (s === 3) rejected++;
+          });
+          return { ready, review, approved, rejected };
+        })()
+      : null;
+
   // Load section content (IPFS) so we can compute unallocated = totalFromContent - subgraph count
   useEffect(() => {
     if (userRole !== USER_ROLE.DIVISION_LEADER || !divisionLeaderSections.length) return;
@@ -149,6 +170,7 @@ export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
     // Division Lead - Internal Review + Legal Review with submenus (clause counts for Internal Review)
     if (userRole === USER_ROLE.DIVISION_LEADER) {
       const dlCounts = divisionLeaderClauseCounts;
+      const dlSectionStatus = divisionLeaderSectionStatusCounts;
       const unallocatedCount =
         divisionLeaderSections.length > 0 &&
         divisionLeaderSections.some((sec) => getTotalClauses(sec.id) !== undefined)
@@ -169,10 +191,38 @@ export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
         { type: 'item', id: 'internal-approved', label: 'Approved', route: '/section-assignments/approved', icon: CheckCircle, count: dlCounts?.approved ?? null },
         { type: 'item', id: 'internal-rejected', label: 'Rejected', route: '/section-assignments/rejected', icon: Archive, count: dlCounts?.rejected ?? null },
         { type: 'header', label: 'Legal Review' },
-        { type: 'item', id: 'legal-pending', label: 'Pending', route: '/legal-review/pending', icon: Clock, count: counts.pending },
-        { type: 'item', id: 'legal-review-tab', label: 'Review', route: '/legal-review/review', icon: FileSearch, count: counts.divisionRequest },
-        { type: 'item', id: 'legal-approved', label: 'Approved', route: '/legal-review/approved', icon: CheckCircle, count: counts.approved },
-        { type: 'item', id: 'legal-rejected', label: 'Rejected', route: '/legal-review/rejected', icon: Archive, count: null },
+        {
+          type: 'item',
+          id: 'legal-pending',
+          label: 'Ready to Submit',
+          route: '/legal-review/pending',
+          icon: Clock,
+          count: dlSectionStatus?.ready ?? null,
+        },
+        {
+          type: 'item',
+          id: 'legal-review-tab',
+          label: 'Review',
+          route: '/legal-review/review',
+          icon: FileSearch,
+          count: dlSectionStatus?.review ?? null,
+        },
+        {
+          type: 'item',
+          id: 'legal-approved',
+          label: 'Approved',
+          route: '/legal-review/approved',
+          icon: CheckCircle,
+          count: dlSectionStatus?.approved ?? null,
+        },
+        {
+          type: 'item',
+          id: 'legal-rejected',
+          label: 'Rejected',
+          route: '/legal-review/rejected',
+          icon: Archive,
+          count: dlSectionStatus?.rejected ?? null,
+        },
         { id: 'templates', label: 'Division Templates', icon: FolderOpen, count: null },
         { id: 'team', label: 'My Team', icon: Users, count: null },
       ];
