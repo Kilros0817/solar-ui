@@ -309,5 +309,19 @@ export const reassignSection = async (
     return true;
   }
   return false;
-}
+};
+
+// legal: submit document to client (all sections must be approved by legal)
+export const submitDocToClient = async (
+  config: any,
+  account: string,
+  docId: number,
+  cid: string,
+) => {
+  const res = await runSponsorTx(config, account, "submitDocToClient", [docId, cid]);
+  if (res.isSuccess) {
+    return true;
+  }
+  return false;
+};
 

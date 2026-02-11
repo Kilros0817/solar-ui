@@ -42,7 +42,7 @@ export const DIVISION_CATEGORY = {
 
 export const CONTRACT_STATUS_LABELS: Record<number, string> = {
     [CONTRACT_STATUS.PENDING]: 'Pending',
-    [CONTRACT_STATUS.DIVISION_REQUEST]: 'Division Request',
+    [CONTRACT_STATUS.DIVISION_REQUEST]: 'Request',
     [CONTRACT_STATUS.APPROVED]: 'Approved',
     [CONTRACT_STATUS.COMPLETED]: 'Completed',
 }

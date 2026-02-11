@@ -6,14 +6,14 @@ import { Button } from './ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { ContractDocumentTemplate } from './ContractDocumentTemplate';
 import { SectionReviewTab } from './SectionReviewTab';
-import { ArrowLeft, FileText, Calendar, DollarSign, Tag, ClipboardList, Building2 } from 'lucide-react';
+import { ArrowLeft, FileText, Calendar, DollarSign, Tag, ClipboardList, Building2, Send, Loader2 } from 'lucide-react';
 import { getContractById } from '@/utils/subgraph';
-import { legalReviewSection, reassignSection } from '@/utils/interact';
+import { legalReviewSection, reassignSection, submitDocToClient } from '@/utils/interact';
 import { uploadContractToPinata } from '@/utils/utility';
 import type { Contract, ContractDocPayload, ContractDetailsProps } from '../data/interfaces';
 import type { DivisionSection } from '../data/interfaces';
 import { useUser } from '../contexts/UserContext';
-import { USER_ROLE, CONTRACT_STATUS_LABELS, DIVISION_LABELS, URLs } from '@/utils/constants';
+import { USER_ROLE, CONTRACT_STATUS, CONTRACT_STATUS_LABELS, DIVISION_LABELS, URLs } from '@/utils/constants';
 import { formatRelativeDate } from '@/utils/utility';
 import { toast } from 'sonner';
 
@@ -54,6 +54,7 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
     Record<string, { sectionName: string; content: string; sectionContent: Array<{ clauseId: string; clauseContent: string }> }>
   >({});
   const [reviewActionSectionId, setReviewActionSectionId] = useState<string | null>(null);
+  const [submittingToClient, setSubmittingToClient] = useState(false);
   const { userRole } = useUser();
 
   const fetchContract = useCallback(async () => {
@@ -135,6 +136,12 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
       if (!cancelled) setSectionContentBySectionId((prev) => ({ ...prev, ...next }));
     });
     return () => { cancelled = true; };
+  }, [rawDocument?.sections]);
+
+  // All sections approved by legal (status 2) → can submit to client
+  const allSectionsApproved = useMemo(() => {
+    const sections = rawDocument?.sections ?? [];
+    return sections.length > 0 && sections.every((s: { status?: number }) => (s.status ?? 0) === 2);
   }, [rawDocument?.sections]);
 
   // Section Review tab: build from subgraph sections, grouped by division
@@ -241,6 +248,64 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
       toast.error(e instanceof Error ? e.message : 'Failed to reject section');
     } finally {
       setReviewActionSectionId(null);
+    }
+  };
+
+  const handleSubmitToClient = async () => {
+    if (!config || !address) {
+      toast.error('Wallet not connected');
+      return;
+    }
+    const docIdNum = Number(contractId);
+    if (Number.isNaN(docIdNum)) {
+      toast.error('Invalid contract');
+      return;
+    }
+    const sections = rawDocument?.sections ?? [];
+    if (sections.length === 0) {
+      toast.error('No sections to submit');
+      return;
+    }
+    setSubmittingToClient(true);
+    try {
+      // Reconstruct doc from section contents (order from subgraph), then upload to get new CID
+      const reconstructedSections = sections.map((sec: { id: string }, idx: number) => {
+        const contentMap = sectionContentBySectionId[sec.id];
+        if (contentMap?.sectionContent?.length) {
+          return {
+            sectionName: contentMap.sectionName,
+            sectionContent: contentMap.sectionContent,
+          };
+        }
+        const fromDoc = docContent?.sections?.[idx];
+        if (fromDoc) {
+          return {
+            sectionName: fromDoc.sectionName,
+            sectionContent: fromDoc.sectionContent ?? [],
+          };
+        }
+        return { sectionName: `Section ${sec.id}`, sectionContent: [] };
+      });
+      const payload = {
+        contractTitle: docContent?.contractTitle ?? foundContract?.title ?? 'Untitled',
+        client: docContent?.client ?? foundContract?.client ?? '',
+        description: docContent?.description ?? '',
+        price: docContent?.price ?? '',
+        category: docContent?.category ?? foundContract?.category ?? '',
+        sections: reconstructedSections,
+      };
+      const newCid = await uploadContractToPinata(payload);
+      const success = await submitDocToClient(config, address, docIdNum, newCid);
+      if (success) {
+        toast.success('Contract submitted to client');
+        await fetchContract();
+      } else {
+        toast.error('Failed to submit to client');
+      }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Failed to submit to client');
+    } finally {
+      setSubmittingToClient(false);
     }
   };
 
@@ -415,11 +480,27 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
 
               <div className="flex justify-center">
                 <Card className="w-full max-w-3xl">
-                  <CardHeader>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0">
                     <CardTitle className="flex items-center gap-2 text-base">
                       <FileText className="h-4 w-4 text-muted-foreground" />
                       Document View
                     </CardTitle>
+                    {userRole === USER_ROLE.LEGAL_TEAM && allSectionsApproved && foundContract?.status === CONTRACT_STATUS.PENDING && foundContract?.cid?.trim() && (
+                      <Button
+                        variant="default"
+                        size="sm"
+                        className="gap-2 bg-green-600 hover:bg-green-700 shrink-0"
+                        disabled={submittingToClient}
+                        onClick={handleSubmitToClient}
+                      >
+                        {submittingToClient ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Send className="h-4 w-4" />
+                        )}
+                        {submittingToClient ? 'Submitting...' : 'Submit to Client'}
+                      </Button>
+                    )}
                   </CardHeader>
                   <CardContent>
                     {docLoading ? (
