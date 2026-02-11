@@ -325,3 +325,17 @@ export const submitDocToClient = async (
   return false;
 };
 
+// client: approve or reject contract review request
+export const clientReview = async (
+  config: any,
+  account: string,
+  docId: number,
+  approve: boolean,
+) => {
+  const res = await runSponsorTx(config, account, "clientReview", [docId, approve]);
+  if (res.isSuccess) {
+    return true;
+  }
+  return false;
+};
+

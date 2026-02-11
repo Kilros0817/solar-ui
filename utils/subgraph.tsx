@@ -243,6 +243,29 @@ export const getAllContracts = async () => {
   }
 }
 
+export const getContractsByClient = async (client: string) => {
+  let query = `{
+    documents(where: {client_: {id: "${client}"}}) {
+      id
+      category
+      title
+      cid
+      status
+      createdAt
+    }
+  }`;
+  try {
+    const res = await getDataFromSubgraph(query);
+    const contracts = (res.data as any).documents || [];
+
+    return contracts;
+  } catch (e) {
+    console.log(e, "============error in get all contracts by client from subgraph============");
+    return [];
+  }
+}
+
+
 export const getContractById = async (id: string | number) => {
   const idStr = String(id);
   const query = `{

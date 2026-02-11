@@ -3,12 +3,10 @@ import { useConfig, useConnection } from 'wagmi';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { ContractDocumentTemplate } from './ContractDocumentTemplate';
-import { SectionReviewTab } from './SectionReviewTab';
-import { ArrowLeft, FileText, Calendar, DollarSign, Tag, ClipboardList, Building2, Send, Loader2 } from 'lucide-react';
+import { ArrowLeft, FileText, Calendar, DollarSign, Tag, ClipboardList, Building2, Send, Loader2, Check, X } from 'lucide-react';
 import { getContractById } from '@/utils/subgraph';
-import { legalReviewSection, reassignSection, submitDocToClient } from '@/utils/interact';
+import { legalReviewSection, reassignSection, submitDocToClient, clientReview } from '@/utils/interact';
 import { uploadContractToPinata } from '@/utils/utility';
 import type { Contract, ContractDocPayload, ContractDetailsProps } from '../data/interfaces';
 import type { DivisionSection } from '../data/interfaces';
@@ -55,6 +53,7 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
   >({});
   const [reviewActionSectionId, setReviewActionSectionId] = useState<string | null>(null);
   const [submittingToClient, setSubmittingToClient] = useState(false);
+  const [clientReviewAction, setClientReviewAction] = useState<'approve' | 'reject' | null>(null);
   const { userRole } = useUser();
 
   const fetchContract = useCallback(async () => {
@@ -335,6 +334,58 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
     }
   };
 
+  const handleClientApprove = async () => {
+    if (!config || !address) {
+      toast.error('Wallet not connected');
+      return;
+    }
+    const docIdNum = Number(contractId);
+    if (Number.isNaN(docIdNum)) {
+      toast.error('Invalid contract');
+      return;
+    }
+    setClientReviewAction('approve');
+    try {
+      const success = await clientReview(config, address, docIdNum, true);
+      if (success) {
+        toast.success('Contract approved');
+        await fetchContract();
+      } else {
+        toast.error('Failed to approve contract');
+      }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Failed to approve contract');
+    } finally {
+      setClientReviewAction(null);
+    }
+  };
+
+  const handleClientReject = async () => {
+    if (!config || !address) {
+      toast.error('Wallet not connected');
+      return;
+    }
+    const docIdNum = Number(contractId);
+    if (Number.isNaN(docIdNum)) {
+      toast.error('Invalid contract');
+      return;
+    }
+    setClientReviewAction('reject');
+    try {
+      const success = await clientReview(config, address, docIdNum, false);
+      if (success) {
+        toast.success('Contract rejected');
+        await fetchContract();
+      } else {
+        toast.error('Failed to reject contract');
+      }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Failed to reject contract');
+    } finally {
+      setClientReviewAction(null);
+    }
+  };
+
   const involvedDivisions = (rawDocument?.sections ?? [])
     .map((s: any) => s?.divisionLeader?.dcategory)
     .filter((dc: unknown) => dc !== undefined && dc !== null && Number(dc) > 0)
@@ -402,158 +453,160 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
       </div>
 
       <div className="space-y-6">
-        {/* Main Content */}
+        {/* Main Content – Overview only */}
         <div className="space-y-6">
-          <Tabs defaultValue="overview" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 md:grid-cols-3 h-auto">
-              <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="sections">Section Review</TabsTrigger>
-              <TabsTrigger value="activity">Activity</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="overview" className="space-y-6">
-              {/* Row 1: Status, Category, Value, Created */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="rounded-lg border bg-card p-4">
-                  <div className="flex items-center gap-2 text-muted-foreground mb-2">
-                    <ClipboardList className="h-4 w-4" />
-                    <span className="text-xs font-medium uppercase tracking-wider">Status</span>
-                  </div>
-                  <Badge className={getStatusColor(contract.status)}>
-                    {CONTRACT_STATUS_LABELS[contract.status] ?? 'Unknown'}
+          {/* Row 1: Status, Category, Value, Created */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="rounded-lg border bg-card p-4">
+              <div className="flex items-center gap-2 text-muted-foreground mb-2">
+                <ClipboardList className="h-4 w-4" />
+                <span className="text-xs font-medium uppercase tracking-wider">Status</span>
+              </div>
+              <Badge className={getStatusColor(contract.status)}>
+                {CONTRACT_STATUS_LABELS[contract.status] ?? 'Unknown'}
+              </Badge>
+            </div>
+            <div className="rounded-lg border bg-card p-4">
+              <div className="flex items-center gap-2 text-muted-foreground mb-2">
+                <Tag className="h-4 w-4" />
+                <span className="text-xs font-medium uppercase tracking-wider">Category</span>
+              </div>
+              <p className="font-medium">{contract.category || '—'}</p>
+            </div>
+            <div className="rounded-lg border bg-card p-4">
+              <div className="flex items-center gap-2 text-muted-foreground mb-2">
+                <DollarSign className="h-4 w-4" />
+                <span className="text-xs font-medium uppercase tracking-wider">Value</span>
+              </div>
+              <p className="font-semibold text-green-600">{contract.value}</p>
+            </div>
+            <div className="rounded-lg border bg-card p-4">
+              <div className="flex items-center gap-2 text-muted-foreground mb-2">
+                <Calendar className="h-4 w-4" />
+                <span className="text-xs font-medium uppercase tracking-wider">Created</span>
+              </div>
+              <p className="font-medium">{contract.createdDate}</p>
+            </div>
+          </div>
+
+          {/* Row 2: Involved Divisions */}
+          <div className="rounded-lg border bg-card p-4">
+            <div className="flex items-center gap-2 text-muted-foreground mb-2">
+              <Building2 className="h-4 w-4" />
+              <span className="text-xs font-medium uppercase tracking-wider">Involved Divisions</span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {contract.involvedDivisions.length > 0 ? (
+                contract.involvedDivisions.map((division: string) => (
+                  <Badge key={division} variant="secondary" className="text-xs">
+                    {division}
                   </Badge>
-                </div>
-                <div className="rounded-lg border bg-card p-4">
-                  <div className="flex items-center gap-2 text-muted-foreground mb-2">
-                    <Tag className="h-4 w-4" />
-                    <span className="text-xs font-medium uppercase tracking-wider">Category</span>
-                  </div>
-                  <p className="font-medium">{contract.category || '—'}</p>
-                </div>
-                <div className="rounded-lg border bg-card p-4">
-                  <div className="flex items-center gap-2 text-muted-foreground mb-2">
-                    <DollarSign className="h-4 w-4" />
-                    <span className="text-xs font-medium uppercase tracking-wider">Value</span>
-                  </div>
-                  <p className="font-semibold text-green-600">{contract.value}</p>
-                </div>
-                <div className="rounded-lg border bg-card p-4">
-                  <div className="flex items-center gap-2 text-muted-foreground mb-2">
-                    <Calendar className="h-4 w-4" />
-                    <span className="text-xs font-medium uppercase tracking-wider">Created</span>
-                  </div>
-                  <p className="font-medium">{contract.createdDate}</p>
-                </div>
-              </div>
+                ))
+              ) : (
+                <p className="font-medium text-muted-foreground">—</p>
+              )}
+            </div>
+          </div>
 
-              {/* Row 2: Involved Divisions */}
-              <div className="rounded-lg border bg-card p-4">
-                <div className="flex items-center gap-2 text-muted-foreground mb-2">
-                  <Building2 className="h-4 w-4" />
-                  <span className="text-xs font-medium uppercase tracking-wider">Involved Divisions</span>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {contract.involvedDivisions.length > 0 ? (
-                    contract.involvedDivisions.map((division: string) => (
-                      <Badge key={division} variant="secondary" className="text-xs">
-                        {division}
-                      </Badge>
-                    ))
-                  ) : (
-                    <p className="font-medium text-muted-foreground">—</p>
-                  )}
-                </div>
-              </div>
+          {/* Description */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <FileText className="h-4 w-4 text-muted-foreground" />
+                Summary
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground leading-relaxed">{contract.description}</p>
+            </CardContent>
+          </Card>
 
-              {/* Description */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-base">
-                    <FileText className="h-4 w-4 text-muted-foreground" />
-                    Summary
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground leading-relaxed">{contract.description}</p>
-                </CardContent>
-              </Card>
-
-              <div className="flex justify-center">
-                <Card className="w-full max-w-3xl">
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0">
-                    <CardTitle className="flex items-center gap-2 text-base">
-                      <FileText className="h-4 w-4 text-muted-foreground" />
-                      Document View
-                    </CardTitle>
-                    {userRole === USER_ROLE.LEGAL_TEAM && allSectionsApproved && foundContract?.status === CONTRACT_STATUS.PENDING && foundContract?.cid?.trim() && (
+          <div className="flex justify-center">
+            <Card className="w-full max-w-3xl">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <FileText className="h-4 w-4 text-muted-foreground" />
+                  Document View
+                </CardTitle>
+                <div className="flex items-center gap-2 shrink-0">
+                  {userRole === USER_ROLE.CLIENT && contract.status === CONTRACT_STATUS.DIVISION_REQUEST && (
+                    <>
                       <Button
                         variant="default"
                         size="sm"
-                        className="gap-2 bg-green-600 hover:bg-green-700 shrink-0"
-                        disabled={submittingToClient}
-                        onClick={handleSubmitToClient}
+                        className="gap-2 bg-green-600 hover:bg-green-700"
+                        disabled={clientReviewAction !== null}
+                        onClick={handleClientApprove}
                       >
-                        {submittingToClient ? (
+                        {clientReviewAction === 'approve' ? (
                           <Loader2 className="h-4 w-4 animate-spin" />
                         ) : (
-                          <Send className="h-4 w-4" />
+                          <Check className="h-4 w-4" />
                         )}
-                        {submittingToClient ? 'Submitting...' : 'Submit to Client'}
+                        {clientReviewAction === 'approve' ? 'Approving...' : 'Approve'}
                       </Button>
-                    )}
-                  </CardHeader>
-                  <CardContent>
-                    {docLoading ? (
-                    <div className="flex items-center justify-center py-12">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-                    </div>
-                  ) : docError ? (
-                    <p className="text-muted-foreground py-6 text-center">{docError}</p>
-                  ) : docContent ? (
-                    <ContractDocumentTemplate
-                      title={contract.title}
-                      client={contract.client}
-                      value={contract.value}
-                      createdDate={contract.createdDate}
-                      docContent={docContent}
-                    />
-                  ) : foundContract?.cid ? (
-                    <p className="text-muted-foreground py-6 text-center">Document content unavailable</p>
-                  ) : (
-                    <ContractDocumentTemplate
-                      title={contract.title}
-                      client={contract.client}
-                      value={contract.value}
-                      createdDate={contract.createdDate}
-                    />
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        className="gap-2"
+                        disabled={clientReviewAction !== null}
+                        onClick={handleClientReject}
+                      >
+                        {clientReviewAction === 'reject' ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <X className="h-4 w-4" />
+                        )}
+                        {clientReviewAction === 'reject' ? 'Rejecting...' : 'Reject'}
+                      </Button>
+                    </>
                   )}
-                  </CardContent>
-                </Card>
-              </div>
-            </TabsContent>
-
-            <TabsContent value="sections" className="space-y-4">
-              <SectionReviewTab
-                sections={sectionsByDivision}
-                onApprove={handleApproveSection}
-                onReject={handleRejectSection}
-                onReassign={handleReassignSection}
-                userRole={userRole ?? 0}
-                processingSectionId={reviewActionSectionId}
-              />
-            </TabsContent>
-
-            <TabsContent value="activity">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Activity Timeline</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground">Activity timeline will be displayed here</p>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
+                  {userRole === USER_ROLE.LEGAL_TEAM && allSectionsApproved && foundContract?.status === CONTRACT_STATUS.PENDING && foundContract?.cid?.trim() && (
+                    <Button
+                      variant="default"
+                      size="sm"
+                      className="gap-2 bg-green-600 hover:bg-green-700"
+                      disabled={submittingToClient}
+                      onClick={handleSubmitToClient}
+                    >
+                      {submittingToClient ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Send className="h-4 w-4" />
+                      )}
+                      {submittingToClient ? 'Submitting...' : 'Submit to Client'}
+                    </Button>
+                  )}
+                </div>
+              </CardHeader>
+              <CardContent>
+                {docLoading ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+                  </div>
+                ) : docError ? (
+                  <p className="text-muted-foreground py-6 text-center">{docError}</p>
+                ) : docContent ? (
+                  <ContractDocumentTemplate
+                    title={contract.title}
+                    client={contract.client}
+                    value={contract.value}
+                    createdDate={contract.createdDate}
+                    docContent={docContent}
+                  />
+                ) : foundContract?.cid ? (
+                  <p className="text-muted-foreground py-6 text-center">Document content unavailable</p>
+                ) : (
+                  <ContractDocumentTemplate
+                    title={contract.title}
+                    client={contract.client}
+                    value={contract.value}
+                    createdDate={contract.createdDate}
+                  />
+                )}
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
     </div>

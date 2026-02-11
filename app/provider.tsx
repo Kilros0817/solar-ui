@@ -10,6 +10,7 @@ import { ContractsProvider } from './contexts/ContractsContext'
 import { SubgraphRefreshProvider } from './contexts/SubgraphRefreshContext'
 import { DivisionLeaderSectionsProvider } from './contexts/DivisionLeaderSectionsContext'
 import { DivisionMemberClausesProvider } from './contexts/DivisionMemberClausesContext'
+import { ClientContractsProvider } from './contexts/ClientContractsContext'
 import { ContractDocProvider } from './contexts/ContractDocContext'
 import { AssignmentProvider } from './contexts/AssignmentContext'
 import { SectionContentProvider } from './contexts/SectionContentContext'
@@ -40,8 +41,8 @@ const TBProvider: React.FC<TBProviderProps> = ({ children }: TBProviderProps) =>
           cacheTime: 3_600_000,
           transports: {
             [baseSepolia.id]: fallback([
-              http(BaseRPC1),
               http(BaseRPC2),
+              http(BaseRPC1),
             ]),
           },
           connectors: [
@@ -68,6 +69,7 @@ const TBProvider: React.FC<TBProviderProps> = ({ children }: TBProviderProps) =>
               <UserProvider>
                 <NewContractProvider>
                   <ContractsProvider>
+                    <ClientContractsProvider>
                     <SubgraphRefreshProvider>
                       <DivisionLeaderSectionsProvider>
                         <DivisionMemberClausesProvider>
@@ -81,6 +83,7 @@ const TBProvider: React.FC<TBProviderProps> = ({ children }: TBProviderProps) =>
                         </DivisionMemberClausesProvider>
                       </DivisionLeaderSectionsProvider>
                     </SubgraphRefreshProvider>
+                    </ClientContractsProvider>
                   </ContractsProvider>
                 </NewContractProvider>
               </UserProvider>

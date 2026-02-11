@@ -37,6 +37,7 @@ import { getContractCounts } from '../data/interfaces';
 import type { SidebarProps } from '../data/interfaces';
 import { useDivisionLeaderSections } from '@/app/contexts/DivisionLeaderSectionsContext';
 import { useDivisionMemberClauses } from '@/app/contexts/DivisionMemberClausesContext';
+import { useClientContracts, getClientContractCounts } from '@/app/contexts/ClientContractsContext';
 import { useSectionContent } from '@/app/contexts/SectionContentContext';
 
 export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
@@ -83,6 +84,12 @@ export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
       : null;
 
   const divisionLeaderSections = leaderSections.sections;
+
+  const clientContracts = useClientContracts().contracts;
+  const clientCounts =
+    userRole === USER_ROLE.CLIENT && clientContracts.length >= 0
+      ? getClientContractCounts(clientContracts)
+      : null;
 
   // For division leaders, compute section-level status counts for Legal Review menu.
   // "Ready to Submit" = status 0 and all clauses approved (total === approved).
@@ -155,6 +162,12 @@ export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
     '/legal-review/rejected': 'legal-rejected',
     '/divisions': 'team',
     '/pending-users': 'pending-users',
+    '/client-contracts': 'client-my-contracts',
+    '/client-contracts/pending': 'client-pending',
+    '/client-contracts/review': 'client-review',
+    '/client-contracts/approved': 'client-approved',
+    '/client-contracts/rejected': 'client-rejected',
+    '/client-contracts/esigned': 'client-esigned',
   };
 
   // Get current tab from pathname
@@ -261,6 +274,20 @@ export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
         { id: 'templates', label: 'All Templates', icon: FolderOpen, count: null },
         { id: 'pending-users', label: 'Pending Users', icon: Users, count: null },
         { id: 'team', label: 'Team', icon: Users, count: null },
+      ];
+    }
+
+    // Client - contracts where I am the client (getContractsByClient)
+    if (userRole === USER_ROLE.CLIENT) {
+      const cc = clientCounts;
+      return [
+        { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, count: null },
+        { id: 'client-my-contracts', label: 'My Contracts', icon: FileText, count: cc?.all ?? null },
+        { id: 'client-pending', label: 'Pending', icon: Clock, count: cc?.pending ?? null },
+        { id: 'client-review', label: 'Review', icon: FileSearch, count: cc?.review ?? null },
+        { id: 'client-approved', label: 'Approved', icon: CheckCircle, count: cc?.approved ?? null },
+        { id: 'client-rejected', label: 'Rejected', icon: Archive, count: cc?.rejected ?? null },
+        { id: 'client-esigned', label: 'ESigned', icon: PenLine, count: cc?.esigned ?? null },
       ];
     }
 
@@ -373,6 +400,12 @@ export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
               'rejected-tasks': '/clause-assignments/rejected',
               'pending-users': '/pending-users',
               'team': '/divisions',
+              'client-my-contracts': '/client-contracts',
+              'client-pending': '/client-contracts/pending',
+              'client-review': '/client-contracts/review',
+              'client-approved': '/client-contracts/approved',
+              'client-rejected': '/client-contracts/rejected',
+              'client-esigned': '/client-contracts/esigned',
             };
             const route = routeMap[flatItem.id];
             if (route) {
