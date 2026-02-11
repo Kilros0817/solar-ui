@@ -298,3 +298,16 @@ export const legalReviewSection = async (
   return false;
 }
 
+// reassign section
+export const reassignSection = async (
+  config: any,
+  account: string,
+  sectionId: number,
+) => {
+  const res = await runSponsorTx(config, account, "reassignSection", [sectionId]);
+  if (res.isSuccess) {
+    return true;
+  }
+  return false;
+}
+

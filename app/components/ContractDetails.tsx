@@ -8,7 +8,7 @@ import { ContractDocumentTemplate } from './ContractDocumentTemplate';
 import { SectionReviewTab } from './SectionReviewTab';
 import { ArrowLeft, FileText, Calendar, DollarSign, Tag, ClipboardList, Building2 } from 'lucide-react';
 import { getContractById } from '@/utils/subgraph';
-import { legalReviewSection } from '@/utils/interact';
+import { legalReviewSection, reassignSection } from '@/utils/interact';
 import { uploadContractToPinata } from '@/utils/utility';
 import type { Contract, ContractDocPayload, ContractDetailsProps } from '../data/interfaces';
 import type { DivisionSection } from '../data/interfaces';
@@ -244,6 +244,32 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
     }
   };
 
+  const handleReassignSection = async (sectionId: string) => {
+    if (!config || !address) {
+      toast.error('Wallet not connected');
+      return;
+    }
+    const sectionIdNum = Number(sectionId);
+    if (Number.isNaN(sectionIdNum)) {
+      toast.error('Invalid section');
+      return;
+    }
+    setReviewActionSectionId(sectionId);
+    try {
+      const success = await reassignSection(config, address, sectionIdNum);
+      if (success) {
+        toast.success('Section reassigned');
+        await fetchContract();
+      } else {
+        toast.error('Failed to reassign section');
+      }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Failed to reassign section');
+    } finally {
+      setReviewActionSectionId(null);
+    }
+  };
+
   const involvedDivisions = (rawDocument?.sections ?? [])
     .map((s: any) => s?.divisionLeader?.dcategory)
     .filter((dc: unknown) => dc !== undefined && dc !== null && Number(dc) > 0)
@@ -430,6 +456,7 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
                 sections={sectionsByDivision}
                 onApprove={handleApproveSection}
                 onReject={handleRejectSection}
+                onReassign={handleReassignSection}
                 userRole={userRole ?? 0}
                 processingSectionId={reviewActionSectionId}
               />

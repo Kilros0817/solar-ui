@@ -1292,6 +1292,14 @@
     background-color: var(--color-blue-100);
   }
 
+  .bg-blue-600 {
+    background-color: var(--color-blue-600);
+  }
+
+  .bg-blue-800 {
+    background-color: var(--color-blue-800);
+  }
+
   .bg-border {
     background-color: var(--border);
   }
@@ -1374,6 +1382,14 @@
     background-color: var(--color-green-100);
   }
 
+  .bg-green-600 {
+    background-color: var(--color-green-600);
+  }
+
+  .bg-green-800 {
+    background-color: var(--color-green-800);
+  }
+
   .bg-input-background {
     background-color: var(--input-background);
   }
@@ -1438,6 +1454,14 @@
 
   .bg-yellow-100 {
     background-color: var(--color-yellow-100);
+  }
+
+  .bg-yellow-600 {
+    background-color: var(--color-yellow-600);
+  }
+
+  .bg-yellow-800 {
+    background-color: var(--color-yellow-800);
   }
 
   .bg-gradient-to-br {
@@ -1768,14 +1792,6 @@
     color: var(--color-yellow-800);
   }
 
-  .bg-green-600 {
-    background-color: var(--color-green-600);
-  }
-
-  .bg-green-800 {
-    background-color: var(--color-green-800);
-  }
-  
   .italic {
     font-style: italic;
   }

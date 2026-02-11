@@ -95,6 +95,7 @@ export default function ClauseAssignmentsPendingPage() {
                   {item.section?.doc?.title ?? 'Untitled'}
                 </span>
                 <p className="text-xs text-muted-foreground">Section ID: {item.section?.id ?? '—'}</p>
+                <p className="text-xs text-muted-foreground">Clause ID: {item.id ?? '—'}</p>
                 <div className="flex justify-end mt-auto pt-2 border-t">
                   <Button
                     variant="default"

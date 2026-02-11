@@ -10,7 +10,7 @@ import {
   FileText, 
   Building2,
   AlertCircle,
-  Eye
+  UserPlus
 } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collapsible';
 import { useState } from 'react';
@@ -21,6 +21,7 @@ export function SectionReviewTab({
   sections,
   onApprove,
   onReject,
+  onReassign,
   userRole,
   processingSectionId = null,
 }: SectionReviewTabProps) {
@@ -72,7 +73,7 @@ export function SectionReviewTab({
 
   // Show message for non-legal team members, but still allow tab to be visible
   const isLegalTeam = userRole === USER_ROLE.LEGAL_TEAM;
-  
+
   if (!isLegalTeam) {
     return (
       <Card>
@@ -159,7 +160,7 @@ export function SectionReviewTab({
       <div className="space-y-4">
         {sections.map((divisionSection) => (
           <Card key={divisionSection.division} className="overflow-hidden">
-            <Collapsible 
+            <Collapsible
               open={expandedDivisions[divisionSection.division] !== false}
               onOpenChange={() => toggleDivision(divisionSection.division)}
             >
@@ -183,13 +184,12 @@ export function SectionReviewTab({
               <CollapsibleContent>
                 <CardContent className="pt-0 space-y-4">
                   {divisionSection.sections.map((section) => (
-                    <div 
-                      key={section.id} 
-                      className={`border rounded-lg p-4 space-y-3 ${
-                        section.status === 'approved' ? 'bg-green-50/50 border-green-200' :
-                        section.status === 'rejected' ? 'bg-red-50/50 border-red-200' :
-                        'bg-orange-50/50 border-orange-200'
-                      }`}
+                    <div
+                      key={section.id}
+                      className={`border rounded-lg p-4 space-y-3 ${section.status === 'approved' ? 'bg-green-50/50 border-green-200' :
+                          section.status === 'rejected' ? 'bg-red-50/50 border-red-200' :
+                            'bg-orange-50/50 border-orange-200'
+                        }`}
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
@@ -239,6 +239,20 @@ export function SectionReviewTab({
                         <div className="bg-red-50 border border-red-200 rounded p-3">
                           <p className="text-sm font-medium text-red-800 mb-1">Rejection Reason:</p>
                           <p className="text-sm text-red-700">{section.comments}</p>
+                        </div>
+                      )}
+
+                      {section.status === 'rejected' && (
+                        <div className="flex items-end gap-2 pt-2 border-t">
+                          <Button
+                            size="sm"
+                            onClick={() => onReassign?.(section.id)}
+                            disabled={processingSectionId === section.id}
+                            className="cursor-pointer bg-blue-600 hover:bg-blue-700 text-white border-0"
+                          >
+                            <UserPlus className="h-4 w-4 mr-2" />
+                            {processingSectionId === section.id ? 'Reassigning...' : 'Reassign'}
+                          </Button>
                         </div>
                       )}
                     </div>

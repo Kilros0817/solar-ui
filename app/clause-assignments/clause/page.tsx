@@ -66,7 +66,7 @@ export default function ClauseAssignmentsClausePage() {
   useEffect(() => {
     if (!doc || sectionIndex < 0 || clauseIndex < 0 || contentLoaded) return;
 
-    const rawSections = (doc as { sections?: Array<{ clauses?: Array<{ id?: string }> }> }).sections ?? [];
+    const rawSections = (doc as { sections?: Array<{ cid?: string; clauses?: Array<{ id?: string }> }> }).sections ?? [];
     const sectionAt = rawSections[sectionIndex];
     const clauseAt = sectionAt?.clauses?.[clauseIndex];
     const sgId = clauseAt?.id != null ? Number(clauseAt.id) : null;
@@ -86,19 +86,17 @@ export default function ClauseAssignmentsClausePage() {
       return;
     }
 
-    if (!doc.cid) {
+    const sectionCid = sectionAt?.cid;
+    if (!sectionCid) {
       setSectionName(`Section ${sectionIndex + 1}`);
       setClauseContent('');
       setContentLoaded(true);
       return;
     }
-    fetch(`${URLs.TBGateWay}${doc.cid}`)
+    fetch(`${URLs.TBGateWay}${sectionCid}`)
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
-        const section =
-          data?.sectionName != null && Array.isArray(data?.sectionContent)
-            ? (data as DocSection)
-            : (data?.sections ?? [])[sectionIndex];
+        const section = data?.sectionName != null && Array.isArray(data?.sectionContent) ? (data as DocSection) : null;
         if (section?.sectionContent?.[clauseIndex]) {
           const clause = section.sectionContent[clauseIndex];
           setSectionName(section.sectionName ?? `Section ${sectionIndex + 1}`);

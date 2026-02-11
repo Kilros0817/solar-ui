@@ -142,6 +142,7 @@ export interface SectionReviewTabProps {
   sections: DivisionSection[];
   onApprove?: (sectionId: string) => void;
   onReject?: (sectionId: string, reason: string) => void;
+  onReassign?: (sectionId: string) => void;
   userRole: number;
   processingSectionId?: string | null;
 }

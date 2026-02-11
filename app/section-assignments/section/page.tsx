@@ -97,6 +97,8 @@ export default function SectionAssignmentsSectionPage() {
   const contractTitle = doc?.title ?? 'Untitled';
   const divisionLabel = profile ? (DIVISION_LABELS[profile.dcategory] ?? `Division #${profile.dcategory}`) : '';
   const sectionClausesFromSubgraph = sectionAt?.clauses ?? [];
+  const sectionStatus = typeof (sectionAt as { status?: number })?.status === 'number' ? (sectionAt as { status: number }).status : 0;
+  const showReassignForSection = sectionStatus === 0;
 
   useEffect(() => {
     if (!doc || profile == null || sectionIndex < 0) return;
@@ -341,7 +343,7 @@ export default function SectionAssignmentsSectionPage() {
                 const isAssignedOrSubmitted = clauseStatus === 0 || clauseStatus === 1;
                 const isApprovedOrRejected = clauseStatus === 2 || clauseStatus === 3;
                 const showAssignDropdown =
-                  !isAssignedOrSubmitted && (isApprovedOrRejected ? reassigningClauseIndex === i : true);
+                  !isAssignedOrSubmitted && (isApprovedOrRejected ? reassigningClauseIndex === i && showReassignForSection : true);
                 const statusLabel =
                   clauseStatus === 0
                     ? 'Assigned'
@@ -382,7 +384,7 @@ export default function SectionAssignmentsSectionPage() {
                         </Badge>
                       </div>
                     )}
-                    {isApprovedOrRejected && reassigningClauseIndex !== i && (
+                    {isApprovedOrRejected && showReassignForSection && reassigningClauseIndex !== i && (
                       <div className="pt-2 border-t">
                         <Button
                           variant="outline"

@@ -87,8 +87,14 @@ export default function LegalReviewPendingPage() {
     });
   }, [sections, loadSectionContent]);
 
-  // Ready to Submit: sections with status 0
-  const pendingSections = sections.filter((sec) => (sec.status ?? 0) === 0);
+  // Ready to Submit: sections with status 0 and all clauses approved (total === approved)
+  const pendingSections = sections.filter((sec) => {
+    if ((sec.status ?? 0) !== 0) return false;
+    const counts = getClauseCounts(sec.clauses);
+    const totalFromContent = getTotalClauses(sec.id);
+    const total = totalFromContent ?? counts.fromSubgraph;
+    return total > 0 && counts.approved === total;
+  });
 
   const filteredSections = pendingSections.filter((sec) => {
     const title = (sec.doc?.title ?? '').toLowerCase();
@@ -157,7 +163,7 @@ export default function LegalReviewPendingPage() {
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Ready to Submit (Legal Review)</h1>
         <p className="text-muted-foreground mt-1">
-          Sections in contracts ready to submit to Legal Review. Open a section to manage clauses.
+          Sections where all clauses are approved. Submit to Legal Review or open a section to manage clauses.
         </p>
       </div>
 
@@ -181,7 +187,7 @@ export default function LegalReviewPendingPage() {
             <p className="text-sm text-muted-foreground max-w-sm">
               {searchTerm
                 ? 'No sections match your search.'
-                : 'No sections ready to submit (status 0).'}
+                : 'No sections ready to submit. All clauses in a section must be approved first.'}
             </p>
           </CardContent>
         </Card>

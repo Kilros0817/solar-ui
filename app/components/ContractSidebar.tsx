@@ -70,8 +70,8 @@ export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
             approved = 0,
             rejected = 0;
           leaderSections.sections.forEach((sec) => {
-            (sec.clauses ?? []).forEach((c) => {
-              const s = typeof (c as { status?: number }).status === 'number' ? (c as { status: number }).status : 0;
+            (sec.clauses ?? []).forEach((c: { status?: number }) => {
+              const s = typeof c.status === 'number' ? c.status : 0;
               if (s === 0) pending++;
               else if (s === 1) review++;
               else if (s === 2) approved++;
@@ -84,22 +84,32 @@ export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
 
   const divisionLeaderSections = leaderSections.sections;
 
-  // For division leaders, compute section-level status counts for Legal Review menu
+  // For division leaders, compute section-level status counts for Legal Review menu.
+  // "Ready to Submit" = status 0 and all clauses approved (total === approved).
   const divisionLeaderSectionStatusCounts =
     userRole === USER_ROLE.DIVISION_LEADER && divisionLeaderSections.length >= 0
       ? (() => {
-          let ready = 0; // status 0
-          let review = 0; // status 1
-          let approved = 0; // status 2
-          let rejected = 0; // status 3
+          let ready = 0;
+          let review = 0;
+          let approved = 0;
+          let rejected = 0;
           divisionLeaderSections.forEach((sec) => {
             const s = typeof (sec as { status?: number }).status === 'number'
               ? (sec as { status: number }).status
               : 0;
-            if (s === 0) ready++;
-            else if (s === 1) review++;
+            if (s === 1) review++;
             else if (s === 2) approved++;
             else if (s === 3) rejected++;
+            else if (s === 0) {
+              const clauses = sec.clauses ?? [];
+              let approvedCount = 0;
+              clauses.forEach((c: { status?: number }) => {
+                const cs = typeof c.status === 'number' ? c.status : 0;
+                if (cs === 2) approvedCount++;
+              });
+              const total = getTotalClauses(sec.id) ?? clauses.length;
+              if (total > 0 && approvedCount === total) ready++;
+            }
           });
           return { ready, review, approved, rejected };
         })()

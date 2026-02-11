@@ -172,7 +172,11 @@ export default function SectionAssignmentsRejectedPage() {
         </Card>
       ) : (
         <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))' }}>
-          {clauses.map((item) => (
+          {clauses.map((item) => {
+            const sec = sections.find((s) => String(s.id) === String(item.sectionId));
+            const sectionStatus = typeof (sec as { status?: number })?.status === 'number' ? (sec as { status: number }).status : 0;
+            const showReassign = sectionStatus === 0;
+            return (
             <Card key={item.id} className="flex flex-col w-full">
               <CardContent className="p-4 flex flex-col gap-3 flex-1">
                 <div className="space-y-1">
@@ -196,6 +200,7 @@ export default function SectionAssignmentsRejectedPage() {
                   <p className="text-sm text-muted-foreground">{getMemberLabel(item.divisionMember)}</p>
                 </div>
                 <div className="flex justify-end gap-2 mt-auto pt-2 border-t">
+                  {showReassign && (
                   <Button
                     variant="outline"
                     size="sm"
@@ -210,6 +215,7 @@ export default function SectionAssignmentsRejectedPage() {
                     )}
                     {reassigningId === item.id ? 'Reassigning...' : 'Reassign'}
                   </Button>
+                  )}
                   <Button
                     variant="outline"
                     size="sm"
@@ -223,7 +229,8 @@ export default function SectionAssignmentsRejectedPage() {
                 </div>
               </CardContent>
             </Card>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

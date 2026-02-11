@@ -113,6 +113,8 @@ export default function SectionAssignmentsClausePage() {
   const sectionAt = rawSections[sectionIndex];
   const clauseAt = sectionAt?.clauses?.[clauseIndex];
   const clauseIdOnChain = clauseAt?.id != null ? Number(clauseAt.id) : NaN;
+  const sectionStatus = typeof (sectionAt as { status?: number })?.status === 'number' ? (sectionAt as { status: number }).status : 0;
+  const showReassignForSection = sectionStatus === 0;
 
   const handleApprove = async () => {
     const sectionCid = (sectionAt as { cid?: string } | undefined)?.cid;
@@ -286,10 +288,10 @@ export default function SectionAssignmentsClausePage() {
               </Button>
             </div>
           )}
-          {selectedFromRoute === 'rejected' && (
+          {(selectedFromRoute === 'rejected' || selectedFromRoute === 'approved') && showReassignForSection && (
             <div className="flex items-center gap-3 pt-2 border-t">
               <Button
-                variant="outline"
+                variant="reassign"
                 className="gap-2 cursor-pointer"
                 disabled={actionLoading !== null}
                 onClick={handleReassign}
