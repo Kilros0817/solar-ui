@@ -156,10 +156,10 @@ export default function ClauseAssignmentsClausePage() {
         toast.success('Clause submitted for review');
         router.push('/clause-assignments/clauses');
         setTimeout(async () => {
+          refreshSubgraph();
           await refetchDoc(contractId);
           await refetchContracts();
-          refreshSubgraph();
-        }, 3000);
+        }, 4000);
       } else {
         toast.error('Failed to submit clause');
       }

@@ -269,10 +269,10 @@ export default function SectionAssignmentsSectionPage() {
       if (success) {
         toast.success('Assignments submitted successfully');
         setTimeout(async () => {
+          refreshSubgraph();
           await refetchDoc(contractId);
           await refetchContracts();
-          refreshSubgraph();
-        }, 3000);
+        }, 4000);
       } else {
         toast.error('Failed to submit assignments');
       }

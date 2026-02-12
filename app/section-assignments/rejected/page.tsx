@@ -100,11 +100,11 @@ export default function SectionAssignmentsRejectedPage() {
       if (ok) {
         toast.success('Clause reassigned');
         setTimeout(async () => {
+          refreshSubgraph();
           const contractId = item.section?.doc?.id;
           if (contractId) await refetchDoc(contractId);
           await refetchContracts();
-          refreshSubgraph();
-        }, 3000);
+        }, 4000);
       } else {
         toast.error('Failed to reassign clause');
       }

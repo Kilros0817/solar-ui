@@ -35,6 +35,7 @@ import {
 import { useConnection, useConfig } from 'wagmi';
 import { toast } from 'sonner';
 import { acceptRegisterRequest, declineRegisterRequest } from '@/utils/interact';
+import { useSubgraphRefresh } from '@/app/contexts/SubgraphRefreshContext';
 import { USER_ROLE, DIVISION_CATEGORY, ROLE_LABELS, DIVISION_LABELS } from '@/utils/constants';
 import { getPendingUsers } from '@/utils/subgraph';
 import { copyAddressToClipboard } from '@/utils/utility';
@@ -53,6 +54,7 @@ const formatAddress = (addr: string): string => {
 export function PendingUsers() {
   const { address, isConnected } = useConnection();
   const config = useConfig();
+  const { refresh: refreshSubgraph } = useSubgraphRefresh();
   const [searchQuery, setSearchQuery] = useState('');
   const [pendingUsers, setPendingUsers] = useState<PendingUser[]>([]);
   const [loading, setLoading] = useState(true);
@@ -62,9 +64,9 @@ export function PendingUsers() {
   const [copiedAddress, setCopiedAddress] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 
-  // Fetch pending users function
-  const fetchPendingUsers = async () => {
-    setLoading(true);
+  // Fetch pending users function (silent = true skips loading state for background refetch)
+  const fetchPendingUsers = async (silent = false) => {
+    if (!silent) setLoading(true);
     try {
       const requests = await getPendingUsers();
       setPendingUsers(requests);
@@ -87,7 +89,7 @@ export function PendingUsers() {
         },
       ]);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
@@ -166,9 +168,7 @@ export function PendingUsers() {
 
       if (result) {
         toast.success('User approved successfully');
-        // Remove user from pending list
         setPendingUsers((prev) => prev.filter((u) => u.id !== userAddress));
-        // Clear selections
         setSelectedRoles((prev) => {
           const newRoles = { ...prev };
           delete newRoles[userAddress];
@@ -179,6 +179,10 @@ export function PendingUsers() {
           delete newDivisions[userAddress];
           return newDivisions;
         });
+        setTimeout(async () => {
+          refreshSubgraph();
+          await fetchPendingUsers(true);
+        }, 4000);
       } else {
         toast.error('Failed to approve user');
       }
@@ -206,9 +210,7 @@ export function PendingUsers() {
 
       if (result) {
         toast.success('User declined successfully');
-        // Remove user from pending list
         setPendingUsers((prev) => prev.filter((u) => u.id !== userAddress));
-        // Clear selections
         setSelectedRoles((prev) => {
           const newRoles = { ...prev };
           delete newRoles[userAddress];
@@ -219,6 +221,10 @@ export function PendingUsers() {
           delete newDivisions[userAddress];
           return newDivisions;
         });
+        setTimeout(async () => {
+          refreshSubgraph();
+          await fetchPendingUsers(true);
+        }, 4000);
       } else {
         toast.error('Failed to decline user');
       }

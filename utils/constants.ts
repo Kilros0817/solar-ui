@@ -15,7 +15,8 @@ export const CONTRACT_STATUS = {
     PENDING: 0,
     DIVISION_REQUEST: 1,
     APPROVED: 2,
-    COMPLETED: 3,
+    REJECTED: 3,
+    ESIGNED: 4,
 }
 
 export const USER_ROLE = {
@@ -44,7 +45,8 @@ export const CONTRACT_STATUS_LABELS: Record<number, string> = {
     [CONTRACT_STATUS.PENDING]: 'Pending',
     [CONTRACT_STATUS.DIVISION_REQUEST]: 'Request',
     [CONTRACT_STATUS.APPROVED]: 'Approved',
-    [CONTRACT_STATUS.COMPLETED]: 'Completed',
+    [CONTRACT_STATUS.REJECTED]: 'Rejected',
+    [CONTRACT_STATUS.ESIGNED]: 'ESigned',
 }
 
 // Role labels for display

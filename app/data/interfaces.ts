@@ -2,7 +2,7 @@
 import type React from 'react';
 
 // --- Contract ---
-// Status: 0=PENDING, 1=DIVISION_REQUEST, 2=APPROVED, 3=COMPLETED
+// Doc status: 0=PENDING, 1=DIVISION_REQUEST, 2=APPROVED, 3=REJECTED, 4=ESIGNED
 export interface Contract {
   id: number;
   title: string;
@@ -59,7 +59,7 @@ export type ContractAssignment = {
   category?: string;
   /** Contract created date (Unix seconds or number) */
   createdAt?: number;
-  /** Contract status (0=PENDING, 1=DIVISION_REQUEST, 2=APPROVED, 3=COMPLETED) */
+  /** Contract status (0=PENDING, 1=DIVISION_REQUEST, 2=APPROVED, 3=REJECTED, 4=ESIGNED) */
   status?: number;
 };
 
@@ -349,7 +349,9 @@ const STATUS_LABEL_TO_NUM: Record<string, number> = {
   pending: 0,
   'division-request': 1,
   approved: 2,
-  completed: 3,
+  rejected: 3,
+  esigned: 4,
+  completed: 4,
 };
 
 export const getContractsByStatus = (contracts: Contract[], status: string) => {
@@ -365,6 +367,9 @@ export const getContractCounts = (contracts: Contract[]) => {
     pending: contracts.filter((c) => c.status === 0).length,
     divisionRequest: contracts.filter((c) => c.status === 1).length,
     approved: contracts.filter((c) => c.status === 2).length,
-    completed: contracts.filter((c) => c.status === 3).length,
+    rejected: contracts.filter((c) => c.status === 3).length,
+    esigned: contracts.filter((c) => c.status === 4).length,
+    /** @deprecated Use esigned (status 4) */
+    completed: contracts.filter((c) => c.status === 4).length,
   };
 };

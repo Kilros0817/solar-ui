@@ -134,8 +134,10 @@ export default function LegalReviewPendingPage() {
       const success = await submitSectionToLegal(config, address, sectionIdNum, section.cid.trim());
       if (success) {
         toast.success('Section submitted to Legal Review');
-        refreshSubgraph();
-        refetch();
+        setTimeout(async () => {
+          refreshSubgraph();
+          await refetch();
+        }, 4000);
       } else {
         toast.error('Failed to submit section');
       }

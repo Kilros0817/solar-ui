@@ -31,26 +31,18 @@ export function ContractDocumentTemplate({
               </div>
             </div>
           ))}
-          {/* Signature Section */}
+          {/* Signature Section - Signature only (Licensor = Legal, Licensee = Client) */}
           <div className="mt-12 pt-8 border-t">
             <div className="grid grid-cols-2 gap-8">
               <div>
                 <p className="font-semibold mb-2">Licensor</p>
                 <div className="border-b-2 border-gray-400 mb-2 h-12"></div>
                 <p className="text-xs text-muted-foreground">Signature</p>
-                <div className="mt-4 border-b border-gray-300 mb-2"></div>
-                <p className="text-xs text-muted-foreground">Name & Title</p>
-                <div className="mt-4 border-b border-gray-300 mb-2"></div>
-                <p className="text-xs text-muted-foreground">Date</p>
               </div>
               <div>
                 <p className="font-semibold mb-2">Licensee</p>
                 <div className="border-b-2 border-gray-400 mb-2 h-12"></div>
                 <p className="text-xs text-muted-foreground">Signature</p>
-                <div className="mt-4 border-b border-gray-300 mb-2"></div>
-                <p className="text-xs text-muted-foreground">Name & Title</p>
-                <div className="mt-4 border-b border-gray-300 mb-2"></div>
-                <p className="text-xs text-muted-foreground">Date</p>
               </div>
             </div>
           </div>
@@ -210,26 +202,18 @@ export function ContractDocumentTemplate({
         </div>
       </div>
 
-      {/* Signature Section */}
+      {/* Signature Section - Signature only */}
       <div className="mt-12 pt-8 border-t">
         <div className="grid grid-cols-2 gap-8">
           <div>
             <p className="font-semibold mb-2">Licensor</p>
             <div className="border-b-2 border-gray-400 mb-2 h-12"></div>
             <p className="text-xs text-muted-foreground">Signature</p>
-            <div className="mt-4 border-b border-gray-300 mb-2"></div>
-            <p className="text-xs text-muted-foreground">Name & Title</p>
-            <div className="mt-4 border-b border-gray-300 mb-2"></div>
-            <p className="text-xs text-muted-foreground">Date</p>
           </div>
           <div>
             <p className="font-semibold mb-2">Licensee</p>
             <div className="border-b-2 border-gray-400 mb-2 h-12"></div>
             <p className="text-xs text-muted-foreground">Signature</p>
-            <div className="mt-4 border-b border-gray-300 mb-2"></div>
-            <p className="text-xs text-muted-foreground">Name & Title</p>
-            <div className="mt-4 border-b border-gray-300 mb-2"></div>
-            <p className="text-xs text-muted-foreground">Date</p>
           </div>
         </div>
       </div>

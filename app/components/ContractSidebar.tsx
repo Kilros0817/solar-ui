@@ -184,7 +184,8 @@ export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
         { id: 'pending', label: 'Pending', icon: Clock, count: counts.pending },
         { id: 'review', label: 'Review', icon: FileSearch, count: counts.divisionRequest },
         { id: 'approved', label: 'Approved', icon: CheckCircle, count: counts.approved },
-        { id: 'esigned', label: 'Esigned', icon: PenLine, count: counts.completed },
+        { id: 'legal-rejected', label: 'Rejected', icon: Archive, count: counts.rejected },
+        { id: 'esigned', label: 'Esigned', icon: PenLine, count: counts.esigned },
         { id: 'templates', label: 'Template Library', icon: FolderOpen, count: null },
         { id: 'team', label: 'Team', icon: Users, count: null },
       ];
@@ -394,6 +395,7 @@ export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
               'pending': pendingRoute,
               'review': reviewRoute,
               'approved': approvedRoute,
+              'legal-rejected': '/legal-review/rejected',
               'esigned': '/esigned',
               'templates': '/templates',
               'clause-assignments': '/clause-assignments',

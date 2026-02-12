@@ -339,3 +339,44 @@ export const clientReview = async (
   return false;
 };
 
+// client: reassign rejected document (back to legal/division)
+export const clientReassignDoc = async (
+  config: any,
+  account: string,
+  docId: number,
+) => {
+  const res = await runSponsorTx(config, account, "clientReassignDoc", [docId]);
+  if (res.isSuccess) {
+    return true;
+  }
+  return false;
+};
+
+// legal: e-sign document (licensor), cid = signature upload CID
+export const legalEsign = async (
+  config: any,
+  account: string,
+  docId: number,
+  cid: string,
+) => {
+  const res = await runSponsorTx(config, account, "legalEsign", [docId, cid]);
+  if (res.isSuccess) {
+    return true;
+  }
+  return false;
+};
+
+// client: e-sign document (licensee), cid = signature upload CID
+export const clientEsign = async (
+  config: any,
+  account: string,
+  docId: number,
+  cid: string,
+) => {
+  const res = await runSponsorTx(config, account, "clientEsign", [docId, cid]);
+  if (res.isSuccess) {
+    return true;
+  }
+  return false;
+};
+

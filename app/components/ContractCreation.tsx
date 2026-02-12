@@ -28,11 +28,13 @@ import { getAllDivisionLeaders, getAllClients } from '@/utils/subgraph';
 import { createContract } from '@/utils/interact';
 import { toast } from 'sonner';
 import { useContracts } from '../contexts/ContractsContext';
+import { useSubgraphRefresh } from '../contexts/SubgraphRefreshContext';
 import type { ContractCreationProps } from '../data/interfaces';
 
 export function ContractCreation({ onBack, selectedTemplate }: ContractCreationProps) {
   const { address } = useConnection();
   const { refetch } = useContracts();
+  const { refresh: refreshSubgraph } = useSubgraphRefresh();
   const config = useConfig();
   const baseCategories = ['Services', 'Legal', 'HR', 'Technology', 'Procurement', 'Business', 'Real Estate', 'General', 'Custom'];
   const templateCategory = selectedTemplate.category || 'Custom';
@@ -309,8 +311,10 @@ export function ContractCreation({ onBack, selectedTemplate }: ContractCreationP
 
       if (success) {
         toast.success('Contract created successfully');
-        await new Promise((r) => setTimeout(r, 3000));
-        await refetch();
+        setTimeout(async () => {
+          refreshSubgraph();
+          await refetch();
+        }, 4000);
       } else {
         throw new Error('Failed to create contract on-chain');
       }

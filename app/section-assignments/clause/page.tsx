@@ -142,10 +142,10 @@ export default function SectionAssignmentsClausePage() {
         toast.success('Clause approved');
         router.back();
         setTimeout(async () => {
+          refreshSubgraph();
           await refetchDoc(contractId);
           await refetchContracts();
-          refreshSubgraph();
-        }, 3000);
+        }, 4000);
       } else {
         toast.error('Failed to approve clause');
       }
@@ -169,10 +169,10 @@ export default function SectionAssignmentsClausePage() {
         toast.success('Clause rejected');
         router.back();
         setTimeout(async () => {
+          refreshSubgraph();
           await refetchDoc(contractId);
           await refetchContracts();
-          refreshSubgraph();
-        }, 3000);
+        }, 4000);
       } else {
         toast.error('Failed to reject clause');
       }
@@ -196,10 +196,10 @@ export default function SectionAssignmentsClausePage() {
         toast.success('Clause reassigned');
         router.back();
         setTimeout(async () => {
+          refreshSubgraph();
           await refetchDoc(contractId);
           await refetchContracts();
-          refreshSubgraph();
-        }, 3000);
+        }, 4000);
       } else {
         toast.error('Failed to reassign clause');
       }

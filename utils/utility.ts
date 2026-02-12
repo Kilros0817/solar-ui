@@ -164,6 +164,20 @@ export const uploadContractToPinata = async (payload: {
   return cid;
 };
 
+/** Upload signature (data URL from canvas) to Pinata via UploadAPI, return CID for legalEsign/clientEsign. */
+export const uploadSignatureToPinata = async (signatureDataUrl: string): Promise<string> => {
+  const res = await fetch(`${URLs.UploadAPI}/signature`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ signature: signatureDataUrl }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error ?? "Failed to upload signature");
+  const cid = data.cid;
+  if (!cid) throw new Error("No signature CID returned");
+  return cid;
+};
+
 /** Approve clause: build new section JSON (replaced clause content), upload to Pinata, then call leaderReviewClause. */
 export const approveClauseWithSectionUpdate = async (
   config: any,
