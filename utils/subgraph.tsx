@@ -1,12 +1,15 @@
 import { print } from "graphql";
 import { URLs } from "./constants";
+import { shouldBypassCache } from "./subgraphCacheBypass";
 
 const getDataFromSubgraph = async (query: unknown) => {
   try {
     const queryStr = typeof query === "string" ? query : print(query as import("graphql").DocumentNode);
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    if (shouldBypassCache()) headers["x-bypass-cache"] = "true";
     const res = await fetch(URLs.SubgraphAPI, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers,
       body: JSON.stringify({ query: queryStr }),
     });
     const json = await res.json();
@@ -265,7 +268,6 @@ export const getContractsByClient = async (client: string) => {
   }
 }
 
-
 export const getContractById = async (id: string | number) => {
   const idStr = String(id);
   const query = `{
@@ -291,6 +293,16 @@ export const getContractById = async (id: string | number) => {
           firstName
           lastName
         }
+      }
+      clientESign {
+        id
+        date
+        cid
+      }
+      legalESign {
+        id
+        date
+        cid
       }
     }
   }`;

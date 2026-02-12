@@ -680,6 +680,40 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
                       value={contract.value}
                       createdDate={contract.createdDate}
                       docContent={docContent}
+                      showSignatureSection={contract.status === CONTRACT_STATUS.APPROVED || contract.status === CONTRACT_STATUS.ESIGNED}
+                      licensorSignature={rawDocument?.legalESign ?? null}
+                      licenseeSignature={rawDocument?.clientESign ?? null}
+                      gatewayBaseUrl={URLs.TBGateWay}
+                      licensorSlot={contract.status === CONTRACT_STATUS.APPROVED && userRole === USER_ROLE.LEGAL_TEAM && !rawDocument?.legalESign?.cid ? (
+                        <div className="space-y-2">
+                          <SignaturePad onSignatureChange={setEsignSignatureDataUrl} />
+                          <Button
+                            variant="default"
+                            size="sm"
+                            className="gap-2"
+                            disabled={!esignSignatureDataUrl || esignSubmitting}
+                            onClick={() => handleEsignSubmit(true)}
+                          >
+                            {esignSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                            {esignSubmitting ? 'Submitting...' : 'Sign'}
+                          </Button>
+                        </div>
+                      ) : undefined}
+                      licenseeSlot={contract.status === CONTRACT_STATUS.APPROVED && userRole === USER_ROLE.CLIENT && !rawDocument?.clientESign?.cid ? (
+                        <div className="space-y-2">
+                          <SignaturePad onSignatureChange={setEsignSignatureDataUrl} />
+                          <Button
+                            variant="default"
+                            size="sm"
+                            className="gap-2"
+                            disabled={!esignSignatureDataUrl || esignSubmitting}
+                            onClick={() => handleEsignSubmit(false)}
+                          >
+                            {esignSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                            {esignSubmitting ? 'Submitting...' : 'Sign'}
+                          </Button>
+                        </div>
+                      ) : undefined}
                     />
                   ) : foundContract?.cid ? (
                     <p className="text-muted-foreground py-6 text-center">Document content unavailable</p>
@@ -689,31 +723,33 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
                       client={contract.client}
                       value={contract.value}
                       createdDate={contract.createdDate}
+                      showSignatureSection={contract.status === CONTRACT_STATUS.APPROVED || contract.status === CONTRACT_STATUS.ESIGNED}
+                      licensorSignature={rawDocument?.legalESign ?? null}
+                      licenseeSignature={rawDocument?.clientESign ?? null}
+                      gatewayBaseUrl={URLs.TBGateWay}
+                      licensorSlot={contract.status === CONTRACT_STATUS.APPROVED && userRole === USER_ROLE.LEGAL_TEAM && !rawDocument?.legalESign?.cid ? (
+                        <div className="space-y-2">
+                          <SignaturePad onSignatureChange={setEsignSignatureDataUrl} />
+                          <Button variant="default" size="sm" className="gap-2" disabled={!esignSignatureDataUrl || esignSubmitting} onClick={() => handleEsignSubmit(true)}>
+                            {esignSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                            {esignSubmitting ? 'Submitting...' : 'Sign'}
+                          </Button>
+                        </div>
+                      ) : undefined}
+                      licenseeSlot={contract.status === CONTRACT_STATUS.APPROVED && userRole === USER_ROLE.CLIENT && !rawDocument?.clientESign?.cid ? (
+                        <div className="space-y-2">
+                          <SignaturePad onSignatureChange={setEsignSignatureDataUrl} />
+                          <Button variant="default" size="sm" className="gap-2" disabled={!esignSignatureDataUrl || esignSubmitting} onClick={() => handleEsignSubmit(false)}>
+                            {esignSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                            {esignSubmitting ? 'Submitting...' : 'Sign'}
+                          </Button>
+                        </div>
+                      ) : undefined}
                     />
                   )}
                 </CardContent>
               </Card>
             </div>
-            {contract.status === CONTRACT_STATUS.APPROVED && userRole === USER_ROLE.CLIENT && (
-              <Card className="w-full max-w-3xl mx-auto mt-6">
-                <CardHeader>
-                  <CardTitle className="text-base">Licensee – Signature</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <SignaturePad onSignatureChange={setEsignSignatureDataUrl} />
-                  <Button
-                    variant="default"
-                    size="sm"
-                    className="gap-2"
-                    disabled={!esignSignatureDataUrl || esignSubmitting}
-                    onClick={() => handleEsignSubmit(false)}
-                  >
-                    {esignSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                    {esignSubmitting ? 'Submitting...' : 'Sign'}
-                  </Button>
-                </CardContent>
-              </Card>
-            )}
           </div>
         ) : (
           <Tabs defaultValue="overview" className="w-full">
@@ -821,6 +857,28 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
                         value={contract.value}
                         createdDate={contract.createdDate}
                         docContent={docContent}
+                        showSignatureSection={contract.status === CONTRACT_STATUS.APPROVED || contract.status === CONTRACT_STATUS.ESIGNED}
+                        licensorSignature={rawDocument?.legalESign ?? null}
+                        licenseeSignature={rawDocument?.clientESign ?? null}
+                        gatewayBaseUrl={URLs.TBGateWay}
+                        licensorSlot={contract.status === CONTRACT_STATUS.APPROVED && userRole === USER_ROLE.LEGAL_TEAM && !rawDocument?.legalESign?.cid ? (
+                          <div className="space-y-2">
+                            <SignaturePad onSignatureChange={setEsignSignatureDataUrl} />
+                            <Button variant="default" size="sm" className="gap-2" disabled={!esignSignatureDataUrl || esignSubmitting} onClick={() => handleEsignSubmit(true)}>
+                              {esignSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                              {esignSubmitting ? 'Submitting...' : 'Sign'}
+                            </Button>
+                          </div>
+                        ) : undefined}
+                        licenseeSlot={contract.status === CONTRACT_STATUS.APPROVED && userRole === USER_ROLE.CLIENT && !rawDocument?.clientESign?.cid ? (
+                          <div className="space-y-2">
+                            <SignaturePad onSignatureChange={setEsignSignatureDataUrl} />
+                            <Button variant="default" size="sm" className="gap-2" disabled={!esignSignatureDataUrl || esignSubmitting} onClick={() => handleEsignSubmit(false)}>
+                              {esignSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                              {esignSubmitting ? 'Submitting...' : 'Sign'}
+                            </Button>
+                          </div>
+                        ) : undefined}
                       />
                     ) : foundContract?.cid ? (
                       <p className="text-muted-foreground py-6 text-center">Document content unavailable</p>
@@ -830,33 +888,33 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
                         client={contract.client}
                         value={contract.value}
                         createdDate={contract.createdDate}
+                        showSignatureSection={contract.status === CONTRACT_STATUS.APPROVED || contract.status === CONTRACT_STATUS.ESIGNED}
+                        licensorSignature={rawDocument?.legalESign ?? null}
+                        licenseeSignature={rawDocument?.clientESign ?? null}
+                        gatewayBaseUrl={URLs.TBGateWay}
+                        licensorSlot={contract.status === CONTRACT_STATUS.APPROVED && userRole === USER_ROLE.LEGAL_TEAM && !rawDocument?.legalESign?.cid ? (
+                          <div className="space-y-2">
+                            <SignaturePad onSignatureChange={setEsignSignatureDataUrl} />
+                            <Button variant="default" size="sm" className="gap-2" disabled={!esignSignatureDataUrl || esignSubmitting} onClick={() => handleEsignSubmit(true)}>
+                              {esignSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                              {esignSubmitting ? 'Submitting...' : 'Sign'}
+                            </Button>
+                          </div>
+                        ) : undefined}
+                        licenseeSlot={contract.status === CONTRACT_STATUS.APPROVED && userRole === USER_ROLE.CLIENT && !rawDocument?.clientESign?.cid ? (
+                          <div className="space-y-2">
+                            <SignaturePad onSignatureChange={setEsignSignatureDataUrl} />
+                            <Button variant="default" size="sm" className="gap-2" disabled={!esignSignatureDataUrl || esignSubmitting} onClick={() => handleEsignSubmit(false)}>
+                              {esignSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                              {esignSubmitting ? 'Submitting...' : 'Sign'}
+                            </Button>
+                          </div>
+                        ) : undefined}
                       />
                     )}
                   </CardContent>
                 </Card>
               </div>
-              {contract.status === CONTRACT_STATUS.APPROVED && userRole === USER_ROLE.LEGAL_TEAM && (
-                <div className="flex justify-center">
-                  <Card className="w-full max-w-3xl">
-                    <CardHeader>
-                      <CardTitle className="text-base">Licensor – Signature</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <SignaturePad onSignatureChange={setEsignSignatureDataUrl} />
-                      <Button
-                        variant="default"
-                        size="sm"
-                        className="gap-2"
-                        disabled={!esignSignatureDataUrl || esignSubmitting}
-                        onClick={() => handleEsignSubmit(true)}
-                      >
-                        {esignSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                        {esignSubmitting ? 'Submitting...' : 'Sign'}
-                      </Button>
-                    </CardContent>
-                  </Card>
-                </div>
-              )}
             </TabsContent>
             <TabsContent value="sections" className="space-y-4">
               <SectionReviewTab

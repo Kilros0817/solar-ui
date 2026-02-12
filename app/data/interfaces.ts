@@ -76,12 +76,26 @@ export interface ContractTemplate {
   sectionIds: string[];
 }
 
+export interface ESignSignature {
+  cid: string;
+  date?: string | number;
+}
+
 export interface ContractDocumentTemplateProps {
   title: string;
   client: string;
   value: string;
   createdDate: string;
   docContent?: ContractDocContent;
+  /** When true, show Licensor/Licensee signature section (only when contract is approved by client). */
+  showSignatureSection?: boolean;
+  licensorSignature?: ESignSignature | null;
+  licenseeSignature?: ESignSignature | null;
+  gatewayBaseUrl?: string;
+  /** Slot for Licensor column when no signature yet (e.g. SignaturePad + Sign button for legal team). */
+  licensorSlot?: React.ReactNode;
+  /** Slot for Licensee column when no signature yet (e.g. SignaturePad + Sign button for client). */
+  licenseeSlot?: React.ReactNode;
 }
 
 export interface ContractTemplatePreviewModalProps {

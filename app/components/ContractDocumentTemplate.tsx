@@ -1,6 +1,7 @@
 'use client'
 
 import type { ContractDocumentTemplateProps } from '../data/interfaces';
+import { formatRelativeDate } from '@/utils/utility';
 
 export function ContractDocumentTemplate({ 
   title, 
@@ -8,6 +9,12 @@ export function ContractDocumentTemplate({
   value, 
   createdDate,
   docContent,
+  showSignatureSection = false,
+  licensorSignature = null,
+  licenseeSignature = null,
+  gatewayBaseUrl = '',
+  licensorSlot,
+  licenseeSlot,
 }: ContractDocumentTemplateProps) {
   const hasDocContent = docContent?.sections?.length;
 
@@ -31,21 +38,56 @@ export function ContractDocumentTemplate({
               </div>
             </div>
           ))}
-          {/* Signature Section - Signature only (Licensor = Legal, Licensee = Client) */}
-          <div className="mt-12 pt-8 border-t">
-            <div className="grid grid-cols-2 gap-8">
-              <div>
-                <p className="font-semibold mb-2">Licensor</p>
-                <div className="border-b-2 border-gray-400 mb-2 h-12"></div>
-                <p className="text-xs text-muted-foreground">Signature</p>
-              </div>
-              <div>
-                <p className="font-semibold mb-2">Licensee</p>
-                <div className="border-b-2 border-gray-400 mb-2 h-12"></div>
-                <p className="text-xs text-muted-foreground">Signature</p>
+          {showSignatureSection && (
+            <div className="mt-12 pt-8 border-t">
+              <div className="grid grid-cols-2 gap-8">
+                <div>
+                  <p className="font-semibold mb-2">Licensor</p>
+                  {licensorSignature?.cid && gatewayBaseUrl ? (
+                    <div className="space-y-1">
+                      <img
+                        src={`${gatewayBaseUrl}${licensorSignature.cid}`}
+                        alt="Licensor signature"
+                        className="max-h-16 w-auto border-b-2 border-gray-400 object-contain"
+                      />
+                      {licensorSignature.date != null && (
+                        <p className="text-xs text-muted-foreground">Signed {formatRelativeDate(Number(licensorSignature.date))}</p>
+                      )}
+                    </div>
+                  ) : licensorSlot ? (
+                    licensorSlot
+                  ) : (
+                    <>
+                      <div className="border-b-2 border-gray-400 mb-2 h-12" />
+                      <p className="text-xs text-muted-foreground">Signature</p>
+                    </>
+                  )}
+                </div>
+                <div>
+                  <p className="font-semibold mb-2">Licensee</p>
+                  {licenseeSignature?.cid && gatewayBaseUrl ? (
+                    <div className="space-y-1">
+                      <img
+                        src={`${gatewayBaseUrl}${licenseeSignature.cid}`}
+                        alt="Licensee signature"
+                        className="max-h-16 w-auto border-b-2 border-gray-400 object-contain"
+                      />
+                      {licenseeSignature.date != null && (
+                        <p className="text-xs text-muted-foreground">Signed {formatRelativeDate(Number(licenseeSignature.date))}</p>
+                      )}
+                    </div>
+                  ) : licenseeSlot ? (
+                    licenseeSlot
+                  ) : (
+                    <>
+                      <div className="border-b-2 border-gray-400 mb-2 h-12" />
+                      <p className="text-xs text-muted-foreground">Signature</p>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </>
       ) : (
         <>
@@ -202,21 +244,56 @@ export function ContractDocumentTemplate({
         </div>
       </div>
 
-      {/* Signature Section - Signature only */}
-      <div className="mt-12 pt-8 border-t">
-        <div className="grid grid-cols-2 gap-8">
-          <div>
-            <p className="font-semibold mb-2">Licensor</p>
-            <div className="border-b-2 border-gray-400 mb-2 h-12"></div>
-            <p className="text-xs text-muted-foreground">Signature</p>
-          </div>
-          <div>
-            <p className="font-semibold mb-2">Licensee</p>
-            <div className="border-b-2 border-gray-400 mb-2 h-12"></div>
-            <p className="text-xs text-muted-foreground">Signature</p>
+      {showSignatureSection && (
+        <div className="mt-12 pt-8 border-t">
+          <div className="grid grid-cols-2 gap-8">
+            <div>
+              <p className="font-semibold mb-2">Licensor</p>
+              {licensorSignature?.cid && gatewayBaseUrl ? (
+                <div className="space-y-1">
+                  <img
+                    src={`${gatewayBaseUrl}${licensorSignature.cid}`}
+                    alt="Licensor signature"
+                    className="max-h-16 w-auto border-b-2 border-gray-400 object-contain"
+                  />
+                  {licensorSignature.date != null && (
+                    <p className="text-xs text-muted-foreground">Signed {formatRelativeDate(Number(licensorSignature.date))}</p>
+                  )}
+                </div>
+              ) : licensorSlot ? (
+                licensorSlot
+              ) : (
+                <>
+                  <div className="border-b-2 border-gray-400 mb-2 h-12" />
+                  <p className="text-xs text-muted-foreground">Signature</p>
+                </>
+              )}
+            </div>
+            <div>
+              <p className="font-semibold mb-2">Licensee</p>
+              {licenseeSignature?.cid && gatewayBaseUrl ? (
+                <div className="space-y-1">
+                  <img
+                    src={`${gatewayBaseUrl}${licenseeSignature.cid}`}
+                    alt="Licensee signature"
+                    className="max-h-16 w-auto border-b-2 border-gray-400 object-contain"
+                  />
+                  {licenseeSignature.date != null && (
+                    <p className="text-xs text-muted-foreground">Signed {formatRelativeDate(Number(licenseeSignature.date))}</p>
+                  )}
+                </div>
+              ) : licenseeSlot ? (
+                licenseeSlot
+              ) : (
+                <>
+                  <div className="border-b-2 border-gray-400 mb-2 h-12" />
+                  <p className="text-xs text-muted-foreground">Signature</p>
+                </>
+              )}
+            </div>
           </div>
         </div>
-      </div>
+      )}
         </>
       )}
     </div>
