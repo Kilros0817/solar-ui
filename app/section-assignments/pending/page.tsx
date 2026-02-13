@@ -19,6 +19,8 @@ type PendingClauseLeader = {
   divisionMember?: { id: string; firstName?: string; lastName?: string; email?: string } | null;
 };
 
+type ClauseWithStatus = { id: string; status: number; cid?: string | null; divisionMember?: PendingClauseLeader['divisionMember'] };
+
 function getMemberLabel(m: PendingClauseLeader['divisionMember']): string {
   if (!m) return '—';
   const name = [m.firstName, m.lastName].filter(Boolean).join(' ').trim();
@@ -49,15 +51,15 @@ export default function SectionAssignmentsPendingPage() {
     sections.forEach((sec) => {
       const sectionId = sec.id;
       const doc = sec.doc;
-      (sec.clauses ?? []).forEach((c) => {
+      (sec.clauses ?? []).forEach((c: ClauseWithStatus) => {
         if (c.status === 0) {
           flat.push({
             id: c.id,
-            cid: (c as { cid?: string | null }).cid ?? null,
+            cid: c.cid ?? null,
             status: 0,
             sectionId,
             section: { id: sectionId, doc: doc ?? { id: '', title: '' } },
-            divisionMember: (c as { divisionMember?: PendingClauseLeader['divisionMember'] }).divisionMember ?? null,
+            divisionMember: c.divisionMember ?? null,
           });
         }
       });
@@ -86,7 +88,7 @@ export default function SectionAssignmentsPendingPage() {
       return;
     }
     const sec = doc.sections[secIdx];
-    const clauseIdx = (sec?.clauses ?? []).findIndex((c) => String((c as { id?: string }).id) === String(clauseId));
+    const clauseIdx = (sec?.clauses ?? []).findIndex((c: { id?: string }) => String(c.id) === String(clauseId));
     if (clauseIdx < 0) {
       setWorkingId(null);
       return;

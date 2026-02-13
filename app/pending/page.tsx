@@ -6,12 +6,14 @@ import { ContractList } from '../components/ContractList';
 import { ContractDetails } from '../components/ContractDetails';
 import { useUser } from '../contexts/UserContext';
 import { useNewContract } from '../contexts/NewContractContext';
+import { useAssignment } from '../contexts/AssignmentContext';
 import { USER_ROLE } from '@/utils/constants';
 
 export default function PendingPage() {
   const router = useRouter();
   const { userRole } = useUser();
-  const { setFrom, setSelectedContract } = useNewContract();
+  const { setFrom } = useNewContract();
+  const { setSelectedContract } = useAssignment();
   const [selectedContractDetails, setSelectedContractDetails] = useState<number | null>(null);
 
   useEffect(() => {

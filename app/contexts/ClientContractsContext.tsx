@@ -11,7 +11,7 @@ function mapDocToContract(doc: Record<string, unknown>, index: number): Contract
   const id = /^\d+$/.test(String(doc.id)) ? parseInt(String(doc.id), 10) : index + 1;
   const status = typeof doc.status === 'number' ? doc.status : 0;
   const cat = doc.category;
-  const category = typeof cat === 'number' ? String(cat) : (cat ?? '');
+  const category = typeof cat === 'string' ? cat : typeof cat === 'number' ? String(cat) : '';
   const rawCreated = doc.createdAt;
   const createdAt =
     typeof rawCreated === 'number'

@@ -88,7 +88,7 @@ export function DivisionMemberClausesProvider({ children }: { children: React.Re
       if (!doc) return null;
       for (let sectionIndex = 0; sectionIndex < doc.sections.length; sectionIndex++) {
         const sec = doc.sections[sectionIndex];
-        const clauseIndex = (sec.clauses ?? []).findIndex((c) => String((c as { id?: string }).id) === String(clauseId));
+        const clauseIndex = (sec.clauses ?? []).findIndex((c: { id?: string }) => String(c.id) === String(clauseId));
         if (clauseIndex >= 0) return { sectionIndex, clauseIndex };
       }
       return null;

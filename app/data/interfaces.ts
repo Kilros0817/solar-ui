@@ -69,7 +69,7 @@ export interface ContractTemplate {
   name: string;
   description: string;
   category: string;
-  icon: unknown;
+  icon?: React.ComponentType<{ className?: string }>;
   createdDate: string;
   lastModified: string;
   createdBy: string;
@@ -176,6 +176,15 @@ export interface SectionTemplatePreview {
   [key: string]: unknown;
 }
 
+export type EditingSection = {
+  id?: string;
+  sectionName: string;
+  name: string;
+  description: string;
+  category: string;
+  selectedClauses?: ClauseTemplate[];
+};
+
 export interface SectionTemplateCreatorProps {
   onClose: () => void;
   onSave: (section: {
@@ -186,7 +195,7 @@ export interface SectionTemplateCreatorProps {
     selectedClauses: ClauseTemplate[];
   }) => void | Promise<void>;
   availableClauses: ClauseTemplate[];
-  editingSection?: unknown;
+  editingSection?: EditingSection | null;
 }
 
 export interface SectionTemplatePreviewModalProps {
@@ -245,7 +254,7 @@ export interface ContractTemplateCreatorProps {
     selectedSections: { sectionName: string; versionId: string }[];
   }) => void | Promise<void>;
   availableSections: SectionTemplateWithVersions[];
-  editingContract?: unknown;
+  editingContract?: EditingContract | null;
 }
 
 // --- Assignment ---
