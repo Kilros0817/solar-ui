@@ -67,8 +67,9 @@ export default function LegalReviewPendingPage() {
   const [viewingId, setViewingId] = useState<string | null>(null);
   const [submittingSectionId, setSubmittingSectionId] = useState<string | null>(null);
 
+  const canAccessLegalReview = userRole === USER_ROLE.LEGAL_TEAM || userRole === USER_ROLE.DIVISION_LEADER;
   useEffect(() => {
-    if (userRole !== null && userRole !== USER_ROLE.DIVISION_LEADER) {
+    if (userRole !== null && !canAccessLegalReview) {
       if (userRole === USER_ROLE.DIVISION_MEMBER) {
         router.replace('/clause-assignments');
       } else {
@@ -76,7 +77,7 @@ export default function LegalReviewPendingPage() {
       }
       return;
     }
-  }, [userRole, router]);
+  }, [userRole, canAccessLegalReview, router]);
 
   // Load section content (IPFS) for each section so we have total clauses for the filter
   useEffect(() => {
@@ -148,7 +149,7 @@ export default function LegalReviewPendingPage() {
     }
   };
 
-  if (userRole !== USER_ROLE.DIVISION_LEADER) {
+  if (!canAccessLegalReview) {
     return null;
   }
 

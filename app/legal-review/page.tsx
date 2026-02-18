@@ -12,17 +12,18 @@ export default function LegalReviewAllPage() {
   const { userRole } = useUser();
   const { setSelectedContract } = useAssignment();
 
+  const canAccessLegalReview = userRole === USER_ROLE.LEGAL_TEAM || userRole === USER_ROLE.DIVISION_LEADER;
   useEffect(() => {
-    if (userRole !== null && userRole !== USER_ROLE.DIVISION_LEADER) {
+    if (userRole !== null && !canAccessLegalReview) {
       if (userRole === USER_ROLE.DIVISION_MEMBER) {
         router.replace('/clause-assignments');
       } else {
         router.replace('/my-contracts');
       }
     }
-  }, [userRole, router]);
+  }, [userRole, canAccessLegalReview, router]);
 
-  if (userRole !== USER_ROLE.DIVISION_LEADER) {
+  if (!canAccessLegalReview) {
     return null;
   }
 

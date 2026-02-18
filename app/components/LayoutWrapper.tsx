@@ -66,7 +66,7 @@ export function LayoutWrapper({ children }: LayoutWrapperProps) {
       'legal-pending': '/legal-review/pending',
       'legal-review-tab': '/legal-review/review',
       'legal-approved': '/legal-review/approved',
-      'legal-rejected': '/legal-review/rejected',
+      'legal-rejected': '/rejected',
     };
 
     const route = routeMap[tab];

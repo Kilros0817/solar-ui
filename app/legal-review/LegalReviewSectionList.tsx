@@ -66,8 +66,9 @@ export function LegalReviewSectionList({ title, subtitle, statusFilter, emptyMes
   const [searchTerm, setSearchTerm] = useState('');
   const [viewingId, setViewingId] = useState<string | null>(null);
 
+  const canAccessLegalReview = userRole === USER_ROLE.LEGAL_TEAM || userRole === USER_ROLE.DIVISION_LEADER;
   useEffect(() => {
-    if (userRole !== null && userRole !== USER_ROLE.DIVISION_LEADER) {
+    if (userRole !== null && !canAccessLegalReview) {
       if (userRole === USER_ROLE.DIVISION_MEMBER) {
         router.replace('/clause-assignments');
       } else {
@@ -75,7 +76,7 @@ export function LegalReviewSectionList({ title, subtitle, statusFilter, emptyMes
       }
       return;
     }
-  }, [userRole, router]);
+  }, [userRole, canAccessLegalReview, router]);
 
   useEffect(() => {
     if (sections.length === 0) return;
@@ -109,7 +110,7 @@ export function LegalReviewSectionList({ title, subtitle, statusFilter, emptyMes
     setViewingId(null);
   };
 
-  if (userRole !== USER_ROLE.DIVISION_LEADER) {
+  if (!canAccessLegalReview) {
     return null;
   }
 

@@ -2,7 +2,7 @@
 
 import { LegalReviewSectionList } from '@/app/legal-review/LegalReviewSectionList';
 
-export default function LegalReviewRejectedPage() {
+export default function RejectedPage() {
   return (
     <LegalReviewSectionList
       title="Rejected by legal"
