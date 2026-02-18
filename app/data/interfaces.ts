@@ -24,6 +24,8 @@ export interface ContractListProps {
   divisionLeaderAddress?: string | null;
   showCreateButton?: boolean;
   showCreateWhenEmpty?: boolean;
+  /** Override empty state subtext when no contracts (e.g. "No rejected contracts."). */
+  emptySubtext?: string;
 }
 
 export interface ContractDocPayload {

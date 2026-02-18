@@ -21,7 +21,7 @@ import { CONTRACT_STATUS_LABELS } from '@/utils/constants';
 import { formatRelativeDate } from '@/utils/utility';
 import { useContracts } from '../contexts/ContractsContext';
 
-export function ContractList({ title, filterStatus, onCreateContract, onViewContract, getViewPath, showCreateButton = true, showCreateWhenEmpty = true }: ContractListProps) {
+export function ContractList({ title, filterStatus, onCreateContract, onViewContract, getViewPath, showCreateButton = true, showCreateWhenEmpty = true, emptySubtext }: ContractListProps) {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
   const { contracts, loading } = useContracts();
@@ -165,7 +165,7 @@ export function ContractList({ title, filterStatus, onCreateContract, onViewCont
             <p className="text-sm text-muted-foreground mb-6 max-w-sm">
               {searchTerm
                 ? 'No contracts match your search. Try a different term.'
-                : 'Get started by creating your first contract.'}
+                : (emptySubtext ?? 'Get started by creating your first contract.')}
             </p>
             {!searchTerm && showCreateWhenEmpty && showCreateButton && (
               <Button className='mb-4' onClick={onCreateContract}>Create New Contract</Button>
