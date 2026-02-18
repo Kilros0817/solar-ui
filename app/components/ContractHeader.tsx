@@ -32,12 +32,11 @@ export function ContractHeader() {
   // Fetch user role when connections are active
   useEffect(() => {
     const fetchUserRole = async () => {
-      const startTime = performance.now();
-      
+
       // Check if both Web3Auth and wagmi are connected
       if (web3Auth?.connected && isConnected && address && config) {
 
-        
+
         // Only fetch if role is not already set to avoid unnecessary calls
         if (userRole === null) {
           try {
@@ -51,7 +50,9 @@ export function ContractHeader() {
         }
       } else if (!web3Auth?.connected && !isConnected && pathname !== '/login' && pathname !== '/register') {
         // If both connections are not active and not on login/register pages, redirect to login
-        router.push('/login');
+        setInterval(() => {
+          window.location.href = "/login";
+        }, 1000);
       }
     };
 
@@ -94,7 +95,7 @@ export function ContractHeader() {
           />
         </div>
       </div>
-      
+
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="sm" className="relative brand-hover">
           <Bell className="h-4 w-4" />
@@ -102,7 +103,7 @@ export function ContractHeader() {
             3
           </Badge>
         </Button>
-        
+
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="flex items-center gap-3 hover:bg-accent">

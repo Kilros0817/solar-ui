@@ -50,27 +50,27 @@ export function UserProvider({ children }: { children: ReactNode }) {
     // Clear user state first to prevent auto-login
     setUserRole(null);
     setUserName('');
-    
+
     // Disconnect from Web3Auth
     const web3Auth = getWeb3AuthInstance();
     if (web3Auth?.connected) {
       try {
         await web3Auth.logout();
         // Wait a bit to ensure Web3Auth state updates
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise(resolve => setTimeout(resolve, 1000));
       } catch (error) {
         console.error('Error disconnecting from Web3Auth:', error);
       }
     }
-    
-    // Disconnect from wagmi
+
+    // Disconnect from wagmi (may throw "Wallet is not connected" if Web3Auth already disconnected)
     try {
       await disconnectAsync();
-      // Wait a bit more to ensure wagmi state updates
-      await new Promise(resolve => setTimeout(resolve, 200));
+      await new Promise((resolve) => setTimeout(resolve, 1000));
     } catch (error) {
       console.error('Error disconnecting from wagmi:', error);
     }
+    window.location.href = "/login";
   };
 
   return (
