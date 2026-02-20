@@ -655,7 +655,7 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
                   )}
                   {contract.status === CONTRACT_STATUS.REJECTED && (
                     <Button
-                      variant="outline"
+                      variant="reassign"
                       size="sm"
                       className="gap-2 shrink-0"
                       disabled={clientReassigning}

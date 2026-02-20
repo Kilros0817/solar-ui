@@ -3,11 +3,11 @@
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
-import { 
-  CheckCircle2, 
-  XCircle, 
-  Clock, 
-  FileText, 
+import {
+  CheckCircle2,
+  XCircle,
+  Clock,
+  FileText,
   Building2,
   AlertCircle,
   UserPlus
@@ -189,8 +189,8 @@ export function SectionReviewTab({
                     <div
                       key={section.id}
                       className={`border rounded-lg p-4 space-y-3 ${section.status === 'approved' ? 'bg-green-50/50 border-green-200' :
-                          section.status === 'rejected' ? 'bg-red-50/50 border-red-200' :
-                            'bg-orange-50/50 border-orange-200'
+                        section.status === 'rejected' ? 'bg-red-50/50 border-red-200' :
+                          'bg-orange-50/50 border-orange-200'
                         }`}
                     >
                       <div className="flex items-start justify-between">
@@ -247,10 +247,11 @@ export function SectionReviewTab({
                       {section.status === 'rejected' && (
                         <div className="flex items-end gap-2 pt-2 border-t">
                           <Button
+                            variant="reassign"
                             size="sm"
                             onClick={() => onReassign?.(section.id)}
                             disabled={processingSectionId === section.id}
-                            className="cursor-pointer bg-blue-600 hover:bg-blue-700 text-white border-0"
+                            className="cursor-pointer text-white border-0"
                           >
                             <UserPlus className="h-4 w-4 mr-2" />
                             {processingSectionId === section.id ? 'Reassigning...' : 'Reassign'}
