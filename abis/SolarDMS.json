@@ -1,6 +1,6 @@
 {
   "contractName": "SolarDMS",
-  "contractAddress": "0x54EB5FEB989789445220E1a0f6f981602eBfCda1",
+  "contractAddress": "0x4E3D1ae2112e83C78964321d92344E0a041A0f2f",
   "abi": [
     {
       "inputs": [],
@@ -195,6 +195,12 @@
           "internalType": "bool",
           "name": "approved",
           "type": "bool"
+        },
+        {
+          "indexed": false,
+          "internalType": "string",
+          "name": "rejectReason",
+          "type": "string"
         }
       ],
       "name": "ClientReviewed",
@@ -290,6 +296,12 @@
           "internalType": "uint256",
           "name": "clauseId",
           "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "string",
+          "name": "rejectReason",
+          "type": "string"
         }
       ],
       "name": "LeaderRejectedClause",
@@ -341,6 +353,12 @@
           "internalType": "uint256",
           "name": "sectionId",
           "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "string",
+          "name": "rejectReason",
+          "type": "string"
         }
       ],
       "name": "LegalRejectedSection",
@@ -716,6 +734,11 @@
           "internalType": "bool",
           "name": "approve",
           "type": "bool"
+        },
+        {
+          "internalType": "string",
+          "name": "rejectReason",
+          "type": "string"
         }
       ],
       "name": "clientReview",
@@ -842,6 +865,11 @@
           "internalType": "string",
           "name": "newSectionCid",
           "type": "string"
+        },
+        {
+          "internalType": "string",
+          "name": "rejectReason",
+          "type": "string"
         }
       ],
       "name": "leaderReviewClause",
@@ -882,6 +910,11 @@
         {
           "internalType": "string",
           "name": "newDocCid",
+          "type": "string"
+        },
+        {
+          "internalType": "string",
+          "name": "rejectReason",
           "type": "string"
         }
       ],

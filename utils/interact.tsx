@@ -236,7 +236,7 @@ export const approveClause = async (
   clauseId: number,
   sectionCid: string,
 ) => {
-  const res = await runSponsorTx(config, account, "leaderReviewClause", [clauseId, true, sectionCid]);
+  const res = await runSponsorTx(config, account, "leaderReviewClause", [clauseId, true, sectionCid, ""]);
   if (res.isSuccess) {
     return true;
   }
@@ -248,8 +248,9 @@ export const rejectClause = async (
   config: any,
   account: string,
   clauseId: number,
+  rejectReason: string
 ) => {
-  const res = await runSponsorTx(config, account, "leaderReviewClause", [clauseId, false, ""]);
+  const res = await runSponsorTx(config, account, "leaderReviewClause", [clauseId, false, "", rejectReason]);
   if (res.isSuccess) {
     return true;
   }
@@ -290,8 +291,9 @@ export const legalReviewSection = async (
   sectionId: number,
   approve: boolean,
   newDocCid: string,
+  rejectReason: string
 ) => {
-  const res = await runSponsorTx(config, account, "legalReviewSection", [sectionId, approve, newDocCid]);
+  const res = await runSponsorTx(config, account, "legalReviewSection", [sectionId, approve, newDocCid, rejectReason]);
   if (res.isSuccess) {
     return true;
   }
@@ -331,8 +333,9 @@ export const clientReview = async (
   account: string,
   docId: number,
   approve: boolean,
+  rejectReason: string
 ) => {
-  const res = await runSponsorTx(config, account, "clientReview", [docId, approve]);
+  const res = await runSponsorTx(config, account, "clientReview", [docId, approve, rejectReason]);
   if (res.isSuccess) {
     return true;
   }

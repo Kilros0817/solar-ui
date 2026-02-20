@@ -16,6 +16,7 @@ import { approveClauseWithSectionUpdate } from '@/utils/utility';
 import { rejectClause, reassignClause } from '@/utils/interact';
 import { toast } from 'sonner';
 import type { DocSection } from '@/app/data/interfaces';
+import { RejectReasonDialog } from '@/app/components/RejectReasonDialog';
 
 export default function SectionAssignmentsClausePage() {
   const router = useRouter();
@@ -33,6 +34,7 @@ export default function SectionAssignmentsClausePage() {
   const [clauseContent, setClauseContent] = useState('');
   const [contentLoaded, setContentLoaded] = useState(false);
   const [actionLoading, setActionLoading] = useState<'approve' | 'reject' | 'reassign' | null>(null);
+  const [showRejectClauseDialog, setShowRejectClauseDialog] = useState(false);
 
   useEffect(() => {
     if (userRole !== null && userRole !== USER_ROLE.DIVISION_LEADER) {
@@ -157,16 +159,17 @@ export default function SectionAssignmentsClausePage() {
     }
   };
 
-  const handleReject = async () => {
+  const handleRejectWithReason = async (reason: string) => {
     if (!config || !address || Number.isNaN(clauseIdOnChain)) {
       toast.error('Missing data to reject');
       return;
     }
     setActionLoading('reject');
     try {
-      const ok = await rejectClause(config, address, clauseIdOnChain);
+      const ok = await rejectClause(config, address, clauseIdOnChain, reason);
       if (ok) {
         toast.success('Clause rejected');
+        setShowRejectClauseDialog(false);
         router.back();
         setTimeout(async () => {
           refreshSubgraph();
@@ -270,7 +273,7 @@ export default function SectionAssignmentsClausePage() {
             <div className="flex items-center gap-3 pt-2 border-t">
               <Button
                 variant="default"
-                className="gap-2"
+                className="gap-2 cursor-pointer"
                 disabled={actionLoading !== null}
                 onClick={handleApprove}
               >
@@ -278,10 +281,15 @@ export default function SectionAssignmentsClausePage() {
                 {actionLoading === 'approve' ? 'Approving...' : 'Approve'}
               </Button>
               <Button
+                type="button"
                 variant="outline"
-                className="gap-2 text-destructive hover:text-destructive hover:bg-destructive/10"
+                className="gap-2 text-destructive hover:text-destructive hover:bg-destructive/10 cursor-pointer"
                 disabled={actionLoading !== null}
-                onClick={handleReject}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setShowRejectClauseDialog(true);
+                }}
               >
                 {actionLoading === 'reject' ? <Loader2 className="h-4 w-4 animate-spin" /> : <XCircle className="h-4 w-4" />}
                 {actionLoading === 'reject' ? 'Rejecting...' : 'Reject'}
@@ -303,6 +311,16 @@ export default function SectionAssignmentsClausePage() {
           )}
         </CardContent>
       </Card>
+      <RejectReasonDialog
+        open={showRejectClauseDialog}
+        onOpenChange={(open) => !open && setShowRejectClauseDialog(false)}
+        title="Reject clause"
+        description="Please provide a reason for rejecting this clause."
+        placeholder="Enter rejection reason..."
+        submitLabel="Reject clause"
+        isSubmitting={actionLoading === 'reject'}
+        onSubmit={handleRejectWithReason}
+      />
     </div>
   );
 }

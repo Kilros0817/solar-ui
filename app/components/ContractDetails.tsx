@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { ContractDocumentTemplate } from './ContractDocumentTemplate';
 import { SectionReviewTab } from './SectionReviewTab';
 import { SignaturePad } from './SignaturePad';
+import { RejectReasonDialog } from './RejectReasonDialog';
 import { ArrowLeft, FileText, Calendar, DollarSign, Tag, ClipboardList, Building2, Send, Loader2, Check, X, RefreshCw } from 'lucide-react';
 import { getContractById } from '@/utils/subgraph';
 import { legalReviewSection, reassignSection, submitDocToClient, clientReview, clientReassignDoc, legalEsign, clientEsign } from '@/utils/interact';
@@ -62,6 +63,7 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
   const [esignSignatureDataUrl, setEsignSignatureDataUrl] = useState<string | null>(null);
   const [esignSubmitting, setEsignSubmitting] = useState(false);
   const [activeTab, setActiveTab] = useState<string>('overview');
+  const [showRejectContractDialog, setShowRejectContractDialog] = useState(false);
   const { userRole } = useUser();
   const { refresh: refreshSubgraph } = useSubgraphRefresh();
 
@@ -219,7 +221,7 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
         sections: newSections,
       };
       const newDocCid = await uploadContractToPinata(newDocPayload);
-      const success = await legalReviewSection(config, address, sectionIdNum, true, newDocCid);
+      const success = await legalReviewSection(config, address, sectionIdNum, true, newDocCid, '');
       if (success) {
         toast.success('Section approved');
         setTimeout(async () => {
@@ -248,7 +250,7 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
     }
     setReviewActionSectionId(sectionId);
     try {
-      const success = await legalReviewSection(config, address, sectionIdNum, false, '');
+      const success = await legalReviewSection(config, address, sectionIdNum, false, '', reason);
       if (success) {
         toast.success('Section rejected');
         setTimeout(async () => {
@@ -367,7 +369,7 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
     }
     setClientReviewAction('approve');
     try {
-      const success = await clientReview(config, address, docIdNum, true);
+      const success = await clientReview(config, address, docIdNum, true, '');
       if (success) {
         toast.success('Contract approved');
         setTimeout(async () => {
@@ -384,7 +386,7 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
     }
   };
 
-  const handleClientReject = async () => {
+  const handleClientRejectWithReason = async (reason: string) => {
     if (!config || !address) {
       toast.error('Wallet not connected');
       return;
@@ -396,9 +398,10 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
     }
     setClientReviewAction('reject');
     try {
-      const success = await clientReview(config, address, docIdNum, false);
+      const success = await clientReview(config, address, docIdNum, false, reason);
       if (success) {
         toast.success('Contract rejected');
+        setShowRejectContractDialog(false);
         setTimeout(async () => {
           refreshSubgraph();
           await fetchContract();
@@ -639,7 +642,7 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
                         size="sm"
                         className="gap-2"
                         disabled={clientReviewAction !== null}
-                        onClick={handleClientReject}
+                        onClick={() => setShowRejectContractDialog(true)}
                       >
                         {clientReviewAction === 'reject' ? (
                           <Loader2 className="h-4 w-4 animate-spin" />
@@ -940,6 +943,17 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
           </Tabs>
         )}
       </div>
+
+      <RejectReasonDialog
+        open={showRejectContractDialog}
+        onOpenChange={setShowRejectContractDialog}
+        title="Reject contract"
+        description="Please provide a reason for rejecting this contract review."
+        placeholder="Enter rejection reason..."
+        submitLabel="Reject contract"
+        isSubmitting={clientReviewAction === 'reject'}
+        onSubmit={handleClientRejectWithReason}
+      />
     </div>
   );
 }

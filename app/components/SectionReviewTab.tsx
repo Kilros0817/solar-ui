@@ -16,6 +16,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collap
 import { useState } from 'react';
 import { USER_ROLE } from '@/utils/constants';
 import type { SectionReviewTabProps } from '../data/interfaces';
+import { RejectReasonDialog } from './RejectReasonDialog';
 
 export function SectionReviewTab({
   sections,
@@ -26,6 +27,7 @@ export function SectionReviewTab({
   processingSectionId = null,
 }: SectionReviewTabProps) {
   const [expandedDivisions, setExpandedDivisions] = useState<Record<string, boolean>>({});
+  const [rejectSectionId, setRejectSectionId] = useState<string | null>(null);
 
   const getSectionStatusBadge = (statusNum?: number) => {
     switch (statusNum) {
@@ -224,7 +226,7 @@ export function SectionReviewTab({
                             <Button
                               size="sm"
                               variant="destructive"
-                              onClick={() => onReject?.(section.id, '')}
+                              onClick={() => setRejectSectionId(section.id)}
                               disabled={processingSectionId === section.id}
                               className="cursor-pointer"
                             >
@@ -272,6 +274,19 @@ export function SectionReviewTab({
           </CardContent>
         </Card>
       )}
+
+      <RejectReasonDialog
+        open={rejectSectionId !== null}
+        onOpenChange={(open) => !open && setRejectSectionId(null)}
+        title="Reject section"
+        description="Please provide a reason for rejecting this section."
+        placeholder="Enter rejection reason..."
+        submitLabel="Reject section"
+        isSubmitting={rejectSectionId !== null && processingSectionId === rejectSectionId}
+        onSubmit={async (reason) => {
+          if (rejectSectionId) onReject?.(rejectSectionId, reason);
+        }}
+      />
     </div>
   );
 }
