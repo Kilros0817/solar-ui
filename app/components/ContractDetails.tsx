@@ -928,6 +928,7 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
                 onReassign={handleReassignSection}
                 userRole={userRole ?? 0}
                 processingSectionId={reviewActionSectionId}
+                contractStatus={contract.status}
               />
             </TabsContent>
             <TabsContent value="activity">

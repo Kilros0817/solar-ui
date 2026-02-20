@@ -161,6 +161,8 @@ export interface SectionReviewTabProps {
   onReassign?: (sectionId: string) => void;
   userRole: number;
   processingSectionId?: string | null;
+  /** When PENDING, legal can reassign approved sections (before submit to client). */
+  contractStatus?: number;
 }
 
 export interface SectionTemplateWithVersions {

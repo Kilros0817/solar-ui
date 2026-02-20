@@ -10,11 +10,13 @@ import {
   FileText,
   Building2,
   AlertCircle,
-  UserPlus
+  UserPlus,
+  RefreshCw,
+  Loader2,
 } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collapsible';
 import { useState } from 'react';
-import { USER_ROLE } from '@/utils/constants';
+import { USER_ROLE, CONTRACT_STATUS } from '@/utils/constants';
 import type { SectionReviewTabProps } from '../data/interfaces';
 import { RejectReasonDialog } from './RejectReasonDialog';
 
@@ -25,6 +27,7 @@ export function SectionReviewTab({
   onReassign,
   userRole,
   processingSectionId = null,
+  contractStatus,
 }: SectionReviewTabProps) {
   const [expandedDivisions, setExpandedDivisions] = useState<Record<string, boolean>>({});
   const [rejectSectionId, setRejectSectionId] = useState<string | null>(null);
@@ -234,6 +237,25 @@ export function SectionReviewTab({
                               Reject
                             </Button>
                           </div>
+                        </div>
+                      )}
+
+                      {section.status === 'approved' && contractStatus === CONTRACT_STATUS.PENDING && (
+                        <div className="flex items-end gap-2 pt-2 border-t">
+                          <Button
+                            variant="reassign"
+                            size="sm"
+                            onClick={() => onReassign?.(section.id)}
+                            disabled={processingSectionId === section.id}
+                            className="cursor-pointer"
+                          >
+                            {processingSectionId === section.id ? (
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            ) : (
+                              <RefreshCw className="h-4 w-4 mr-2" />
+                            )}
+                            {processingSectionId === section.id ? 'Reassigning...' : 'Reassign'}
+                          </Button>
                         </div>
                       )}
 
