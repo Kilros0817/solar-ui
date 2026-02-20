@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/ca
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/app/components/ui/select';
 import { Label } from '@/app/components/ui/label';
 import { Badge } from '@/app/components/ui/badge';
-import { ArrowLeft, FileText, Loader2, UserPlus, RefreshCw, Eye } from 'lucide-react';
+import { ArrowLeft, FileText, Loader2, UserPlus, Eye } from 'lucide-react';
 import { getDivisionMembersByDivisionId } from '@/utils/subgraph';
 import { assignClausesToMembers } from '@/utils/interact';
 import { useContractDoc } from '@/app/contexts/ContractDocContext';
@@ -48,7 +48,6 @@ export default function SectionAssignmentsSectionPage() {
   const [assigning, setAssigning] = useState(false);
   const [sectionIdFromSubgraph, setSectionIdFromSubgraph] = useState<number | null>(null);
   const [sectionContentLoaded, setSectionContentLoaded] = useState(false);
-  const [reassigningClauseIndex, setReassigningClauseIndex] = useState<number | null>(null);
   const [clauseContentOverrides, setClauseContentOverrides] = useState<Record<number, string>>({});
 
   useEffect(() => {
@@ -97,8 +96,6 @@ export default function SectionAssignmentsSectionPage() {
   const contractTitle = doc?.title ?? 'Untitled';
   const divisionLabel = profile ? (DIVISION_LABELS[profile.dcategory] ?? `Division #${profile.dcategory}`) : '';
   const sectionClausesFromSubgraph = sectionAt?.clauses ?? [];
-  const sectionStatus = typeof (sectionAt as { status?: number })?.status === 'number' ? (sectionAt as { status: number }).status : 0;
-  const showReassignForSection = sectionStatus === 0;
 
   useEffect(() => {
     if (!doc || profile == null || sectionIndex < 0) return;
@@ -342,8 +339,7 @@ export default function SectionAssignmentsSectionPage() {
                 const clauseStatus = typeof clauseData?.status === 'number' ? clauseData.status : undefined;
                 const isAssignedOrSubmitted = clauseStatus === 0 || clauseStatus === 1;
                 const isApprovedOrRejected = clauseStatus === 2 || clauseStatus === 3;
-                const showAssignDropdown =
-                  !isAssignedOrSubmitted && (isApprovedOrRejected ? reassigningClauseIndex === i && showReassignForSection : true);
+                const showAssignDropdown = !isAssignedOrSubmitted && !isApprovedOrRejected;
                 const statusLabel =
                   clauseStatus === 0
                     ? 'Assigned'
@@ -384,27 +380,12 @@ export default function SectionAssignmentsSectionPage() {
                         </Badge>
                       </div>
                     )}
-                    {isApprovedOrRejected && showReassignForSection && reassigningClauseIndex !== i && (
-                      <div className="pt-2 border-t">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="gap-2"
-                          onClick={() => setReassigningClauseIndex(i)}
-                        >
-                          <RefreshCw className="h-4 w-4" />
-                          Reassign
-                        </Button>
-                      </div>
-                    )}
                     {showAssignDropdown && (
                       <div className="flex items-center gap-3 pt-2 border-t">
                         <UserPlus className="h-4 w-4 text-muted-foreground shrink-0" />
                         <div className="flex-1 min-w-0 flex flex-wrap items-center gap-2">
                           <div>
-                            <Label className="text-xs text-muted-foreground">
-                              {reassigningClauseIndex === i ? 'Reassign to' : 'Assign to'}
-                            </Label>
+                            <Label className="text-xs text-muted-foreground">Assign to</Label>
                             <Select
                               value={clauseAssignments[clause.clauseId] ?? (assignedMember?.id ?? 'unassigned')}
                               onValueChange={(v) =>
@@ -427,15 +408,6 @@ export default function SectionAssignmentsSectionPage() {
                               </SelectContent>
                             </Select>
                           </div>
-                          {reassigningClauseIndex === i && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => setReassigningClauseIndex(null)}
-                            >
-                              Cancel
-                            </Button>
-                          )}
                         </div>
                       </div>
                     )}
@@ -475,7 +447,7 @@ export default function SectionAssignmentsSectionPage() {
         const allClausesAssigned =
           clauses.length > 0 &&
           clauses.every((_, i) => sectionClausesFromSubgraph[i]?.divisionMember != null);
-        const showAssignButton = !allClausesAssigned || reassigningClauseIndex !== null;
+        const showAssignButton = !allClausesAssigned;
         if (!showAssignButton) return null;
         return (
           <div className="flex justify-end">

@@ -1,11 +1,12 @@
 'use client'
 
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import { useConfig, useConnection } from 'wagmi';
 import { Button } from '@/app/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card';
-import { ArrowLeft, FileText, Loader2, CheckCircle, XCircle, UserPlus } from 'lucide-react';
+import { ArrowLeft, FileText, Loader2, CheckCircle, XCircle, UserPlus, MessageCircle } from 'lucide-react';
 import { useContractDoc } from '@/app/contexts/ContractDocContext';
 import { useContracts } from '@/app/contexts/ContractsContext';
 import { useSubgraphRefresh } from '@/app/contexts/SubgraphRefreshContext';
@@ -35,6 +36,7 @@ export default function SectionAssignmentsClausePage() {
   const [contentLoaded, setContentLoaded] = useState(false);
   const [actionLoading, setActionLoading] = useState<'approve' | 'reject' | 'reassign' | null>(null);
   const [showRejectClauseDialog, setShowRejectClauseDialog] = useState(false);
+  const [showRejectReasonModal, setShowRejectReasonModal] = useState(false);
 
   useEffect(() => {
     if (userRole !== null && userRole !== USER_ROLE.DIVISION_LEADER) {
@@ -115,6 +117,9 @@ export default function SectionAssignmentsClausePage() {
   const sectionAt = rawSections[sectionIndex];
   const clauseAt = sectionAt?.clauses?.[clauseIndex];
   const clauseIdOnChain = clauseAt?.id != null ? Number(clauseAt.id) : NaN;
+  const clauseStatus = typeof (clauseAt as { status?: number })?.status === 'number' ? (clauseAt as { status: number }).status : 0;
+  const isClauseRejected = clauseStatus === 3;
+  const clauseRejectReason = (clauseAt as { rejectReason?: string })?.rejectReason ?? '';
   const sectionStatus = typeof (sectionAt as { status?: number })?.status === 'number' ? (sectionAt as { status: number }).status : 0;
   const showReassignForSection = sectionStatus === 0;
 
@@ -258,7 +263,20 @@ export default function SectionAssignmentsClausePage() {
 
       <Card className="gap-2">
         <CardHeader>
-          <CardTitle className="text-lg">View clause content</CardTitle>
+          <div className="flex items-center gap-2">
+            <CardTitle className="text-lg">View clause content</CardTitle>
+            {isClauseRejected && (
+              <button
+                type="button"
+                onClick={() => setShowRejectReasonModal(true)}
+                title="View rejection reason"
+                className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-sm font-medium text-destructive bg-destructive/10 hover:bg-destructive/20 focus:outline-none focus:ring-2 focus:ring-destructive/50 cursor-pointer"
+              >
+                <MessageCircle className="h-4 w-4 shrink-0" />
+                <span>Rejection reason</span>
+              </button>
+            )}
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <textarea
@@ -321,6 +339,34 @@ export default function SectionAssignmentsClausePage() {
         isSubmitting={actionLoading === 'reject'}
         onSubmit={handleRejectWithReason}
       />
+
+      {typeof document !== 'undefined' &&
+        showRejectReasonModal &&
+        createPortal(
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="reject-reason-modal-title"
+            className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+          >
+            <div className="absolute inset-0 bg-black/70" onClick={() => setShowRejectReasonModal(false)} />
+            <div
+              className="relative z-10 w-full max-w-md rounded-lg border bg-background p-6 shadow-lg"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h2 id="reject-reason-modal-title" className="text-lg font-semibold leading-none tracking-tight mb-2">
+                Rejection reason
+              </h2>
+              <p className="text-sm text-muted-foreground whitespace-pre-wrap break-words">{clauseRejectReason || 'No reason provided.'}</p>
+              <div className="flex justify-end mt-4">
+                <Button type="button" variant="outline" onClick={() => setShowRejectReasonModal(false)}>
+                  Close
+                </Button>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
     </div>
   );
 }

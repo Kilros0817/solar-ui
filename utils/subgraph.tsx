@@ -333,6 +333,7 @@ export const getSectionsByDivisionLeader = async (divisionLeaderId: string) => {
         cid
         assignedAt
         status
+        rejectReason
         divisionMember {
           id
           firstName
