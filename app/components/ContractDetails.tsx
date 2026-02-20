@@ -61,6 +61,7 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
   const [clientReassigning, setClientReassigning] = useState(false);
   const [esignSignatureDataUrl, setEsignSignatureDataUrl] = useState<string | null>(null);
   const [esignSubmitting, setEsignSubmitting] = useState(false);
+  const [activeTab, setActiveTab] = useState<string>('overview');
   const { userRole } = useUser();
   const { refresh: refreshSubgraph } = useSubgraphRefresh();
 
@@ -752,7 +753,7 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
             </div>
           </div>
         ) : (
-          <Tabs defaultValue="overview" className="w-full">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-2 md:grid-cols-3 h-auto">
               <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="sections">Section Review</TabsTrigger>

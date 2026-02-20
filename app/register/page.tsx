@@ -304,7 +304,7 @@ export default function RegistrationPage() {
           {/* Wallet Address Field */}
           <div className="space-y-2">
             <Label htmlFor="walletAddress" className="text-sm font-medium">
-              Wallet Address
+              Unique ID
             </Label>
             <div className="relative">
               <Input
