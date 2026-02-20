@@ -2,19 +2,13 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { useConfig, useConnection } from 'wagmi';
 import { Card, CardContent } from '@/app/components/ui/card';
 import { Button } from '@/app/components/ui/button';
-import { reassignClause } from '@/utils/interact';
 import { DIVISION_LABELS, USER_ROLE } from '@/utils/constants';
 import { useUser } from '@/app/contexts/UserContext';
 import { useAssignment } from '@/app/contexts/AssignmentContext';
 import { useDivisionLeaderSections } from '@/app/contexts/DivisionLeaderSectionsContext';
-import { useContractDoc } from '@/app/contexts/ContractDocContext';
-import { useContracts } from '@/app/contexts/ContractsContext';
-import { useSubgraphRefresh } from '@/app/contexts/SubgraphRefreshContext';
-import { FileText, Loader2, Eye, UserPlus } from 'lucide-react';
-import { toast } from 'sonner';
+import { FileText, Loader2, Eye } from 'lucide-react';
 
 type RejectedClauseLeader = {
   id: string;
@@ -35,17 +29,11 @@ function getMemberLabel(m: RejectedClauseLeader['divisionMember']): string {
 
 export default function SectionAssignmentsRejectedPage() {
   const router = useRouter();
-  const config = useConfig();
-  const { address } = useConnection();
   const { userRole } = useUser();
   const { setSelection } = useAssignment();
-  const { refetchDoc } = useContractDoc();
-  const { refetch: refetchContracts } = useContracts();
-  const { refresh: refreshSubgraph } = useSubgraphRefresh();
   const { sections, loading, getDocFromSections, getSectionIndex } = useDivisionLeaderSections();
   const [divisionLabel, setDivisionLabel] = useState('');
   const [workingId, setWorkingId] = useState<string | null>(null);
-  const [reassigningId, setReassigningId] = useState<string | null>(null);
 
   const clauses = useMemo(() => {
     const flat: RejectedClauseLeader[] = [];
@@ -85,38 +73,6 @@ export default function SectionAssignmentsRejectedPage() {
       if (dcat != null) setDivisionLabel(DIVISION_LABELS[dcat] ?? `Division #${dcat}`);
     }
   }, [userRole, sections, divisionLabel]);
-
-  const handleReassign = async (item: RejectedClauseLeader) => {
-    if (!config || !address) {
-      toast.error('Wallet not connected');
-      return;
-    }
-    const clauseId = Number(item.id);
-    if (Number.isNaN(clauseId)) {
-      toast.error('Invalid clause');
-      return;
-    }
-    setReassigningId(item.id);
-    try {
-      const ok = await reassignClause(config, address, clauseId);
-      if (ok) {
-        toast.success('Clause reassigned');
-        setTimeout(async () => {
-          refreshSubgraph();
-          const contractId = item.section?.doc?.id;
-          if (contractId) await refetchDoc(contractId);
-          await refetchContracts();
-        }, 4000);
-      } else {
-        toast.error('Failed to reassign clause');
-      }
-    } catch (e) {
-      console.error('Reassign error:', e);
-      toast.error(e instanceof Error ? e.message : 'Failed to reassign clause');
-    } finally {
-      setReassigningId(null);
-    }
-  };
 
   const handleViewClause = (item: RejectedClauseLeader) => {
     const contractId = item.section?.doc?.id;
@@ -174,11 +130,7 @@ export default function SectionAssignmentsRejectedPage() {
         </Card>
       ) : (
         <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))' }}>
-          {clauses.map((item) => {
-            const sec = sections.find((s) => String(s.id) === String(item.sectionId));
-            const sectionStatus = typeof (sec as { status?: number })?.status === 'number' ? (sec as { status: number }).status : 0;
-            const showReassign = sectionStatus === 0;
-            return (
+          {clauses.map((item) => (
             <Card key={item.id} className="flex flex-col w-full">
               <CardContent className="p-4 flex flex-col gap-3 flex-1">
                 <div className="space-y-1">
@@ -202,22 +154,6 @@ export default function SectionAssignmentsRejectedPage() {
                   <p className="text-sm text-muted-foreground">{getMemberLabel(item.divisionMember)}</p>
                 </div>
                 <div className="flex justify-end gap-2 mt-auto pt-2 border-t">
-                  {showReassign && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="gap-1.5 shrink-0 cursor-pointer"
-                    disabled={reassigningId === item.id}
-                    onClick={() => handleReassign(item)}
-                  >
-                    {reassigningId === item.id ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <UserPlus className="h-3.5 w-3.5" />
-                    )}
-                    {reassigningId === item.id ? 'Reassigning...' : 'Reassign'}
-                  </Button>
-                  )}
                   <Button
                     variant="outline"
                     size="sm"
@@ -231,8 +167,7 @@ export default function SectionAssignmentsRejectedPage() {
                 </div>
               </CardContent>
             </Card>
-            );
-          })}
+          ))}
         </div>
       )}
     </div>
