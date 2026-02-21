@@ -144,9 +144,11 @@ export default function SectionAssignmentsPendingPage() {
                 </div>
                 <div className="space-y-1">
                   <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                    Section ID
+                    Section ID / Clause ID
                   </p>
-                  <p className="text-sm text-muted-foreground">{item.section?.id ?? '—'}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {item.section?.id ?? '—'} / {item.id}
+                  </p>
                 </div>
                 <div className="space-y-1">
                   <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">

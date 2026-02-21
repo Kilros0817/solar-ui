@@ -154,7 +154,7 @@ export default function SectionAssignmentsUnallocatedPage() {
         </Card>
       ) : (
         <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))' }}>
-          {filteredItems.map(({ section }) => {
+          {filteredItems.map(({ section, unallocatedCount }) => {
             const contractTitle = section.doc?.title ?? 'Untitled';
             const client = getClientLabel(section.doc);
             const isViewing = viewingId === section.id;
@@ -181,6 +181,9 @@ export default function SectionAssignmentsUnallocatedPage() {
                       <ClipboardList className="h-4 w-4 text-muted-foreground shrink-0" />
                       <span>Section ID: {section.id}</span>
                     </div>
+                    <p className="text-sm font-medium text-foreground">
+                      {unallocatedCount} unallocated {unallocatedCount === 1 ? 'clause' : 'clauses'}
+                    </p>
                   </div>
                   <div className="flex justify-end mt-auto pt-2 border-t">
                     <Button

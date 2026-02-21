@@ -209,7 +209,7 @@ export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
       return [
         { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, count: null },
         { type: 'header', label: 'Internal Review' },
-        { type: 'item', id: 'internal-all', label: 'All Sections', route: '/section-assignments', icon: ClipboardList, count: counts.all },
+        { type: 'item', id: 'internal-all', label: 'All Sections', route: '/section-assignments', icon: ClipboardList, count: divisionLeaderSections.length },
         { type: 'item', id: 'internal-unallocated', label: 'Unallocated', route: '/section-assignments/unallocated', icon: UserPlus, count: unallocatedCount },
         { type: 'item', id: 'internal-pending', label: 'Pending', route: '/section-assignments/pending', icon: Clock, count: dlCounts?.pending ?? null },
         { type: 'item', id: 'internal-review', label: 'Review', route: '/section-assignments/review', icon: FileSearch, count: dlCounts?.review ?? null },
