@@ -212,7 +212,6 @@ export default function SectionAssignmentsSectionPage() {
   const handleAssign = async () => {
     if (!config || !address || clauses.length === 0 || sectionIdFromSubgraph == null) return;
     setAssigning(true);
-    const assignedDate = new Date().toISOString();
     try {
       // Only assigned clauses: build (memberAddress, payload) for clauses that have a member selected
       const assigned: Array<{ memberAddress: string; clause: Clause }> = [];
@@ -231,11 +230,11 @@ export default function SectionAssignmentsSectionPage() {
         return;
       }
 
+      // Omit assignedDate so same clause + member yields same CID and avoids double-assign issues
       const clausePayloads = assigned.map(({ memberAddress, clause }) => ({
         clauseId: clause.clauseId,
         clauseContent: clause.clauseContent,
         divisionMemberAddress: memberAddress,
-        assignedDate,
       }));
 
       const uploadRes = await fetch(`${URLs.UploadAPI}/clauses`, {

@@ -1,6 +1,6 @@
 {
   "contractName": "SolarDMS",
-  "contractAddress": "0x4E3D1ae2112e83C78964321d92344E0a041A0f2f",
+  "contractAddress": "0xB745D8A7e7F464a2454ee3DD6457C0171f14E17F",
   "abi": [
     {
       "inputs": [],
@@ -10,6 +10,11 @@
     {
       "inputs": [],
       "name": "AlreadySigned",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "DoubleAssign",
       "type": "error"
     },
     {
@@ -981,6 +986,30 @@
           "internalType": "string",
           "name": "email",
           "type": "string"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "sectionId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "string",
+          "name": "clauseCid",
+          "type": "string"
+        }
+      ],
+      "name": "memberOfClauseCid",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "member",
+          "type": "address"
         }
       ],
       "stateMutability": "view",

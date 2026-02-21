@@ -128,7 +128,7 @@ export default function ClauseAssignmentsClausePage() {
     }
     setSubmitting(true);
     try {
-      const assignedDate = new Date().toISOString();
+      // Omit assignedDate so same clause + member yields same CID (avoids double-assign / duplicate CIDs)
       const uploadRes = await fetch(`${URLs.UploadAPI}/clauses`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -137,7 +137,6 @@ export default function ClauseAssignmentsClausePage() {
             clauseId: docClauseId,
             clauseContent,
             divisionMemberAddress: address.toLowerCase(),
-            assignedDate,
           }],
         }),
       });
