@@ -122,6 +122,9 @@ export default function SectionAssignmentsClausePage() {
   const clauseRejectReason = (clauseAt as { rejectReason?: string })?.rejectReason ?? '';
   const sectionStatus = typeof (sectionAt as { status?: number })?.status === 'number' ? (sectionAt as { status: number }).status : 0;
   const showReassignForSection = sectionStatus === 0;
+  // Also show Reassign for approved/rejected clauses (like legal team can reassign section to division leader)
+  const showReassignForClause = clauseStatus === 2 || clauseStatus === 3;
+  const showReassignButton = showReassignForSection || showReassignForClause;
 
   const handleApprove = async () => {
     const sectionCid = (sectionAt as { cid?: string } | undefined)?.cid;
@@ -314,7 +317,7 @@ export default function SectionAssignmentsClausePage() {
               </Button>
             </div>
           )}
-          {(selectedFromRoute === 'rejected' || selectedFromRoute === 'approved') && showReassignForSection && (
+          {(selectedFromRoute === 'rejected' || selectedFromRoute === 'approved') && showReassignButton && (
             <div className="flex items-center gap-3 pt-2 border-t">
               <Button
                 variant="reassign"
