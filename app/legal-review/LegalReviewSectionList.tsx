@@ -50,17 +50,20 @@ export function getClientLabel(doc: SectionFromApi['doc']) {
   return name || (c as { email?: string }).email || '—';
 }
 
+type LegalFromRoute = 'legal-review-tab' | 'legal-approved' | 'legal-rejected';
+
 type Props = {
   title: string;
   subtitle: string;
   statusFilter: 0 | 1 | 2 | 3;
   emptyMessage: string;
+  fromRoute: LegalFromRoute;
 };
 
-export function LegalReviewSectionList({ title, subtitle, statusFilter, emptyMessage }: Props) {
+export function LegalReviewSectionList({ title, subtitle, statusFilter, emptyMessage, fromRoute }: Props) {
   const router = useRouter();
   const { userRole } = useUser();
-  const { setSelectedContract, setSelectedSection } = useAssignment();
+  const { setSelection } = useAssignment();
   const { loadSectionContent, getTotalClauses } = useSectionContent();
   const { sections, loading, getSectionIndex } = useDivisionLeaderSections();
   const [searchTerm, setSearchTerm] = useState('');
@@ -104,8 +107,7 @@ export function LegalReviewSectionList({ title, subtitle, statusFilter, emptyMes
       setViewingId(null);
       return;
     }
-    setSelectedContract(docId);
-    setSelectedSection(sectionIndex);
+    setSelection(docId, sectionIndex, null, null, fromRoute);
     router.push('/section-assignments/section');
     setViewingId(null);
   };

@@ -9,6 +9,7 @@ export default function LegalReviewRejectedPage() {
       subtitle="Sections rejected by Legal Review."
       statusFilter={3}
       emptyMessage="No rejected sections."
+      fromRoute="legal-rejected"
     />
   );
 }

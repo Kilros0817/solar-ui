@@ -21,5 +21,5 @@ export default function ClientContractsApprovedPage() {
     return null;
   }
 
-  return <ClientContractsList title="Approved" statusFilter={2} />;
+  return <ClientContractsList title="Approved" statusFilter={2} fromRoute="client-approved" />;
 }

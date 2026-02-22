@@ -21,5 +21,5 @@ export default function ClientContractsPage() {
     return null;
   }
 
-  return <ClientContractsList title="My Contracts" statusFilter={null} />;
+  return <ClientContractsList title="My Contracts" statusFilter={null} fromRoute="client-my-contracts" />;
 }

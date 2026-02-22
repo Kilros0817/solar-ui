@@ -32,7 +32,7 @@ function getClientLabel(doc: SectionFromApi['doc']) {
 export default function SectionAssignmentsUnallocatedPage() {
   const router = useRouter();
   const { userRole } = useUser();
-  const { setSelectedContract, setSelectedSection } = useAssignment();
+  const { setSelection } = useAssignment();
   const { loadSectionContent, getTotalClauses } = useSectionContent();
   const { sections, loading, getSectionIndex } = useDivisionLeaderSections();
   const [searchTerm, setSearchTerm] = useState('');
@@ -92,8 +92,7 @@ export default function SectionAssignmentsUnallocatedPage() {
       setViewingId(null);
       return;
     }
-    setSelectedContract(docId);
-    setSelectedSection(sectionIndex);
+    setSelection(docId, sectionIndex, null, null, 'unallocated');
     router.push('/section-assignments/section');
     setViewingId(null);
   };

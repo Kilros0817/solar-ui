@@ -21,5 +21,5 @@ export default function ClientContractsReviewPage() {
     return null;
   }
 
-  return <ClientContractsList title="Review" statusFilter={1} />;
+  return <ClientContractsList title="Review" statusFilter={1} fromRoute="client-review" />;
 }

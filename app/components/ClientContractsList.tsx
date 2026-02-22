@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAssignment } from '../contexts/AssignmentContext';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -28,14 +29,25 @@ const CLIENT_STATUS_LABELS: Record<number, string> = {
   4: 'ESigned',
 };
 
+export type ClientFromRoute =
+  | 'client-my-contracts'
+  | 'client-pending'
+  | 'client-review'
+  | 'client-approved'
+  | 'client-rejected'
+  | 'client-esigned';
+
 export function ClientContractsList({
   title,
   statusFilter,
+  fromRoute,
 }: {
   title: string;
   statusFilter: number | null;
+  fromRoute?: ClientFromRoute;
 }) {
   const router = useRouter();
+  const { setSelection } = useAssignment();
   const [searchTerm, setSearchTerm] = useState('');
   const { contracts, loading } = useClientContracts();
 
@@ -51,6 +63,7 @@ export function ClientContractsList({
   });
 
   const handleView = (contractId: number) => {
+    if (fromRoute) setSelection(String(contractId), null, null, null, fromRoute);
     router.push(`/contract/${contractId}`);
   };
 

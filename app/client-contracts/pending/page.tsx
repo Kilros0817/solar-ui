@@ -21,5 +21,5 @@ export default function ClientContractsPendingPage() {
     return null;
   }
 
-  return <ClientContractsList title="Pending" statusFilter={0} />;
+  return <ClientContractsList title="Pending" statusFilter={0} fromRoute="client-pending" />;
 }

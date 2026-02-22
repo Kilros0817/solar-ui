@@ -21,5 +21,5 @@ export default function ClientContractsESignedPage() {
     return null;
   }
 
-  return <ClientContractsList title="ESigned" statusFilter={4} />;
+  return <ClientContractsList title="ESigned" statusFilter={4} fromRoute="client-esigned" />;
 }

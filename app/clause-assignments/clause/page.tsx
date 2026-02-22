@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation';
 import { useConfig, useConnection } from 'wagmi';
 import { Button } from '@/app/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card';
-import { ArrowLeft, FileText, Loader2 } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { ArrowLeft, FileText, Loader2, MessageCircle } from 'lucide-react';
 import { useContractDoc } from '@/app/contexts/ContractDocContext';
 import { useContracts } from '@/app/contexts/ContractsContext';
 import { useSubgraphRefresh } from '@/app/contexts/SubgraphRefreshContext';
@@ -34,6 +35,7 @@ export default function ClauseAssignmentsClausePage() {
   const [subgraphClauseId, setSubgraphClauseId] = useState<number | null>(null);
   const [contentLoaded, setContentLoaded] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [showRejectReasonModal, setShowRejectReasonModal] = useState(false);
 
   useEffect(() => {
     if (userRole !== null && userRole !== USER_ROLE.DIVISION_MEMBER) {
@@ -117,9 +119,17 @@ export default function ClauseAssignmentsClausePage() {
   const contractTitle = doc?.title ?? 'Untitled';
   const divisionLabel = profile ? (DIVISION_LABELS[profile.dcategory] ?? `Division #${profile.dcategory}`) : '';
 
-  const isEditMode = selectedFromRoute === 'clauses' && !selectedClauseCid;
-  const backHref = selectedFromRoute === 'clauses' ? '/clause-assignments/clauses' : selectedFromRoute === 'review' ? '/clause-assignments/review' : selectedFromRoute === 'approved' ? '/clause-assignments/approved' : selectedFromRoute === 'rejected' ? '/clause-assignments/rejected' : '/clause-assignments';
-  const backLabel = selectedFromRoute === 'clauses' ? 'Back to Clauses' : selectedFromRoute === 'review' ? 'Back to Review' : selectedFromRoute === 'approved' ? 'Back to Approved' : selectedFromRoute === 'rejected' ? 'Back to Rejected' : 'Back to Clause Assignments';
+  const rawSectionsForClause = (doc as { sections?: Array<{ clauses?: Array<{ status?: number; rejectReason?: string }> }> })?.sections ?? [];
+  const sectionAtForClause = rawSectionsForClause[sectionIndex];
+  const clauseAt = sectionAtForClause?.clauses?.[clauseIndex];
+  const clauseStatus = typeof (clauseAt as { status?: number })?.status === 'number' ? (clauseAt as { status: number }).status : 0;
+  const isClauseRejected = clauseStatus === 3;
+  const clauseRejectReason = (clauseAt as { rejectReason?: string })?.rejectReason ?? '';
+
+  // Edit mode + Request Review: when from Clauses or Pending, and clause not yet submitted (no CID)
+  const isEditMode = (selectedFromRoute === 'clauses' || selectedFromRoute === 'pending') && !selectedClauseCid;
+  const backHref = selectedFromRoute === 'clauses' ? '/clause-assignments/clauses' : selectedFromRoute === 'pending' ? '/clause-assignments/pending' : selectedFromRoute === 'review' ? '/clause-assignments/review' : selectedFromRoute === 'approved' ? '/clause-assignments/approved' : selectedFromRoute === 'rejected' ? '/clause-assignments/rejected' : '/clause-assignments';
+  const backLabel = selectedFromRoute === 'clauses' ? 'Back to Clauses' : selectedFromRoute === 'pending' ? 'Back to Pending' : selectedFromRoute === 'review' ? 'Back to Review' : selectedFromRoute === 'approved' ? 'Back to Approved' : selectedFromRoute === 'rejected' ? 'Back to Rejected' : 'Back to Clause Assignments';
 
   const handleRequestReview = async () => {
     if (!config || !address || subgraphClauseId == null) {
@@ -214,7 +224,20 @@ export default function ClauseAssignmentsClausePage() {
 
       <Card className="gap-2">
         <CardHeader>
-          <CardTitle className="text-lg">{isEditMode ? 'Edit clause content' : 'View clause content'}</CardTitle>
+          <div className="flex items-center gap-2">
+            <CardTitle className="text-lg">{isEditMode ? 'Edit clause content' : 'View clause content'}</CardTitle>
+            {isClauseRejected && (
+              <button
+                type="button"
+                onClick={() => setShowRejectReasonModal(true)}
+                title="View rejection reason"
+                className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-sm font-medium text-destructive bg-destructive/10 hover:bg-destructive/20 focus:outline-none focus:ring-2 focus:ring-destructive/50 cursor-pointer"
+              >
+                <MessageCircle className="h-4 w-4 shrink-0" />
+                <span>Rejection reason</span>
+              </button>
+            )}
+          </div>
         </CardHeader>
         <CardContent>
           <textarea
@@ -235,6 +258,34 @@ export default function ClauseAssignmentsClausePage() {
           )}
         </CardContent>
       </Card>
+
+      {typeof document !== 'undefined' &&
+        showRejectReasonModal &&
+        createPortal(
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="reject-reason-modal-title"
+            className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+          >
+            <div className="absolute inset-0 bg-black/70" onClick={() => setShowRejectReasonModal(false)} />
+            <div
+              className="relative z-10 w-full max-w-md rounded-lg border bg-background p-6 shadow-lg"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h2 id="reject-reason-modal-title" className="text-lg font-semibold leading-none tracking-tight mb-2">
+                Rejection reason
+              </h2>
+              <p className="text-sm text-muted-foreground whitespace-pre-wrap break-words">{clauseRejectReason || 'No reason provided.'}</p>
+              <div className="flex justify-end mt-4">
+                <Button type="button" variant="outline" onClick={() => setShowRejectReasonModal(false)}>
+                  Close
+                </Button>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
     </div>
   );
 }

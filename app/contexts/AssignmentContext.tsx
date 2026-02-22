@@ -7,11 +7,11 @@ interface AssignmentContextType {
   selectedSectionIndex: number | null;
   selectedClauseIndex: number | null;
   selectedClauseCid: string | null;
-  selectedFromRoute: 'clauses' | 'pending' | 'review' | 'approved' | 'rejected' | null;
+  selectedFromRoute: 'clauses' | 'pending' | 'review' | 'approved' | 'rejected' | 'unallocated' | 'legal-pending' | 'legal-review-tab' | 'legal-approved' | 'legal-rejected' | 'client-my-contracts' | 'client-pending' | 'client-review' | 'client-approved' | 'client-rejected' | 'client-esigned' | null;
   setSelectedContract: (contractId: string | null) => void;
   setSelectedSection: (sectionIndex: number | null) => void;
   setSelectedClause: (clauseIndex: number | null) => void;
-  setSelection: (contractId: string | null, sectionIndex: number | null, clauseIndex?: number | null, clauseCid?: string | null, fromRoute?: 'clauses' | 'pending' | 'review' | 'approved' | 'rejected' | null) => void;
+  setSelection: (contractId: string | null, sectionIndex: number | null, clauseIndex?: number | null, clauseCid?: string | null, fromRoute?: 'clauses' | 'pending' | 'review' | 'approved' | 'rejected' | 'unallocated' | 'legal-pending' | 'legal-review-tab' | 'legal-approved' | 'legal-rejected' | 'client-my-contracts' | 'client-pending' | 'client-review' | 'client-approved' | 'client-rejected' | 'client-esigned' | null) => void;
 }
 
 const AssignmentContext = createContext<AssignmentContextType | undefined>(undefined);
@@ -21,7 +21,7 @@ export function AssignmentProvider({ children }: { children: ReactNode }) {
   const [selectedSectionIndex, setSelectedSectionIndex] = useState<number | null>(null);
   const [selectedClauseIndex, setSelectedClauseIndex] = useState<number | null>(null);
   const [selectedClauseCid, setSelectedClauseCid] = useState<string | null>(null);
-  const [selectedFromRoute, setSelectedFromRoute] = useState<'clauses' | 'pending' | 'review' | 'approved' | 'rejected' | null>(null);
+  const [selectedFromRoute, setSelectedFromRoute] = useState<'clauses' | 'pending' | 'review' | 'approved' | 'rejected' | 'unallocated' | 'legal-pending' | 'legal-review-tab' | 'legal-approved' | 'legal-rejected' | 'client-my-contracts' | 'client-pending' | 'client-review' | 'client-approved' | 'client-rejected' | 'client-esigned' | null>(null);
 
   const setSelectedContract = useCallback((contractId: string | null) => {
     setSelectedContractId(contractId);
@@ -42,7 +42,7 @@ export function AssignmentProvider({ children }: { children: ReactNode }) {
     setSelectedClauseCid(null);
   }, []);
 
-  const setSelection = useCallback((contractId: string | null, sectionIndex: number | null, clauseIndex?: number | null, clauseCid?: string | null, fromRoute?: 'clauses' | 'pending' | 'review' | 'approved' | 'rejected' | null) => {
+  const setSelection = useCallback((contractId: string | null, sectionIndex: number | null, clauseIndex?: number | null, clauseCid?: string | null, fromRoute?: 'clauses' | 'pending' | 'review' | 'approved' | 'rejected' | 'unallocated' | 'legal-pending' | 'legal-review-tab' | 'legal-approved' | 'legal-rejected' | 'client-my-contracts' | 'client-pending' | 'client-review' | 'client-approved' | 'client-rejected' | 'client-esigned' | null) => {
     setSelectedContractId(contractId);
     setSelectedSectionIndex(sectionIndex);
     setSelectedClauseIndex(clauseIndex ?? null);

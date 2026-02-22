@@ -57,7 +57,7 @@ function getClientLabel(doc: SectionFromApi['doc']) {
 export default function LegalReviewPendingPage() {
   const router = useRouter();
   const { userRole } = useUser();
-  const { setSelectedContract, setSelectedSection } = useAssignment();
+  const { setSelection } = useAssignment();
   const { loadSectionContent, getTotalClauses } = useSectionContent();
   const { sections, loading, getSectionIndex, refetch } = useDivisionLeaderSections();
   const { refresh: refreshSubgraph } = useSubgraphRefresh();
@@ -114,8 +114,7 @@ export default function LegalReviewPendingPage() {
       setViewingId(null);
       return;
     }
-    setSelectedContract(docId);
-    setSelectedSection(sectionIndex);
+    setSelection(docId, sectionIndex, null, null, 'legal-pending');
     router.push('/section-assignments/section');
     setViewingId(null);
   };

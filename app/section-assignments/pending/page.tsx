@@ -93,7 +93,7 @@ export default function SectionAssignmentsPendingPage() {
       setWorkingId(null);
       return;
     }
-    setSelection(contractId, secIdx, clauseIdx, item.cid ?? null);
+    setSelection(contractId, secIdx, clauseIdx, item.cid ?? null, 'pending');
     router.push('/section-assignments/clause');
     setWorkingId(null);
   };

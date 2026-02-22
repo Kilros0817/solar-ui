@@ -21,5 +21,5 @@ export default function ClientContractsRejectedPage() {
     return null;
   }
 
-  return <ClientContractsList title="Rejected" statusFilter={3} />;
+  return <ClientContractsList title="Rejected" statusFilter={3} fromRoute="client-rejected" />;
 }

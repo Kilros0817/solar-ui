@@ -13,7 +13,7 @@ export default function PendingPage() {
   const router = useRouter();
   const { userRole } = useUser();
   const { setFrom } = useNewContract();
-  const { setSelectedContract } = useAssignment();
+  const { setSelectedContract, setSelection } = useAssignment();
   const [selectedContractDetails, setSelectedContractDetails] = useState<number | null>(null);
 
   useEffect(() => {
@@ -53,9 +53,12 @@ export default function PendingPage() {
     );
   }
 
-  const onViewContract = isDivisionLeaderForList
-    ? (contractId: number) => setSelectedContract(String(contractId))
-    : (contractId: number) => setSelectedContractDetails(contractId);
+  const onViewContract =
+    isDivisionLeaderForList
+      ? (contractId: number) => setSelectedContract(String(contractId))
+      : userRole === USER_ROLE.LEGAL_TEAM
+        ? (contractId: number) => setSelection(String(contractId), null, null, null, 'pending')
+        : (contractId: number) => setSelectedContractDetails(contractId);
 
   // Only Legal team (and similar) see this page; DM/DL are redirected above
   if (userRole === USER_ROLE.DIVISION_MEMBER || userRole === USER_ROLE.DIVISION_LEADER) {

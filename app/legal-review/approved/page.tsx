@@ -9,6 +9,7 @@ export default function LegalReviewApprovedPage() {
       subtitle="Sections approved by Legal Review."
       statusFilter={2}
       emptyMessage="No sections approved by legal (status 2)."
+      fromRoute="legal-approved"
     />
   );
 }

@@ -10,10 +10,7 @@ import {
   Archive,
   FolderOpen,
   Users,
-  Search,
   ClipboardList,
-  FileEdit,
-  BarChart3,
   RefreshCw,
   FileSearch,
   PenLine,
@@ -39,11 +36,13 @@ import { useDivisionLeaderSections } from '@/app/contexts/DivisionLeaderSections
 import { useDivisionMemberClauses } from '@/app/contexts/DivisionMemberClausesContext';
 import { useClientContracts, getClientContractCounts } from '@/app/contexts/ClientContractsContext';
 import { useSectionContent } from '@/app/contexts/SectionContentContext';
+import { useAssignment } from '@/app/contexts/AssignmentContext';
 
 export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
   const router = useRouter();
   const pathname = usePathname();
   const { userRole, setUserRole } = useUser();
+  const { selectedFromRoute } = useAssignment();
   const { contracts } = useContracts();
   const leaderSections = useDivisionLeaderSections();
   const memberClauses = useDivisionMemberClauses();
@@ -149,7 +148,6 @@ export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
     '/clause-assignments': 'clause-assignments',
     '/clause-assignments/review': 'review',
     '/clause-assignments/clauses': 'clause-assignments',
-    '/clause-assignments/clause': 'review',
     '/clause-assignments/approved': 'approved',
     '/clause-assignments/rejected': 'rejected-tasks',
     '/section-assignments': 'internal-all',
@@ -171,8 +169,62 @@ export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
     '/client-contracts/esigned': 'client-esigned',
   };
 
-  // Get current tab from pathname
-  const currentTab = routeToTabMap[pathname] || activeTab;
+  // Get current tab from pathname; when on clause view, use the menu they came from
+  const fromRouteToTabMember: Record<string, string> = {
+    clauses: 'clause-assignments',
+    pending: 'pending',
+    review: 'review',
+    approved: 'approved',
+    rejected: 'rejected-tasks',
+  };
+  const fromRouteToTabLeader: Record<string, string> = {
+    unallocated: 'internal-unallocated',
+    pending: 'internal-pending',
+    review: 'internal-review',
+    approved: 'internal-approved',
+    rejected: 'internal-rejected',
+    'legal-pending': 'legal-pending',
+    'legal-review-tab': 'legal-review-tab',
+    'legal-approved': 'legal-approved',
+    'legal-rejected': 'legal-rejected',
+  };
+  const fromRouteToTabLegal: Record<string, string> = {
+    pending: 'pending',
+    review: 'review',
+    approved: 'approved',
+    'legal-rejected': 'legal-rejected',
+  };
+  const fromRouteToTabClient: Record<string, string> = {
+    'client-my-contracts': 'client-my-contracts',
+    'client-pending': 'client-pending',
+    'client-review': 'client-review',
+    'client-approved': 'client-approved',
+    'client-rejected': 'client-rejected',
+    'client-esigned': 'client-esigned',
+  };
+  const isContractViewPath = pathname.startsWith('/contract/');
+  const currentTab =
+    pathname === '/clause-assignments/clause' &&
+    userRole === USER_ROLE.DIVISION_MEMBER &&
+    selectedFromRoute &&
+    fromRouteToTabMember[selectedFromRoute]
+      ? fromRouteToTabMember[selectedFromRoute]
+      : (pathname === '/section-assignments/clause' || pathname === '/section-assignments/section') &&
+          userRole === USER_ROLE.DIVISION_LEADER &&
+          selectedFromRoute &&
+          fromRouteToTabLeader[selectedFromRoute]
+        ? fromRouteToTabLeader[selectedFromRoute]
+        : isContractViewPath &&
+          userRole === USER_ROLE.LEGAL_TEAM &&
+          selectedFromRoute &&
+          fromRouteToTabLegal[selectedFromRoute]
+        ? fromRouteToTabLegal[selectedFromRoute]
+        : isContractViewPath &&
+          userRole === USER_ROLE.CLIENT &&
+          selectedFromRoute &&
+          fromRouteToTabClient[selectedFromRoute]
+        ? fromRouteToTabClient[selectedFromRoute]
+        : routeToTabMap[pathname] || activeTab;
 
   // Define menu items based on user role (contract counts from subgraph)
   const counts = getContractCounts(contracts);

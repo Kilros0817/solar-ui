@@ -373,6 +373,7 @@ export const getContractsByDivisionMember = async (divisionMemberId: string) => 
       cid
       assignedAt
       status
+      rejectReason
       section {
         id
         cid

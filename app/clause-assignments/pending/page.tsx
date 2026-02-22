@@ -50,7 +50,7 @@ export default function ClauseAssignmentsPendingPage() {
       setWorkingId(null);
       return;
     }
-    setSelection(contractId, idx.sectionIndex, idx.clauseIndex, null, 'clauses');
+    setSelection(contractId, idx.sectionIndex, idx.clauseIndex, null, 'pending');
     router.push('/clause-assignments/clause');
     setWorkingId(null);
   };

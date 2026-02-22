@@ -5,11 +5,13 @@ import { useRouter } from 'next/navigation';
 import { ContractList } from '@/app/components/ContractList';
 import { ContractDetails } from '@/app/components/ContractDetails';
 import { useUser } from '@/app/contexts/UserContext';
+import { useAssignment } from '@/app/contexts/AssignmentContext';
 import { USER_ROLE } from '@/utils/constants';
 
 export default function RejectedPage() {
   const router = useRouter();
   const { userRole } = useUser();
+  const { setSelection } = useAssignment();
   const [selectedContract, setSelectedContract] = useState<number | null>(null);
 
   useEffect(() => {
@@ -40,7 +42,10 @@ export default function RejectedPage() {
       title="Rejected"
       filterStatus="rejected"
       onCreateContract={() => {}}
-      onViewContract={(contractId) => setSelectedContract(contractId)}
+      onViewContract={(contractId) => {
+        setSelection(String(contractId), null, null, null, 'legal-rejected');
+        setSelectedContract(contractId);
+      }}
       showCreateButton={false}
       showCreateWhenEmpty={false}
       emptySubtext="No rejected contracts."

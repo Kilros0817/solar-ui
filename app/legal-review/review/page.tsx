@@ -9,6 +9,7 @@ export default function LegalReviewReviewPage() {
       subtitle="Sections submitted to Legal Review. Open a section to view or review."
       statusFilter={1}
       emptyMessage="No sections in review (status 1)."
+      fromRoute="legal-review-tab"
     />
   );
 }

@@ -6,12 +6,14 @@ import { ContractList } from '../components/ContractList';
 import { ContractDetails } from '../components/ContractDetails';
 import { useUser } from '../contexts/UserContext';
 import { useNewContract } from '../contexts/NewContractContext';
+import { useAssignment } from '../contexts/AssignmentContext';
 import { USER_ROLE } from '@/utils/constants';
 
 export default function ReviewPage() {
   const router = useRouter();
   const { userRole } = useUser();
   const { setFrom } = useNewContract();
+  const { setSelection } = useAssignment();
   const [selectedContract, setSelectedContract] = useState<number | null>(null);
 
   useEffect(() => {
@@ -44,7 +46,10 @@ export default function ReviewPage() {
       title="Review"
       filterStatus="division-request"
       onCreateContract={handleCreateContract}
-      onViewContract={(contractId) => setSelectedContract(contractId)}
+      onViewContract={(contractId) => {
+        setSelection(String(contractId), null, null, null, 'review');
+        setSelectedContract(contractId);
+      }}
       showCreateButton={canCreateContract}
       showCreateWhenEmpty={false}
     />
