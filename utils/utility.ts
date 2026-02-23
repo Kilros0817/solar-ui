@@ -81,6 +81,65 @@ export const formatRelativeDate = (dateStr: number): string => {
   return date.toLocaleDateString();
 };
 
+/** Clause history type: 0 assign, 1 request, 2 approve, 3 reject, 4 reassign */
+const CLAUSE_HISTORY_ACTIONS: Record<number, string> = {
+  0: "Assigned this clause",
+  1: "Requested review",
+  2: "Approved this clause",
+  3: "Rejected this clause",
+  4: "Reassigned this clause",
+};
+
+const CLAUSE_HISTORY_TYPE_BY_STRING: Record<string, number> = {
+  assign: 0,
+  requested: 1,
+  request: 1,
+  approve: 2,
+  approved: 2,
+  reject: 3,
+  rejected: 3,
+  reassign: 4,
+  reassigned: 4,
+};
+
+/**
+ * Formats a clause history timestamp (seconds since epoch) to a locale date string.
+ * @param timestampSeconds - Unix timestamp in seconds (e.g. 1771765060)
+ * @returns Formatted date string (e.g. "2/23/2026")
+ */
+export const formatClauseHistoryDate = (timestampSeconds: number): string => {
+  const date = new Date(timestampSeconds * 1000);
+  return date.toLocaleDateString();
+};
+
+/**
+ * Returns a readable sentence for a clause history item.
+ * @param item - { type: 0|1|2|3|4 or string, date: number (seconds) or string }
+ * @returns e.g. "Assigned this clause at 2/23/2026"
+ */
+export const formatClauseHistoryReadable = (item: {
+  type?: string | number;
+  date?: string | number;
+}): string => {
+  let action = "Updated";
+  const typeRaw = item.type;
+  if (typeof typeRaw === "number" && typeRaw in CLAUSE_HISTORY_ACTIONS) {
+    action = CLAUSE_HISTORY_ACTIONS[typeRaw];
+  } else if (typeof typeRaw === "string") {
+    const normalized = typeRaw.toLowerCase().trim();
+    const num = CLAUSE_HISTORY_TYPE_BY_STRING[normalized];
+    if (num !== undefined) action = CLAUSE_HISTORY_ACTIONS[num];
+  }
+
+  let dateStr = "";
+  const dateVal = item.date;
+  if (dateVal != null) {
+    const sec = typeof dateVal === "number" ? dateVal : parseInt(String(dateVal), 10);
+    if (!Number.isNaN(sec)) dateStr = formatClauseHistoryDate(sec);
+  }
+  return dateStr ? `${action} at ${dateStr}` : action;
+};
+
 /** Normalize sectionContent from gateway (may be array of { clauseId, clauseContent } or strings) to Clause[]. */
 function normalizeSectionContent(
   raw: unknown,
@@ -199,3 +258,5 @@ export const approveClauseWithSectionUpdate = async (
   const sectionCid = await uploadSectionToPinata(newSection);
   return approveClause(config, account, clauseId, sectionCid);
 };
+
+

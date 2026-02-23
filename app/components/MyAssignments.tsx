@@ -15,7 +15,7 @@ import {
   TableRow,
 } from './ui/table';
 import { FileText, Loader2, Eye, ClipboardList, AlertCircle } from 'lucide-react';
-import { getCurrentUserProfile, getContractsByDivisionMember } from '@/utils/subgraph';
+import { getCurrentUserProfile, getClausesByDivisionMember } from '@/utils/subgraph';
 import { CONTRACT_STATUS_LABELS, DIVISION_LABELS, USER_ROLE } from '@/utils/constants';
 import { formatRelativeDate } from '@/utils/utility';
 import { useUser } from '@/app/contexts/UserContext';
@@ -58,7 +58,7 @@ export function MyAssignments() {
         const memberDcategory = Number(profile.dcategory);
         setDivisionLabel(DIVISION_LABELS[memberDcategory] ?? `Division #${memberDcategory}`);
 
-        const clauses = await getContractsByDivisionMember(address);
+        const clauses = await getClausesByDivisionMember(address);
         const list = Array.isArray(clauses) ? clauses : [];
         type DocFromClause = { id: string; title?: string; client?: { firstName?: string; lastName?: string }; category?: number; createdAt?: number | string; status?: number };
         const byDocId = new Map<string, { title: string; client: string; category?: string; assignedClauseCount: number; createdAt?: number; status?: number }>();

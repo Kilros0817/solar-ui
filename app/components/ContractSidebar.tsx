@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import {
   LayoutDashboard,
@@ -37,16 +37,20 @@ import { useDivisionMemberClauses } from '@/app/contexts/DivisionMemberClausesCo
 import { useClientContracts, getClientContractCounts } from '@/app/contexts/ClientContractsContext';
 import { useSectionContent } from '@/app/contexts/SectionContentContext';
 import { useAssignment } from '@/app/contexts/AssignmentContext';
+import { useSubgraphRefresh } from '@/app/contexts/SubgraphRefreshContext';
 
 export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
   const router = useRouter();
   const pathname = usePathname();
   const { userRole, setUserRole } = useUser();
   const { selectedFromRoute } = useAssignment();
-  const { contracts } = useContracts();
+  const { contracts, refetch: refetchContracts } = useContracts();
   const leaderSections = useDivisionLeaderSections();
   const memberClauses = useDivisionMemberClauses();
+  const clientContracts = useClientContracts();
   const { loadSectionContent, getTotalClauses } = useSectionContent();
+  const { refresh: refreshSubgraph } = useSubgraphRefresh();
+  const [refreshing, setRefreshing] = useState(false);
 
   const divisionMemberCounts =
     userRole === USER_ROLE.DIVISION_MEMBER && memberClauses.clauses.length >= 0
@@ -84,10 +88,9 @@ export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
 
   const divisionLeaderSections = leaderSections.sections;
 
-  const clientContracts = useClientContracts().contracts;
   const clientCounts =
-    userRole === USER_ROLE.CLIENT && clientContracts.length >= 0
-      ? getClientContractCounts(clientContracts)
+    userRole === USER_ROLE.CLIENT && clientContracts.contracts.length >= 0
+      ? getClientContractCounts(clientContracts.contracts)
       : null;
 
   // For division leaders, compute section-level status counts for Legal Review menu.
@@ -305,7 +308,7 @@ export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
       ];
     }
 
-    // Division Member - Clause assignments from getContractsByDivisionMember
+    // Division Member - Clause assignments from getClausesByDivisionMember
     // Clause Assignments = all; Pending = status 0; Review = status 1; Approved = status 2; Rejected = status 3
     if (userRole === USER_ROLE.DIVISION_MEMBER) {
       const dm = divisionMemberCounts;
@@ -377,17 +380,41 @@ export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
     { value: USER_ROLE.ADMIN as UserRole, label: 'Administrator' },
   ];
 
+  const handleRefresh = async () => {
+    if (refreshing) return;
+    setRefreshing(true);
+    try {
+      refreshSubgraph();
+      await refetchContracts();
+      if (userRole === USER_ROLE.CLIENT) await clientContracts.refetch();
+    } catch (e) {
+      console.error('Refresh failed:', e);
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
   return (
     <aside className="w-64 border-r bg-card h-full min-h-0 flex flex-col shrink-0">
       <div className="p-6 border-b shrink-0">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center shrink-0">
             <FileText className="h-4 w-4 text-primary-foreground" />
           </div>
-          <div>
+          <div className="min-w-0 flex-1">
             <h2 className="font-semibold">ContractFlow</h2>
             <p className="text-xs text-muted-foreground">{getRoleLabel()}</p>
           </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 shrink-0"
+            onClick={handleRefresh}
+            disabled={refreshing}
+            title="Refresh data"
+          >
+            <RefreshCw className={cn('h-4 w-4', refreshing && 'animate-spin')} />
+          </Button>
         </div>
       </div>
       

@@ -365,7 +365,7 @@ export const getSectionsByDivisionLeader = async (divisionLeaderId: string) => {
   }
 }
 
-export const getContractsByDivisionMember = async (divisionMemberId: string) => {
+export const getClausesByDivisionMember = async (divisionMemberId: string) => {
   const memberId = divisionMemberId.toLowerCase();
   const query = `{
     clauses(where: {divisionMember: "${memberId}"}) {
@@ -406,6 +406,65 @@ export const getContractsByDivisionMember = async (divisionMemberId: string) => 
     return [];
   }
 }
+
+export const getClauseHistories = async (clauseId: string) => {
+  const query = `{
+    clauseHistories(orderBy: date, where: {clause: "${clauseId}"}) {
+      type
+      id
+      date
+      cid
+    }
+  }`;
+  try {
+    const res = await getDataFromSubgraph(query);
+    const histories = (res.data as any).clauseHistories || [];
+    return histories;
+  } catch (e) {
+    console.log(e, "============error in get histories by clauseId from subgraph============");
+    return [];
+  }
+}
+
+export const getSectionHistories = async (sectionId: string) => {
+  const query = `{
+    sectionHistories(where: {section: "${sectionId}"}) {
+      type
+      id
+      date
+      cid
+    }
+  }`;
+  try {
+    const res = await getDataFromSubgraph(query);
+    const histories = (res.data as any).sectionHistories || [];
+    return histories;
+  } catch (e) {
+    console.log(e, "============error in get histories by sectionId from subgraph============");
+    return [];
+  }
+}
+
+export const getContractHistories = async (docId: string) => {
+  const query = `{
+    docHistories(where: {document: "${docId}"}) {
+      type
+      id
+      date
+      cid
+    }
+  }`;
+  try {
+    const res = await getDataFromSubgraph(query);
+    const histories = (res.data as any).docHistories || [];
+    return histories;
+  } catch (e) {
+    console.log(e, "============error in get histories by docId from subgraph============");
+    return [];
+  }
+}
+
+
 
 interface User {
   id: string;

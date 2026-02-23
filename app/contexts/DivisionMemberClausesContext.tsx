@@ -2,12 +2,12 @@
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { useConnection } from 'wagmi';
-import { getContractsByDivisionMember } from '@/utils/subgraph';
+import { getClausesByDivisionMember } from '@/utils/subgraph';
 import { useUser } from './UserContext';
 import { useSubgraphRefresh } from './SubgraphRefreshContext';
 import { USER_ROLE } from '@/utils/constants';
 
-export type ClauseFromMember = Awaited<ReturnType<typeof getContractsByDivisionMember>>[number];
+export type ClauseFromMember = Awaited<ReturnType<typeof getClausesByDivisionMember>>[number];
 
 type SectionLike = ClauseFromMember['section'] & { clauses: ClauseFromMember[] };
 type DocLike = NonNullable<ClauseFromMember['section']>['doc'] & { sections: SectionLike[] };
@@ -38,7 +38,7 @@ export function DivisionMemberClausesProvider({ children }: { children: React.Re
     setLoading(true);
     setError(null);
     try {
-      const list = await getContractsByDivisionMember(address);
+      const list = await getClausesByDivisionMember(address);
       setClauses(Array.isArray(list) ? list : []);
     } catch (e) {
       console.error('Failed to load clauses:', e);
