@@ -70,6 +70,8 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
   const [showDocHistoryModal, setShowDocHistoryModal] = useState(false);
   const [docHistories, setDocHistories] = useState<DocHistoryItem[]>([]);
   const [loadingDocHistories, setLoadingDocHistories] = useState(false);
+  const [viewHistoryDocContent, setViewHistoryDocContent] = useState<ContractDocPayload | null>(null);
+  const [loadingViewHistoryCid, setLoadingViewHistoryCid] = useState<string | null>(null);
   const { userRole } = useUser();
   const { refresh: refreshSubgraph } = useSubgraphRefresh();
 
@@ -367,6 +369,7 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
     setShowDocHistoryModal(true);
     setLoadingDocHistories(true);
     setDocHistories([]);
+    setViewHistoryDocContent(null);
     try {
       const list = await getContractHistories(String(contractId));
       const sorted = Array.isArray(list)
@@ -383,6 +386,21 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
       setDocHistories([]);
     } finally {
       setLoadingDocHistories(false);
+    }
+  };
+
+  const handleViewDocHistoryCid = async (cid: string) => {
+    if (!cid || loadingViewHistoryCid) return;
+    setLoadingViewHistoryCid(cid);
+    try {
+      const res = await fetch(`${URLs.TBGateWay}${cid}`);
+      const data = res.ok ? await res.json() : null;
+      setViewHistoryDocContent(data as ContractDocPayload);
+    } catch (e) {
+      console.error('Failed to load document from history:', e);
+      toast.error('Failed to load content');
+    } finally {
+      setLoadingViewHistoryCid(null);
     }
   };
 
@@ -1005,7 +1023,25 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
                 <ul className="space-y-2 overflow-y-auto flex-1 min-h-0 pr-1">
                   {docHistories.map((h, i) => (
                     <li key={h.id ?? i} className="text-sm rounded-md border bg-muted/30 px-3 py-2">
-                      <span className="text-foreground">{formatDocHistoryReadable(h)}</span>
+                      {h.cid ? (
+                        <button
+                          type="button"
+                          onClick={() => handleViewDocHistoryCid(h.cid!)}
+                          disabled={!!loadingViewHistoryCid}
+                          className="clause-history-link text-left w-full text-foreground cursor-pointer"
+                        >
+                          {loadingViewHistoryCid === h.cid ? (
+                            <span className="inline-flex items-center gap-1.5">
+                              <Loader2 className="h-3.5 w-3.5 animate-spin shrink-0" />
+                              {formatDocHistoryReadable(h)}
+                            </span>
+                          ) : (
+                            formatDocHistoryReadable(h)
+                          )}
+                        </button>
+                      ) : (
+                        <span className="text-foreground">{formatDocHistoryReadable(h)}</span>
+                      )}
                     </li>
                   ))}
                 </ul>
@@ -1014,6 +1050,44 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
                 <Button type="button" variant="outline" onClick={() => setShowDocHistoryModal(false)}>
                   Close
                 </Button>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
+
+      {typeof document !== 'undefined' &&
+        viewHistoryDocContent &&
+        createPortal(
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="doc-history-content-modal-title"
+            className="fixed inset-0 z-[10000] flex items-center justify-center p-4"
+          >
+            <div className="absolute inset-0 bg-black/70" onClick={() => setViewHistoryDocContent(null)} />
+            <div
+              className="relative z-10 w-full max-w-3xl max-h-[90vh] rounded-lg border bg-background shadow-lg flex flex-col"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between p-4 border-b shrink-0">
+                <h2 id="doc-history-content-modal-title" className="text-lg font-semibold">
+                  Document at this point in history
+                </h2>
+                <Button type="button" variant="outline" size="sm" onClick={() => setViewHistoryDocContent(null)}>
+                  Close
+                </Button>
+              </div>
+              <div className="overflow-y-auto flex-1 p-4 min-h-0">
+                <ContractDocumentTemplate
+                  title={viewHistoryDocContent.contractTitle ?? contract?.title ?? 'Untitled'}
+                  client={viewHistoryDocContent.client ?? contract?.client ?? ''}
+                  value={contract?.value ?? ''}
+                  createdDate={contract?.createdDate ?? ''}
+                  docContent={viewHistoryDocContent}
+                  showSignatureSection={false}
+                  gatewayBaseUrl={URLs.TBGateWay}
+                />
               </div>
             </div>
           </div>,

@@ -193,10 +193,12 @@ export const formatSectionHistoryReadable = (item: {
 /** Document/contract history type labels. */
 const DOC_HISTORY_ACTIONS: Record<number, string> = {
   0: "Contract created",
-  1: "Submitted to Legal",
-  2: "Submitted to Client",
-  3: "Client approved",
-  4: "Client rejected",
+  1: "Submitted to Client",
+  2: "Client Approved",
+  3: "Client Rejected",
+  4: "Client ESigned",
+  5: "Legal Team ESigned",
+  6: "Client Reassigned Contract",
 };
 
 const DOC_HISTORY_TYPE_BY_STRING: Record<string, number> = {

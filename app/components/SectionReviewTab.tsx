@@ -15,13 +15,15 @@ import {
   RefreshCw,
   Loader2,
   History,
+  RotateCcw,
 } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collapsible';
 import { useState, useCallback } from 'react';
-import { USER_ROLE, CONTRACT_STATUS } from '@/utils/constants';
+import { USER_ROLE, CONTRACT_STATUS, URLs } from '@/utils/constants';
 import { getSectionHistories } from '@/utils/subgraph';
 import { formatSectionHistoryReadable } from '@/utils/utility';
 import { toast } from 'sonner';
+import type { DocSection } from '@/app/data/interfaces';
 import type { SectionReviewTabProps } from '../data/interfaces';
 import { RejectReasonDialog } from './RejectReasonDialog';
 
@@ -41,6 +43,9 @@ export function SectionReviewTab({
   const [sectionHistorySectionId, setSectionHistorySectionId] = useState<string | null>(null);
   const [sectionHistories, setSectionHistories] = useState<SectionHistoryItem[]>([]);
   const [loadingSectionHistories, setLoadingSectionHistories] = useState(false);
+  const [loadingViewHistoryCid, setLoadingViewHistoryCid] = useState<string | null>(null);
+  const [sectionIdViewingPast, setSectionIdViewingPast] = useState<string | null>(null);
+  const [pastSectionDisplay, setPastSectionDisplay] = useState<{ sectionName: string; content: string } | null>(null);
 
   const openSectionHistoryModal = useCallback(async (sectionId: string) => {
     setSectionHistorySectionId(sectionId);
@@ -63,6 +68,36 @@ export function SectionReviewTab({
     } finally {
       setLoadingSectionHistories(false);
     }
+  }, []);
+
+  const handleViewSectionHistoryCid = useCallback(async (cid: string) => {
+    const sectionId = sectionHistorySectionId;
+    if (!cid || !sectionId || loadingViewHistoryCid) return;
+    setLoadingViewHistoryCid(cid);
+    try {
+      const res = await fetch(`${URLs.TBGateWay}${cid}`);
+      const data = res.ok ? (await res.json()) : null;
+      const section = data as DocSection | null;
+      const sectionName = section?.sectionName ?? 'Section';
+      const sectionContent = section?.sectionContent ?? [];
+      const contentPreview = sectionContent
+        .filter((c) => c?.clauseContent != null)
+        .map((c) => (c as { clauseContent: string }).clauseContent)
+        .join('\n\n');
+      setSectionIdViewingPast(sectionId);
+      setPastSectionDisplay({ sectionName, content: contentPreview || 'No content.' });
+      setSectionHistorySectionId(null);
+    } catch (e) {
+      console.error('Failed to load section from history:', e);
+      toast.error('Failed to load content');
+    } finally {
+      setLoadingViewHistoryCid(null);
+    }
+  }, [loadingViewHistoryCid, sectionHistorySectionId]);
+
+  const goToCurrentSection = useCallback(() => {
+    setSectionIdViewingPast(null);
+    setPastSectionDisplay(null);
   }, []);
 
   const getSectionStatusBadge = (statusNum?: number) => {
@@ -232,7 +267,11 @@ export function SectionReviewTab({
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-2 flex-wrap">
-                            <h4 className="font-semibold">{section.name}</h4>
+                            <h4 className="font-semibold">
+                              {sectionIdViewingPast === section.id && pastSectionDisplay
+                                ? pastSectionDisplay.sectionName
+                                : section.name}
+                            </h4>
                             {getSectionStatusBadge(section.statusNum)}
                             <Button
                               type="button"
@@ -245,6 +284,19 @@ export function SectionReviewTab({
                               <History className="h-3.5 w-3.5" />
                               History
                             </Button>
+                            {sectionIdViewingPast === section.id && (
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                className="gap-1.5 h-8 shrink-0"
+                                onClick={goToCurrentSection}
+                                title="View current version of section"
+                              >
+                                <RotateCcw className="h-3.5 w-3.5" />
+                                Go to current
+                              </Button>
+                            )}
                           </div>
                           {section.divisionLeaderName && (
                             <p className="text-sm text-muted-foreground mb-3">
@@ -252,7 +304,11 @@ export function SectionReviewTab({
                             </p>
                           )}
                           <div className="bg-white rounded p-3 border max-h-32 overflow-y-auto">
-                            <p className="text-sm leading-relaxed line-clamp-3">{section.content}</p>
+                            <p className="text-sm leading-relaxed line-clamp-3">
+                              {sectionIdViewingPast === section.id && pastSectionDisplay
+                                ? pastSectionDisplay.content
+                                : section.content}
+                            </p>
                           </div>
                         </div>
                       </div>
@@ -369,7 +425,25 @@ export function SectionReviewTab({
                 <ul className="space-y-2 overflow-y-auto flex-1 min-h-0 pr-1">
                   {sectionHistories.map((h, i) => (
                     <li key={h.id ?? i} className="text-sm rounded-md border bg-muted/30 px-3 py-2">
-                      <span className="text-foreground">{formatSectionHistoryReadable(h)}</span>
+                      {h.cid ? (
+                        <button
+                          type="button"
+                          onClick={() => handleViewSectionHistoryCid(h.cid!)}
+                          disabled={!!loadingViewHistoryCid}
+                          className="clause-history-link text-left w-full text-foreground cursor-pointer"
+                        >
+                          {loadingViewHistoryCid === h.cid ? (
+                            <span className="inline-flex items-center gap-1.5">
+                              <Loader2 className="h-3.5 w-3.5 animate-spin shrink-0" />
+                              {formatSectionHistoryReadable(h)}
+                            </span>
+                          ) : (
+                            formatSectionHistoryReadable(h)
+                          )}
+                        </button>
+                      ) : (
+                        <span className="text-foreground">{formatSectionHistoryReadable(h)}</span>
+                      )}
                     </li>
                   ))}
                 </ul>
