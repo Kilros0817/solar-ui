@@ -1,5 +1,6 @@
 'use client'
 
+import { createPortal } from 'react-dom';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
@@ -13,12 +14,18 @@ import {
   UserPlus,
   RefreshCw,
   Loader2,
+  History,
 } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collapsible';
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { USER_ROLE, CONTRACT_STATUS } from '@/utils/constants';
+import { getSectionHistories } from '@/utils/subgraph';
+import { formatSectionHistoryReadable } from '@/utils/utility';
+import { toast } from 'sonner';
 import type { SectionReviewTabProps } from '../data/interfaces';
 import { RejectReasonDialog } from './RejectReasonDialog';
+
+type SectionHistoryItem = { type?: string; id?: string; date?: string | number; cid?: string | null };
 
 export function SectionReviewTab({
   sections,
@@ -31,6 +38,32 @@ export function SectionReviewTab({
 }: SectionReviewTabProps) {
   const [expandedDivisions, setExpandedDivisions] = useState<Record<string, boolean>>({});
   const [rejectSectionId, setRejectSectionId] = useState<string | null>(null);
+  const [sectionHistorySectionId, setSectionHistorySectionId] = useState<string | null>(null);
+  const [sectionHistories, setSectionHistories] = useState<SectionHistoryItem[]>([]);
+  const [loadingSectionHistories, setLoadingSectionHistories] = useState(false);
+
+  const openSectionHistoryModal = useCallback(async (sectionId: string) => {
+    setSectionHistorySectionId(sectionId);
+    setLoadingSectionHistories(true);
+    setSectionHistories([]);
+    try {
+      const list = await getSectionHistories(sectionId);
+      const sorted = Array.isArray(list)
+        ? [...list].sort((a, b) => {
+            const da = a.date != null ? Number(a.date) : 0;
+            const db = b.date != null ? Number(b.date) : 0;
+            return da - db;
+          })
+        : [];
+      setSectionHistories(sorted);
+    } catch (e) {
+      console.error('Failed to load section histories:', e);
+      toast.error('Failed to load history');
+      setSectionHistories([]);
+    } finally {
+      setLoadingSectionHistories(false);
+    }
+  }, []);
 
   const getSectionStatusBadge = (statusNum?: number) => {
     switch (statusNum) {
@@ -198,9 +231,20 @@ export function SectionReviewTab({
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-2">
+                          <div className="flex items-center gap-2 mb-2 flex-wrap">
                             <h4 className="font-semibold">{section.name}</h4>
                             {getSectionStatusBadge(section.statusNum)}
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="gap-1.5 h-8 shrink-0"
+                              onClick={() => openSectionHistoryModal(section.id)}
+                              title="View section history"
+                            >
+                              <History className="h-3.5 w-3.5" />
+                              History
+                            </Button>
                           </div>
                           {section.divisionLeaderName && (
                             <p className="text-sm text-muted-foreground mb-3">
@@ -297,6 +341,48 @@ export function SectionReviewTab({
           </CardContent>
         </Card>
       )}
+
+      {typeof document !== 'undefined' &&
+        sectionHistorySectionId !== null &&
+        createPortal(
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="section-history-modal-title"
+            className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+          >
+            <div className="absolute inset-0 bg-black/70" onClick={() => setSectionHistorySectionId(null)} />
+            <div
+              className="relative z-10 w-sm rounded-lg border bg-background p-6 shadow-lg max-h-[80vh] flex flex-col"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h2 id="section-history-modal-title" className="text-lg font-semibold leading-none tracking-tight mb-4">
+                Section history
+              </h2>
+              {loadingSectionHistories ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                </div>
+              ) : sectionHistories.length === 0 ? (
+                <p className="text-sm text-muted-foreground py-4">No history for this section.</p>
+              ) : (
+                <ul className="space-y-2 overflow-y-auto flex-1 min-h-0 pr-1">
+                  {sectionHistories.map((h, i) => (
+                    <li key={h.id ?? i} className="text-sm rounded-md border bg-muted/30 px-3 py-2">
+                      <span className="text-foreground">{formatSectionHistoryReadable(h)}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <div className="flex justify-end mt-4 pt-2 border-t">
+                <Button type="button" variant="outline" onClick={() => setSectionHistorySectionId(null)}>
+                  Close
+                </Button>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
 
       <RejectReasonDialog
         open={rejectSectionId !== null}

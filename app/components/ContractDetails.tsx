@@ -8,8 +8,9 @@ import { ContractDocumentTemplate } from './ContractDocumentTemplate';
 import { SectionReviewTab } from './SectionReviewTab';
 import { SignaturePad } from './SignaturePad';
 import { RejectReasonDialog } from './RejectReasonDialog';
-import { ArrowLeft, FileText, Calendar, DollarSign, Tag, ClipboardList, Building2, Send, Loader2, Check, X, RefreshCw } from 'lucide-react';
-import { getContractById } from '@/utils/subgraph';
+import { createPortal } from 'react-dom';
+import { ArrowLeft, FileText, Calendar, DollarSign, Tag, ClipboardList, Building2, Send, Loader2, Check, X, RefreshCw, History } from 'lucide-react';
+import { getContractById, getContractHistories } from '@/utils/subgraph';
 import { legalReviewSection, reassignSection, submitDocToClient, clientReview, clientReassignDoc, legalEsign, clientEsign } from '@/utils/interact';
 import { uploadContractToPinata, uploadSignatureToPinata } from '@/utils/utility';
 import type { Contract, ContractDocPayload, ContractDetailsProps } from '../data/interfaces';
@@ -17,8 +18,10 @@ import type { DivisionSection } from '../data/interfaces';
 import { useUser } from '../contexts/UserContext';
 import { useSubgraphRefresh } from '../contexts/SubgraphRefreshContext';
 import { USER_ROLE, CONTRACT_STATUS, CONTRACT_STATUS_LABELS, DIVISION_LABELS, URLs } from '@/utils/constants';
-import { formatRelativeDate } from '@/utils/utility';
+import { formatRelativeDate, formatDocHistoryReadable } from '@/utils/utility';
 import { toast } from 'sonner';
+
+type DocHistoryItem = { type?: string; id?: string; date?: string | number; cid?: string | null };
 
 const mapDocumentToContract = (doc: any, index: number): Contract => {
   const client = doc.client;
@@ -64,6 +67,9 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
   const [esignSubmitting, setEsignSubmitting] = useState(false);
   const [activeTab, setActiveTab] = useState<string>('overview');
   const [showRejectContractDialog, setShowRejectContractDialog] = useState(false);
+  const [showDocHistoryModal, setShowDocHistoryModal] = useState(false);
+  const [docHistories, setDocHistories] = useState<DocHistoryItem[]>([]);
+  const [loadingDocHistories, setLoadingDocHistories] = useState(false);
   const { userRole } = useUser();
   const { refresh: refreshSubgraph } = useSubgraphRefresh();
 
@@ -354,6 +360,29 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
       toast.error(e instanceof Error ? e.message : 'Failed to reassign section');
     } finally {
       setReviewActionSectionId(null);
+    }
+  };
+
+  const openDocHistoryModal = async () => {
+    setShowDocHistoryModal(true);
+    setLoadingDocHistories(true);
+    setDocHistories([]);
+    try {
+      const list = await getContractHistories(String(contractId));
+      const sorted = Array.isArray(list)
+        ? [...list].sort((a, b) => {
+            const da = a.date != null ? Number(a.date) : 0;
+            const db = b.date != null ? Number(b.date) : 0;
+            return da - db;
+          })
+        : [];
+      setDocHistories(sorted);
+    } catch (e) {
+      console.error('Failed to load document histories:', e);
+      toast.error('Failed to load history');
+      setDocHistories([]);
+    } finally {
+      setLoadingDocHistories(false);
     }
   };
 
@@ -757,10 +786,9 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
           </div>
         ) : (
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2 md:grid-cols-3 h-auto">
+            <TabsList className="grid w-full grid-cols-2 h-auto">
               <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="sections">Section Review</TabsTrigger>
-              <TabsTrigger value="activity">Activity</TabsTrigger>
             </TabsList>
             <TabsContent value="overview" className="space-y-6">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -830,22 +858,37 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
                       <FileText className="h-4 w-4 text-muted-foreground" />
                       Document View
                     </CardTitle>
-                    {userRole === USER_ROLE.LEGAL_TEAM && allSectionsApproved && foundContract?.status === CONTRACT_STATUS.PENDING && foundContract?.cid?.trim() && (
-                      <Button
-                        variant="default"
-                        size="sm"
-                        className="gap-2 bg-green-600 hover:bg-green-700 shrink-0"
-                        disabled={submittingToClient}
-                        onClick={handleSubmitToClient}
-                      >
-                        {submittingToClient ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <Send className="h-4 w-4" />
-                        )}
-                        {submittingToClient ? 'Submitting...' : 'Submit to Client'}
-                      </Button>
-                    )}
+                    <div className="flex items-center gap-2 shrink-0">
+                      {userRole === USER_ROLE.LEGAL_TEAM && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="gap-1.5"
+                          onClick={openDocHistoryModal}
+                          title="View document history"
+                        >
+                          <History className="h-4 w-4" />
+                          Document history
+                        </Button>
+                      )}
+                      {userRole === USER_ROLE.LEGAL_TEAM && allSectionsApproved && foundContract?.status === CONTRACT_STATUS.PENDING && foundContract?.cid?.trim() && (
+                        <Button
+                          variant="default"
+                          size="sm"
+                          className="gap-2 bg-green-600 hover:bg-green-700"
+                          disabled={submittingToClient}
+                          onClick={handleSubmitToClient}
+                        >
+                          {submittingToClient ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Send className="h-4 w-4" />
+                          )}
+                          {submittingToClient ? 'Submitting...' : 'Submit to Client'}
+                        </Button>
+                      )}
+                    </div>
                   </CardHeader>
                   <CardContent>
                     {docLoading ? (
@@ -931,19 +974,51 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
                 contractStatus={contract.status}
               />
             </TabsContent>
-            <TabsContent value="activity">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Activity Timeline</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground">Activity timeline will be displayed here</p>
-                </CardContent>
-              </Card>
-            </TabsContent>
           </Tabs>
         )}
       </div>
+
+      {typeof document !== 'undefined' &&
+        showDocHistoryModal &&
+        createPortal(
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="doc-history-modal-title"
+            className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+          >
+            <div className="absolute inset-0 bg-black/70" onClick={() => setShowDocHistoryModal(false)} />
+            <div
+              className="relative z-10 w-sm rounded-lg border bg-background p-6 shadow-lg max-h-[80vh] flex flex-col"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h2 id="doc-history-modal-title" className="text-lg font-semibold leading-none tracking-tight mb-4">
+                Document history
+              </h2>
+              {loadingDocHistories ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                </div>
+              ) : docHistories.length === 0 ? (
+                <p className="text-sm text-muted-foreground py-4">No history for this document.</p>
+              ) : (
+                <ul className="space-y-2 overflow-y-auto flex-1 min-h-0 pr-1">
+                  {docHistories.map((h, i) => (
+                    <li key={h.id ?? i} className="text-sm rounded-md border bg-muted/30 px-3 py-2">
+                      <span className="text-foreground">{formatDocHistoryReadable(h)}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <div className="flex justify-end mt-4 pt-2 border-t">
+                <Button type="button" variant="outline" onClick={() => setShowDocHistoryModal(false)}>
+                  Close
+                </Button>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
 
       <RejectReasonDialog
         open={showRejectContractDialog}

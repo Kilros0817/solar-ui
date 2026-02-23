@@ -1,12 +1,12 @@
 'use client'
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import { useConfig, useConnection } from 'wagmi';
 import { Button } from '@/app/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card';
-import { ArrowLeft, FileText, Loader2, CheckCircle, XCircle, UserPlus, MessageCircle } from 'lucide-react';
+import { ArrowLeft, FileText, Loader2, CheckCircle, XCircle, UserPlus, MessageCircle, History, RotateCcw } from 'lucide-react';
 import { useContractDoc } from '@/app/contexts/ContractDocContext';
 import { useContracts } from '@/app/contexts/ContractsContext';
 import { useSubgraphRefresh } from '@/app/contexts/SubgraphRefreshContext';
@@ -15,9 +15,13 @@ import { DIVISION_LABELS, USER_ROLE, URLs } from '@/utils/constants';
 import { useUser } from '@/app/contexts/UserContext';
 import { approveClauseWithSectionUpdate } from '@/utils/utility';
 import { rejectClause, reassignClause } from '@/utils/interact';
+import { getClauseHistories } from '@/utils/subgraph';
+import { formatClauseHistoryReadable } from '@/utils/utility';
 import { toast } from 'sonner';
 import type { DocSection } from '@/app/data/interfaces';
 import { RejectReasonDialog } from '@/app/components/RejectReasonDialog';
+
+type ClauseHistoryItem = { type?: string; id?: string; date?: string | number; cid?: string | null };
 
 export default function SectionAssignmentsClausePage() {
   const router = useRouter();
@@ -37,6 +41,12 @@ export default function SectionAssignmentsClausePage() {
   const [actionLoading, setActionLoading] = useState<'approve' | 'reject' | 'reassign' | null>(null);
   const [showRejectClauseDialog, setShowRejectClauseDialog] = useState(false);
   const [showRejectReasonModal, setShowRejectReasonModal] = useState(false);
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [histories, setHistories] = useState<ClauseHistoryItem[]>([]);
+  const [loadingHistories, setLoadingHistories] = useState(false);
+  const [loadingHistoryCid, setLoadingHistoryCid] = useState<string | null>(null);
+  const [isViewingPastVersion, setIsViewingPastVersion] = useState(false);
+  const currentClauseContentRef = useRef('');
 
   useEffect(() => {
     if (userRole !== null && userRole !== USER_ROLE.DIVISION_LEADER) {
@@ -76,8 +86,14 @@ export default function SectionAssignmentsClausePage() {
         .then((data) => {
           const content = typeof data?.clauseContent === 'string' ? data.clauseContent : '';
           setClauseContent(content);
+          currentClauseContentRef.current = content;
+          setIsViewingPastVersion(false);
         })
-        .catch(() => setClauseContent(''))
+        .catch(() => {
+          setClauseContent('');
+          currentClauseContentRef.current = '';
+          setIsViewingPastVersion(false);
+        })
         .finally(() => setContentLoaded(true));
       return;
     }
@@ -87,6 +103,8 @@ export default function SectionAssignmentsClausePage() {
     if (!sectionCid) {
       setSectionName(`Section ${sectionIndex + 1}`);
       setClauseContent('');
+      currentClauseContentRef.current = '';
+      setIsViewingPastVersion(false);
       setContentLoaded(true);
       return;
     }
@@ -96,16 +114,23 @@ export default function SectionAssignmentsClausePage() {
         const section = data as DocSection | null;
         if (section?.sectionContent?.[clauseIndex]) {
           const clause = section.sectionContent[clauseIndex];
+          const content = clause.clauseContent ?? '';
           setSectionName(section.sectionName ?? `Section ${sectionIndex + 1}`);
-          setClauseContent(clause.clauseContent ?? '');
+          setClauseContent(content);
+          currentClauseContentRef.current = content;
+          setIsViewingPastVersion(false);
         } else {
           setSectionName(`Section ${sectionIndex + 1}`);
           setClauseContent('');
+          currentClauseContentRef.current = '';
+          setIsViewingPastVersion(false);
         }
       })
       .catch(() => {
         setSectionName(`Section ${sectionIndex + 1}`);
         setClauseContent('');
+        currentClauseContentRef.current = '';
+        setIsViewingPastVersion(false);
       })
       .finally(() => setContentLoaded(true));
   }, [doc, sectionIndex, clauseIndex, contentLoaded, selectedClauseCid]);
@@ -125,6 +150,54 @@ export default function SectionAssignmentsClausePage() {
   // Also show Reassign for approved/rejected clauses (like legal team can reassign section to division leader)
   const showReassignForClause = clauseStatus === 2 || clauseStatus === 3;
   const showReassignButton = showReassignForSection || showReassignForClause;
+  const subgraphClauseId = !Number.isNaN(clauseIdOnChain) ? clauseIdOnChain : null;
+
+  const openHistoryModal = async () => {
+    if (subgraphClauseId == null) return;
+    setShowHistoryModal(true);
+    setLoadingHistories(true);
+    setHistories([]);
+    try {
+      const list = await getClauseHistories(String(subgraphClauseId));
+      const sorted = Array.isArray(list)
+        ? [...list].sort((a, b) => {
+            const da = a.date != null ? Number(a.date) : 0;
+            const db = b.date != null ? Number(b.date) : 0;
+            return da - db; // chronological: oldest first
+          })
+        : [];
+      setHistories(sorted);
+    } catch (e) {
+      console.error('Failed to load clause histories:', e);
+      toast.error('Failed to load history');
+      setHistories([]);
+    } finally {
+      setLoadingHistories(false);
+    }
+  };
+
+  const handleViewHistoryCid = async (cid: string) => {
+    if (!cid || loadingHistoryCid) return;
+    setLoadingHistoryCid(cid);
+    try {
+      const res = await fetch(`${URLs.TBGateWay}${cid}`);
+      const data = res.ok ? await res.json() : null;
+      const content = typeof data?.clauseContent === 'string' ? data.clauseContent : '';
+      setClauseContent(content);
+      setIsViewingPastVersion(true);
+      setShowHistoryModal(false);
+    } catch (e) {
+      console.error('Failed to load history content:', e);
+      toast.error('Failed to load content from history');
+    } finally {
+      setLoadingHistoryCid(null);
+    }
+  };
+
+  const goToCurrentVersion = () => {
+    setClauseContent(currentClauseContentRef.current);
+    setIsViewingPastVersion(false);
+  };
 
   const handleApprove = async () => {
     const sectionCid = (sectionAt as { cid?: string } | undefined)?.cid;
@@ -266,8 +339,36 @@ export default function SectionAssignmentsClausePage() {
 
       <Card className="gap-2">
         <CardHeader>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <CardTitle className="text-lg">View clause content</CardTitle>
+            {subgraphClauseId != null && (
+              <>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5 shrink-0"
+                  onClick={openHistoryModal}
+                  title="View clause history"
+                >
+                  <History className="h-4 w-4 shrink-0" />
+                  <span>History</span>
+                </Button>
+                {isViewingPastVersion && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="gap-1.5 shrink-0"
+                    onClick={goToCurrentVersion}
+                    title="View current version of clause"
+                  >
+                    <RotateCcw className="h-4 w-4 shrink-0" />
+                    <span>Current version</span>
+                  </Button>
+                )}
+              </>
+            )}
             {isClauseRejected && (
               <button
                 type="button"
@@ -363,6 +464,75 @@ export default function SectionAssignmentsClausePage() {
               <p className="text-sm text-muted-foreground whitespace-pre-wrap break-words">{clauseRejectReason || 'No reason provided.'}</p>
               <div className="flex justify-end mt-4">
                 <Button type="button" variant="outline" onClick={() => setShowRejectReasonModal(false)}>
+                  Close
+                </Button>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
+
+      {typeof document !== 'undefined' &&
+        showHistoryModal &&
+        createPortal(
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="clause-history-modal-title"
+            className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+          >
+            <div className="absolute inset-0 bg-black/70" onClick={() => setShowHistoryModal(false)} />
+            <div
+              className="relative z-10 w-sm rounded-lg border bg-background p-6 shadow-lg max-h-[80vh] flex flex-col"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h2 id="clause-history-modal-title" className="text-lg font-semibold leading-none tracking-tight mb-4">
+                Clause history
+              </h2>
+              {loadingHistories ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                </div>
+              ) : histories.length === 0 ? (
+                <p className="text-sm text-muted-foreground py-4">No history for this clause.</p>
+              ) : (
+                <ul className="space-y-2 overflow-y-auto flex-1 min-h-0 pr-1">
+                  {histories.map((h, i) => {
+                    const description = formatClauseHistoryReadable(h);
+                    const hasCid = !!h.cid;
+                    const isLoading = hasCid && loadingHistoryCid === h.cid;
+                    return (
+                      <li
+                        key={h.id ?? i}
+                        className="text-sm rounded-md border bg-muted/30 px-3 py-2"
+                      >
+                        {hasCid ? (
+                          <button
+                            type="button"
+                            onClick={() => handleViewHistoryCid(h.cid!)}
+                            disabled={!!loadingHistoryCid}
+                            className="clause-history-link text-left w-full text-foreground cursor-pointer"
+                            title="View content at this point in history"
+                          >
+                            {isLoading ? (
+                              <span className="inline-flex items-center gap-1.5">
+                                <Loader2 className="h-3.5 w-3.5 animate-spin shrink-0" />
+                                {description}
+                              </span>
+                            ) : (
+                              description
+                            )}
+                          </button>
+                        ) : (
+                          <span className="text-foreground">{description}</span>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+              <div className="flex justify-end mt-4 pt-2 border-t">
+                <Button type="button" variant="outline" onClick={() => setShowHistoryModal(false)}>
                   Close
                 </Button>
               </div>

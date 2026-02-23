@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import { useConfig, useConnection } from 'wagmi';
 import { Button } from '@/app/components/ui/button';
@@ -8,8 +9,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/ca
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/app/components/ui/select';
 import { Label } from '@/app/components/ui/label';
 import { Badge } from '@/app/components/ui/badge';
-import { ArrowLeft, FileText, Loader2, UserPlus, Eye } from 'lucide-react';
-import { getDivisionMembersByDivisionId } from '@/utils/subgraph';
+import { ArrowLeft, FileText, Loader2, UserPlus, Eye, History, RotateCcw } from 'lucide-react';
+import { getDivisionMembersByDivisionId, getSectionHistories } from '@/utils/subgraph';
 import { assignClausesToMembers } from '@/utils/interact';
 import { useContractDoc } from '@/app/contexts/ContractDocContext';
 import { useContracts } from '@/app/contexts/ContractsContext';
@@ -18,8 +19,11 @@ import { useAssignment } from '@/app/contexts/AssignmentContext';
 import { useSectionContent } from '@/app/contexts/SectionContentContext';
 import { DIVISION_LABELS, USER_ROLE, URLs } from '@/utils/constants';
 import { useUser } from '@/app/contexts/UserContext';
+import { formatSectionHistoryReadable } from '@/utils/utility';
 import { toast } from 'sonner';
 import type { Clause, DocSection, DivisionMember } from '@/app/data/interfaces';
+
+type SectionHistoryItem = { type?: string; id?: string; date?: string | number; cid?: string | null };
 
 const getMemberLabel = (m: DivisionMember) =>
   [m.firstName, m.lastName].filter(Boolean).join(' ').trim() || m.email || m.id;
@@ -49,13 +53,22 @@ export default function SectionAssignmentsSectionPage() {
   const [sectionIdFromSubgraph, setSectionIdFromSubgraph] = useState<number | null>(null);
   const [sectionContentLoaded, setSectionContentLoaded] = useState(false);
   const [clauseContentOverrides, setClauseContentOverrides] = useState<Record<number, string>>({});
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [histories, setHistories] = useState<SectionHistoryItem[]>([]);
+  const [loadingHistories, setLoadingHistories] = useState(false);
+  const [loadingHistoryCid, setLoadingHistoryCid] = useState<string | null>(null);
+  const [isViewingPastVersion, setIsViewingPastVersion] = useState(false);
+  const currentSectionNameRef = useRef('');
+  const currentClausesRef = useRef<Clause[]>([]);
 
+  const canAccessSection = userRole === USER_ROLE.DIVISION_LEADER || userRole === USER_ROLE.LEGAL_TEAM;
+  const isDivisionLeader = userRole === USER_ROLE.DIVISION_LEADER;
   useEffect(() => {
-    if (userRole !== null && userRole !== USER_ROLE.DIVISION_LEADER) {
+    if (userRole !== null && !canAccessSection) {
       router.replace('/my-contracts');
       return;
     }
-  }, [userRole, router]);
+  }, [userRole, canAccessSection, router]);
 
   useEffect(() => {
     if (!selectedContractId || selectedSectionIndex == null || selectedSectionIndex < 0) {
@@ -85,7 +98,7 @@ export default function SectionAssignmentsSectionPage() {
   const sectionDcategory =
     sectionAt?.divisionLeader?.dcategory != null ? Number(sectionAt.divisionLeader.dcategory) : null;
   const sectionNotForDivision =
-    doc && profile != null && sectionDcategory !== leaderDcategory;
+    isDivisionLeader && doc && profile != null && sectionDcategory !== leaderDcategory;
 
   const error =
     contextError ??
@@ -98,12 +111,12 @@ export default function SectionAssignmentsSectionPage() {
   const sectionClausesFromSubgraph = sectionAt?.clauses ?? [];
 
   useEffect(() => {
-    if (!doc || profile == null || sectionIndex < 0) return;
+    if (!doc || profile == null || sectionIndex < 0 || !isDivisionLeader) return;
     const leaderDcategoryNum = profile.dcategory;
     getDivisionMembersByDivisionId(leaderDcategoryNum).then((memberList) => {
       setMembers(Array.isArray(memberList) ? memberList : []);
     });
-  }, [doc, profile, sectionIndex]);
+  }, [doc, profile, sectionIndex, isDivisionLeader]);
 
   useEffect(() => {
     if (!doc || sectionIndex < 0) return;
@@ -128,8 +141,13 @@ export default function SectionAssignmentsSectionPage() {
     const sectionCid = sectionAt?.cid;
     const cached = sectionId ? getSectionContent(sectionId) : undefined;
     if (cached) {
-      setSectionName(cached.sectionName);
-      setClauses(cached.sectionContent?.map((c) => ({ clauseId: c.clauseId, clauseContent: c.clauseContent ?? '' })) ?? []);
+      const name = cached.sectionName;
+      const clauseList = cached.sectionContent?.map((c) => ({ clauseId: c.clauseId, clauseContent: c.clauseContent ?? '' })) ?? [];
+      setSectionName(name);
+      setClauses(clauseList);
+      currentSectionNameRef.current = name;
+      currentClausesRef.current = clauseList;
+      setIsViewingPastVersion(false);
       setSectionContentLoaded(true);
       return;
     }
@@ -139,16 +157,27 @@ export default function SectionAssignmentsSectionPage() {
         .then((data) => {
           const section = data as DocSection | null;
           if (section?.sectionContent) {
-            setSectionName(section.sectionName ?? `Section ${sectionIndex + 1}`);
-            setClauses(section.sectionContent.filter((c) => c.clauseContent).map((c) => ({ clauseId: c.clauseId, clauseContent: c.clauseContent ?? '' })));
+            const name = section.sectionName ?? `Section ${sectionIndex + 1}`;
+            const clauseList = section.sectionContent.filter((c) => c.clauseContent).map((c) => ({ clauseId: c.clauseId, clauseContent: c.clauseContent ?? '' }));
+            setSectionName(name);
+            setClauses(clauseList);
+            currentSectionNameRef.current = name;
+            currentClausesRef.current = clauseList;
+            setIsViewingPastVersion(false);
           } else {
             setSectionName(`Section ${sectionIndex + 1}`);
             setClauses([]);
+            currentSectionNameRef.current = `Section ${sectionIndex + 1}`;
+            currentClausesRef.current = [];
+            setIsViewingPastVersion(false);
           }
         })
         .catch(() => {
           setSectionName(`Section ${sectionIndex + 1}`);
           setClauses([]);
+          currentSectionNameRef.current = `Section ${sectionIndex + 1}`;
+          currentClausesRef.current = [];
+          setIsViewingPastVersion(false);
         })
         .finally(() => setSectionContentLoaded(true));
       return;
@@ -157,6 +186,9 @@ export default function SectionAssignmentsSectionPage() {
     if (!docCid) {
       setSectionName(`Section ${sectionIndex + 1}`);
       setClauses([]);
+      currentSectionNameRef.current = `Section ${sectionIndex + 1}`;
+      currentClausesRef.current = [];
+      setIsViewingPastVersion(false);
       setSectionContentLoaded(true);
       return;
     }
@@ -166,19 +198,88 @@ export default function SectionAssignmentsSectionPage() {
         const sections: DocSection[] = data?.sections ?? [];
         const section = sections[sectionIndex];
         if (section) {
-          setSectionName(section.sectionName ?? `Section ${sectionIndex + 1}`);
-          setClauses(section.sectionContent?.filter((c) => c.clauseContent) ?? []);
+          const name = section.sectionName ?? `Section ${sectionIndex + 1}`;
+          const clauseList = section.sectionContent?.filter((c) => c.clauseContent) ?? [];
+          setSectionName(name);
+          setClauses(clauseList);
+          currentSectionNameRef.current = name;
+          currentClausesRef.current = clauseList;
+          setIsViewingPastVersion(false);
         } else {
           setSectionName(`Section ${sectionIndex + 1}`);
           setClauses([]);
+          currentSectionNameRef.current = `Section ${sectionIndex + 1}`;
+          currentClausesRef.current = [];
+          setIsViewingPastVersion(false);
         }
       })
       .catch(() => {
         setSectionName(`Section ${sectionIndex + 1}`);
         setClauses([]);
+        currentSectionNameRef.current = `Section ${sectionIndex + 1}`;
+        currentClausesRef.current = [];
+        setIsViewingPastVersion(false);
       })
       .finally(() => setSectionContentLoaded(true));
   }, [doc, sectionIndex, sectionContentLoaded, getSectionContent]);
+
+  const openHistoryModal = async () => {
+    if (sectionIdFromSubgraph == null) return;
+    setShowHistoryModal(true);
+    setLoadingHistories(true);
+    setHistories([]);
+    try {
+      const list = await getSectionHistories(String(sectionIdFromSubgraph));
+      const sorted = Array.isArray(list)
+        ? [...list].sort((a, b) => {
+            const da = a.date != null ? Number(a.date) : 0;
+            const db = b.date != null ? Number(b.date) : 0;
+            return da - db; // chronological: oldest first
+          })
+        : [];
+      setHistories(sorted);
+    } catch (e) {
+      console.error('Failed to load section histories:', e);
+      toast.error('Failed to load history');
+      setHistories([]);
+    } finally {
+      setLoadingHistories(false);
+    }
+  };
+
+  const handleViewHistoryCid = async (cid: string) => {
+    if (!cid || loadingHistoryCid) return;
+    setLoadingHistoryCid(cid);
+    try {
+      const res = await fetch(`${URLs.TBGateWay}${cid}`);
+      const data = res.ok ? await res.json() : null;
+      const section = data as DocSection | null;
+      if (section?.sectionContent) {
+        const name = section.sectionName ?? `Section ${sectionIndex + 1}`;
+        const clauseList = section.sectionContent.filter((c) => c.clauseContent).map((c) => ({ clauseId: c.clauseId, clauseContent: c.clauseContent ?? '' }));
+        setSectionName(name);
+        setClauses(clauseList);
+        setClauseContentOverrides({});
+        setIsViewingPastVersion(true);
+      } else {
+        setSectionName(section?.sectionName ?? `Section ${sectionIndex + 1}`);
+        setClauses([]);
+        setClauseContentOverrides({});
+        setIsViewingPastVersion(true);
+      }
+    } catch (e) {
+      console.error('Failed to load section history content:', e);
+      toast.error('Failed to load content from history');
+    } finally {
+      setLoadingHistoryCid(null);
+    }
+  };
+
+  const goToCurrentVersion = () => {
+    setSectionName(currentSectionNameRef.current);
+    setClauses(currentClausesRef.current);
+    setIsViewingPastVersion(false);
+  };
 
   // For allocated clauses (have division member), load content from clause CID; unallocated use section CID content already in clauses
   useEffect(() => {
@@ -280,7 +381,7 @@ export default function SectionAssignmentsSectionPage() {
     }
   };
 
-  if (userRole !== null && userRole !== USER_ROLE.DIVISION_LEADER) {
+  if (userRole !== null && !canAccessSection) {
     return null;
   }
 
@@ -323,7 +424,37 @@ export default function SectionAssignmentsSectionPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-xl">{sectionName}</CardTitle>
+          <div className="flex flex-wrap items-center gap-2">
+            <CardTitle className="text-xl">{sectionName}</CardTitle>
+            {sectionIdFromSubgraph != null && (
+              <>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5 shrink-0"
+                  onClick={openHistoryModal}
+                  title="View section history"
+                >
+                  <History className="h-4 w-4 shrink-0" />
+                  <span>History</span>
+                </Button>
+                {isViewingPastVersion && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="gap-1.5 shrink-0"
+                    onClick={goToCurrentVersion}
+                    title="View current version of section"
+                  >
+                    <RotateCcw className="h-4 w-4 shrink-0" />
+                    <span>Current version</span>
+                  </Button>
+                )}
+              </>
+            )}
+          </div>
           <p className="text-sm text-muted-foreground">Section {sectionIndex + 1}</p>
         </CardHeader>
         <CardContent>
@@ -338,7 +469,7 @@ export default function SectionAssignmentsSectionPage() {
                 const clauseStatus = typeof clauseData?.status === 'number' ? clauseData.status : undefined;
                 const isAssignedOrSubmitted = clauseStatus === 0 || clauseStatus === 1;
                 const isApprovedOrRejected = clauseStatus === 2 || clauseStatus === 3;
-                const showAssignDropdown = !isAssignedOrSubmitted && !isApprovedOrRejected;
+                const showAssignDropdown = isDivisionLeader && !isAssignedOrSubmitted && !isApprovedOrRejected;
                 const statusLabel =
                   clauseStatus === 0
                     ? 'Assigned'
@@ -411,29 +542,31 @@ export default function SectionAssignmentsSectionPage() {
                       </div>
                     )}
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 shrink-0 cursor-pointer"
-                      onClick={() => {
-                        const fromRoute =
-                          clauseStatus === 0
-                            ? 'pending'
-                            : clauseStatus === 1
-                              ? 'review'
-                              : clauseStatus === 2
-                                ? 'approved'
-                                : clauseStatus === 3
-                                  ? 'rejected'
-                                  : null;
-                        const clauseCid = (clauseData as { cid?: string | null } | undefined)?.cid ?? null;
-                        setSelection(contractId, sectionIndex, i, clauseCid, fromRoute);
-                        router.push('/section-assignments/clause');
-                      }}
-                      title="View clause"
-                    >
-                      <Eye className="h-4 w-4" />
-                    </Button>
+                    {isDivisionLeader && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 shrink-0 cursor-pointer"
+                        onClick={() => {
+                          const fromRoute =
+                            clauseStatus === 0
+                              ? 'pending'
+                              : clauseStatus === 1
+                                ? 'review'
+                                : clauseStatus === 2
+                                  ? 'approved'
+                                  : clauseStatus === 3
+                                    ? 'rejected'
+                                    : null;
+                          const clauseCid = (clauseData as { cid?: string | null } | undefined)?.cid ?? null;
+                          setSelection(contractId, sectionIndex, i, clauseCid, fromRoute);
+                          router.push('/section-assignments/clause');
+                        }}
+                        title="View clause"
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                    )}
                   </div>
                 );
               })}
@@ -443,6 +576,7 @@ export default function SectionAssignmentsSectionPage() {
       </Card>
 
       {(() => {
+        if (!isDivisionLeader) return null;
         const allClausesAssigned =
           clauses.length > 0 &&
           clauses.every((_, i) => sectionClausesFromSubgraph[i]?.divisionMember != null);
@@ -467,6 +601,75 @@ export default function SectionAssignmentsSectionPage() {
           </div>
         );
       })()}
+
+      {typeof document !== 'undefined' &&
+        showHistoryModal &&
+        createPortal(
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="section-history-modal-title"
+            className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+          >
+            <div className="absolute inset-0 bg-black/70" onClick={() => setShowHistoryModal(false)} />
+            <div
+              className="relative z-10 w-sm rounded-lg border bg-background p-6 shadow-lg max-h-[80vh] flex flex-col"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h2 id="section-history-modal-title" className="text-lg font-semibold leading-none tracking-tight mb-4">
+                Section history
+              </h2>
+              {loadingHistories ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                </div>
+              ) : histories.length === 0 ? (
+                <p className="text-sm text-muted-foreground py-4">No history for this section.</p>
+              ) : (
+                <ul className="space-y-2 overflow-y-auto flex-1 min-h-0 pr-1">
+                  {histories.map((h, i) => {
+                    const description = formatSectionHistoryReadable(h);
+                    const hasCid = !!h.cid;
+                    const isLoading = hasCid && loadingHistoryCid === h.cid;
+                    return (
+                      <li
+                        key={h.id ?? i}
+                        className="text-sm rounded-md border bg-muted/30 px-3 py-2"
+                      >
+                        {hasCid ? (
+                          <button
+                            type="button"
+                            onClick={() => handleViewHistoryCid(h.cid!)}
+                            disabled={!!loadingHistoryCid}
+                            className="clause-history-link text-left w-full text-foreground cursor-pointer"
+                            title="View content at this point in history"
+                          >
+                            {isLoading ? (
+                              <span className="inline-flex items-center gap-1.5">
+                                <Loader2 className="h-3.5 w-3.5 animate-spin shrink-0" />
+                                {description}
+                              </span>
+                            ) : (
+                              description
+                            )}
+                          </button>
+                        ) : (
+                          <span className="text-foreground">{description}</span>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+              <div className="flex justify-end mt-4 pt-2 border-t">
+                <Button type="button" variant="outline" onClick={() => setShowHistoryModal(false)}>
+                  Close
+                </Button>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
     </div>
   );
 }

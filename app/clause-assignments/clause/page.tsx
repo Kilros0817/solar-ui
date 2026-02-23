@@ -167,7 +167,14 @@ export default function ClauseAssignmentsClausePage() {
     setHistories([]);
     try {
       const list = await getClauseHistories(String(subgraphClauseId));
-      setHistories(Array.isArray(list) ? list : []);
+      const sorted = Array.isArray(list)
+        ? [...list].sort((a, b) => {
+            const da = a.date != null ? Number(a.date) : 0;
+            const db = b.date != null ? Number(b.date) : 0;
+            return da - db; // chronological: oldest first
+          })
+        : [];
+      setHistories(sorted);
     } catch (e) {
       console.error('Failed to load clause histories:', e);
       toast.error('Failed to load history');

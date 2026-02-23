@@ -83,11 +83,11 @@ export const formatRelativeDate = (dateStr: number): string => {
 
 /** Clause history type: 0 assign, 1 request, 2 approve, 3 reject, 4 reassign */
 const CLAUSE_HISTORY_ACTIONS: Record<number, string> = {
-  0: "Assigned this clause",
-  1: "Requested review",
-  2: "Approved this clause",
-  3: "Rejected this clause",
-  4: "Reassigned this clause",
+  0: "Leader Assigned this clause",
+  1: "Member Requested review",
+  2: "Leader Approved this clause",
+  3: "Leader Rejected this clause",
+  4: "Leader Reassigned this clause",
 };
 
 const CLAUSE_HISTORY_TYPE_BY_STRING: Record<string, number> = {
@@ -129,6 +129,103 @@ export const formatClauseHistoryReadable = (item: {
     const normalized = typeRaw.toLowerCase().trim();
     const num = CLAUSE_HISTORY_TYPE_BY_STRING[normalized];
     if (num !== undefined) action = CLAUSE_HISTORY_ACTIONS[num];
+  }
+
+  let dateStr = "";
+  const dateVal = item.date;
+  if (dateVal != null) {
+    const sec = typeof dateVal === "number" ? dateVal : parseInt(String(dateVal), 10);
+    if (!Number.isNaN(sec)) dateStr = formatClauseHistoryDate(sec);
+  }
+  return dateStr ? `${action} at ${dateStr}` : action;
+};
+
+/** Section history type labels (e.g. 0 assign by legal, 1 submit, 2 approve, 3 reject, 4 reassign). */
+const SECTION_HISTORY_ACTIONS: Record<number, string> = {
+  0: "Legal Team assigned this section",
+  1: "Division submitted this section",
+  2: "Legal Team approved this section",
+  3: "Legal Team rejected this section",
+  4: "Legal Team reassigned this section",
+};
+
+const SECTION_HISTORY_TYPE_BY_STRING: Record<string, number> = {
+  assign: 0,
+  assigned: 0,
+  submit: 1,
+  submitted: 1,
+  approve: 2,
+  approved: 2,
+  reject: 3,
+  rejected: 3,
+  reassign: 4,
+  reassigned: 4,
+};
+
+/**
+ * Returns a readable sentence for a section history item.
+ * @param item - { type: number or string, date: number (seconds) or string }
+ * @returns e.g. "Legal Team assigned this section at 2/22/2026"
+ */
+export const formatSectionHistoryReadable = (item: {
+  type?: string | number;
+  date?: string | number;
+}): string => {
+  let action = "Updated this section";
+  const typeRaw = item.type;
+  if (typeof typeRaw === "number" && typeRaw in SECTION_HISTORY_ACTIONS) {
+    action = SECTION_HISTORY_ACTIONS[typeRaw];
+  } else if (typeof typeRaw === "string") {
+    const normalized = typeRaw.toLowerCase().trim();
+    const num = SECTION_HISTORY_TYPE_BY_STRING[normalized];
+    if (num !== undefined) action = SECTION_HISTORY_ACTIONS[num];
+  }
+
+  let dateStr = "";
+  const dateVal = item.date;
+  if (dateVal != null) {
+    const sec = typeof dateVal === "number" ? dateVal : parseInt(String(dateVal), 10);
+    if (!Number.isNaN(sec)) dateStr = formatClauseHistoryDate(sec);
+  }
+  return dateStr ? `${action} at ${dateStr}` : action;
+};
+
+/** Document/contract history type labels. */
+const DOC_HISTORY_ACTIONS: Record<number, string> = {
+  0: "Contract created",
+  1: "Submitted to Legal",
+  2: "Submitted to Client",
+  3: "Client approved",
+  4: "Client rejected",
+};
+
+const DOC_HISTORY_TYPE_BY_STRING: Record<string, number> = {
+  created: 0,
+  submit: 1,
+  submitted: 1,
+  approve: 2,
+  approved: 3,
+  reject: 4,
+  rejected: 4,
+};
+
+/**
+ * Returns a readable sentence for a document/contract history item.
+ * @param item - { type: number or string, date: number (seconds) or string }
+ * @returns e.g. "Contract created at 2/22/2026"
+ */
+export const formatDocHistoryReadable = (item: {
+  type?: string | number;
+  date?: string | number;
+}): string => {
+  let action = "Document updated";
+  const typeRaw = item.type;
+  if (typeof typeRaw === "number" && typeRaw in DOC_HISTORY_ACTIONS) {
+    action = DOC_HISTORY_ACTIONS[typeRaw];
+  } else if (typeof typeRaw === "string") {
+    const normalized = typeRaw.toLowerCase().trim();
+    const num = DOC_HISTORY_TYPE_BY_STRING[normalized];
+    if (num !== undefined) action = DOC_HISTORY_ACTIONS[num];
   }
 
   let dateStr = "";

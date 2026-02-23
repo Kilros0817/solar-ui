@@ -428,7 +428,7 @@ export const getClauseHistories = async (clauseId: string) => {
 
 export const getSectionHistories = async (sectionId: string) => {
   const query = `{
-    sectionHistories(where: {section: "${sectionId}"}) {
+    sectionHistories(orderBy: date, where: {section: "${sectionId}"}) {
       type
       id
       date
@@ -447,7 +447,7 @@ export const getSectionHistories = async (sectionId: string) => {
 
 export const getContractHistories = async (docId: string) => {
   const query = `{
-    docHistories(where: {document: "${docId}"}) {
+    docHistories(orderBy: date, where: {document: "${docId}"}) {
       type
       id
       date
