@@ -15,21 +15,14 @@ import {
   FileSearch,
   PenLine,
   UserPlus,
+  LogOut,
 } from 'lucide-react';
 import { cn } from '../lib/utils';
-import { useUser, UserRole } from '../contexts/UserContext';
+import { useUser } from '../contexts/UserContext';
 import { useContracts } from '../contexts/ContractsContext';
 import { USER_ROLE } from '@/utils/constants';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from './ui/dropdown-menu';
 import { getContractCounts } from '../data/interfaces';
 import type { SidebarProps } from '../data/interfaces';
 import { useDivisionLeaderSections } from '@/app/contexts/DivisionLeaderSectionsContext';
@@ -42,7 +35,7 @@ import { useSubgraphRefresh } from '@/app/contexts/SubgraphRefreshContext';
 export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const { userRole, setUserRole } = useUser();
+  const { userRole, logout } = useUser();
   const { selectedFromRoute } = useAssignment();
   const { contracts, refetch: refetchContracts } = useContracts();
   const leaderSections = useDivisionLeaderSections();
@@ -373,13 +366,6 @@ export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
     }
   };
 
-  const roleOptions = [
-    { value: USER_ROLE.LEGAL_TEAM as UserRole, label: 'Legal Division' },
-    { value: USER_ROLE.DIVISION_LEADER as UserRole, label: 'Division Lead' },
-    { value: USER_ROLE.DIVISION_MEMBER as UserRole, label: 'Division Member' },
-    { value: USER_ROLE.ADMIN as UserRole, label: 'Administrator' },
-  ];
-
   const handleRefresh = async () => {
     if (refreshing) return;
     setRefreshing(true);
@@ -517,35 +503,12 @@ export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
         })}
       </nav>
 
-      {/* Role Switcher for Testing */}
+      {/* Log out */}
       <div className="p-4 border-t shrink-0 mt-auto">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm" className="w-full">
-              <RefreshCw className="h-3 w-3 mr-2" />
-              Switch Role
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuLabel>Demo - Switch Role</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            {roleOptions.map((role) => (
-              <DropdownMenuItem
-                key={role.value}
-                onClick={() => {
-                  setUserRole(role.value);
-                  onTabChange('dashboard'); // Reset to dashboard when switching roles
-                }}
-                className="cursor-pointer"
-              >
-                {role.label}
-                {userRole === role.value && (
-                  <CheckCircle className="ml-auto h-4 w-4 text-brand-secondary" />
-                )}
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <Button variant="outline" size="sm" className="w-full cursor-pointer" onClick={logout}>
+          <LogOut className="h-3 w-3 mr-2" />
+          Log out
+        </Button>
       </div>
     </aside>
   );
