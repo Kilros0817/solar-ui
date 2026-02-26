@@ -153,3 +153,40 @@ export function parseClauseContentFromStorage(
   if (!trimmed) return '';
   return trimmed;
 }
+
+/** Extract plain text from clause content (Lexical JSON or plain) for one-line previews with ellipsis. */
+export function getPlainTextPreview(clauseContent: string | null | undefined): string {
+  if (clauseContent == null || !clauseContent.trim()) return '';
+  const trimmed = clauseContent.trim();
+  if (trimmed[0] !== '{') return trimmed;
+  try {
+    type TextChild = { type?: string; text?: string };
+    type BlockChild = { type?: string; children?: TextChild[] };
+    type ListNode = { type?: string; children?: Array<{ type?: string; children?: TextChild[] }> };
+    const parsed = JSON.parse(clauseContent) as {
+      root?: { children?: Array<BlockChild | ListNode> };
+    };
+    if (!parsed?.root?.children) return trimmed;
+    const parts: string[] = [];
+    for (const node of parsed.root.children) {
+      if (node.type === 'paragraph' && 'children' in node && node.children) {
+        for (const c of node.children) {
+          if ('text' in c && typeof c.text === 'string') parts.push(c.text);
+        }
+      }
+      if (node.type === 'list' && 'children' in node && node.children) {
+        for (const item of node.children) {
+          const itemChildren = (item as { children?: Array<{ type?: string; text?: string }> }).children;
+          if (itemChildren) {
+            for (const c of itemChildren) {
+              if ('text' in c && typeof c.text === 'string') parts.push(c.text);
+            }
+          }
+        }
+      }
+    }
+    return parts.join(' ').trim() || trimmed;
+  } catch {
+    return trimmed;
+  }
+}

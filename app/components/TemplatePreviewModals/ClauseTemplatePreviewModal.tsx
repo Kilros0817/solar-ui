@@ -2,6 +2,7 @@ import { X, Text, FileCheck } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Badge } from '../ui/badge';
+import { ClauseLexicalEditor } from '../editor/ClauseLexicalEditor';
 import type { ClauseTemplate, ClauseTemplatePreviewModalProps } from '../../data/interfaces';
 
 export function ClauseTemplatePreviewModal({ template, onClose, onUse }: ClauseTemplatePreviewModalProps) {
@@ -42,7 +43,15 @@ export function ClauseTemplatePreviewModal({ template, onClose, onUse }: ClauseT
                     Clause Content
                   </h4>
                   <div className="bg-muted/50 p-4 rounded-lg border">
-                    <p className="text-sm leading-relaxed">{template.content || 'No content'}</p>
+                    {template.content ? (
+                      <ClauseLexicalEditor
+                        initialContent={template.content}
+                        readOnly
+                        className="text-sm"
+                      />
+                    ) : (
+                      <p className="text-sm leading-relaxed text-muted-foreground">No content</p>
+                    )}
                   </div>
                 </div>
               </div>

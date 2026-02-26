@@ -1,6 +1,7 @@
 import { ClauseTemplateCreator } from './ClauseTemplateCreator';
 import { SectionTemplateCreator } from './SectionTemplateCreator';
 import { ContractTemplateCreator } from './ContractTemplateCreator';
+import { getPlainTextPreview } from './editor/ClauseLexicalEditor';
 import {
   ContractTemplatePreviewModal,
   SectionTemplatePreviewModal,
@@ -20,11 +21,11 @@ import {
   Trash2,
 } from 'lucide-react';
 import { Button } from './ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Input } from './ui/input';
 import { Badge } from './ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
+import { TooltipProvider } from './ui/tooltip';
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -742,9 +743,18 @@ export function TemplateLibrary({ onSelectContractTemplate }: TemplateLibraryPro
                       </div>
                     </CardHeader>
                     <CardContent>
-                      <p className="text-xs text-muted-foreground line-clamp-2 mb-3">
-                        {clause.content}
-                      </p>
+                      {(() => {
+                        const preview = getPlainTextPreview(clause.content);
+                        const display = preview.length > 60 ? `${preview.slice(0, 60)}...` : preview;
+                        return (
+                          <p
+                            className="text-xs text-muted-foreground mb-3 min-h-[1.25rem]"
+                            title={preview}
+                          >
+                            {display}
+                          </p>
+                        );
+                      })()}
                       <div className="flex items-center justify-between mb-3">
                         <Badge variant="outline" className="text-xs">
                           {clause.category}

@@ -2,6 +2,7 @@ import { X, Layers, FileCheck } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Badge } from '../ui/badge';
+import { ClauseLexicalEditor } from '../editor/ClauseLexicalEditor';
 import type { SectionTemplatePreview, SectionTemplatePreviewModalProps } from '../../data/interfaces';
 
 export function SectionTemplatePreviewModal({ template, onClose, onUse }: SectionTemplatePreviewModalProps) {
@@ -59,12 +60,16 @@ export function SectionTemplatePreviewModal({ template, onClose, onUse }: Sectio
                             }
                           >
                             {hasMultipleClauses && (
-                              <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand-primary/20 text-xs font-medium text-brand-secondary">
+                              <div className="flex h-5 w-5 mt-3 shrink-0 items-center justify-center rounded-full bg-brand-primary/20 text-xs font-medium text-brand-secondary">
                                 {index + 1}
                               </div>
                             )}
-                            <div className="text-sm leading-[1.7] text-foreground whitespace-pre-line">
-                              {block.trim()}
+                            <div className="text-sm leading-[1.7] text-foreground">
+                              <ClauseLexicalEditor
+                                initialContent={block.trim()}
+                                readOnly
+                                className="text-sm"
+                              />
                             </div>
                           </div>
                         ))

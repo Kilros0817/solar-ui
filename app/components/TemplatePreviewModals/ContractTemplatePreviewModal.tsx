@@ -3,6 +3,7 @@ import { Button } from '../ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '../ui/hover-card';
+import { ClauseLexicalEditor } from '../editor/ClauseLexicalEditor';
 import { ContractTemplate } from '../../data/templates';
 import type { SectionInfo, ContractTemplatePreviewModalProps } from '../../data/interfaces';
 
@@ -46,12 +47,16 @@ function SectionContentPreview({ name, content }: { name: string; content: strin
               }
             >
               {hasMultipleBlocks && (
-                <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand-primary/20 text-xs font-medium text-brand-secondary">
+                <div className="flex h-5 w-5 mt-3 shrink-0 items-center justify-center rounded-full bg-brand-primary/20 text-xs font-medium text-brand-secondary">
                   {i + 1}
                 </div>
               )}
-              <div className="text-sm leading-[1.7] text-foreground whitespace-pre-line">
-                {block.trim()}
+              <div className="text-sm leading-[1.7] text-foreground">
+                <ClauseLexicalEditor
+                  initialContent={block.trim()}
+                  readOnly
+                  className="text-sm"
+                />
               </div>
             </div>
           ))
