@@ -61,7 +61,7 @@ export type ContractAssignment = {
   category?: string;
   /** Contract created date (Unix seconds or number) */
   createdAt?: number;
-  /** Contract status (0=PENDING, 1=DIVISION_REQUEST, 2=APPROVED, 3=REJECTED, 4=ESIGNED) */
+  /** Contract status (0=PENDING, 1=REQUEST, 2=APPROVED, 3=REJECTED, 4=ESIGNED) */
   status?: number;
 };
 

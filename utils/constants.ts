@@ -1,10 +1,10 @@
 export const URLs = {
-	SDMSAPI: "https://api.tomeblock.com/api",
-	ClauseAPI: "https://api.tomeblock.com/clause",
-	SectionAPI: "https://api.tomeblock.com/section",
-	ContractAPI: "https://api.tomeblock.com/contract",
-	UploadAPI: "https://api.tomeblock.com/upload",
-	SubgraphAPI: "https://api.tomeblock.com/subgraph",
+	SDMSAPI: "http://localhost:8085/api",
+	ClauseAPI: "http://localhost:8085/clause",
+	SectionAPI: "http://localhost:8085/section",
+	ContractAPI: "http://localhost:8085/contract",
+	UploadAPI: "http://localhost:8085/upload",
+	SubgraphAPI: "http://localhost:8085/subgraph",
 	TBGateWay: "https://jade-wonderful-hawk-382.mypinata.cloud/ipfs/",
 };
 
@@ -13,7 +13,7 @@ export const BaseRPC2 = "https://base-sepolia.g.alchemy.com/v2/-DFmaAk_5jzgxCw7i
 
 export const CONTRACT_STATUS = {
     PENDING: 0,
-    DIVISION_REQUEST: 1,
+    REQUEST: 1,
     APPROVED: 2,
     REJECTED: 3,
     ESIGNED: 4,
@@ -43,7 +43,7 @@ export const DIVISION_CATEGORY = {
 
 export const CONTRACT_STATUS_LABELS: Record<number, string> = {
     [CONTRACT_STATUS.PENDING]: 'Pending',
-    [CONTRACT_STATUS.DIVISION_REQUEST]: 'Request',
+    [CONTRACT_STATUS.REQUEST]: 'Request',
     [CONTRACT_STATUS.APPROVED]: 'Approved',
     [CONTRACT_STATUS.REJECTED]: 'Rejected',
     [CONTRACT_STATUS.ESIGNED]: 'ESigned',

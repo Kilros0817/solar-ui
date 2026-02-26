@@ -668,7 +668,7 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
                     <FileText className="h-4 w-4 text-muted-foreground" />
                     Document View
                   </CardTitle>
-                  {contract.status === CONTRACT_STATUS.DIVISION_REQUEST && (
+                  {contract.status === CONTRACT_STATUS.REQUEST && (
                     <div className="flex items-center gap-2 shrink-0">
                       <Button
                         variant="default"

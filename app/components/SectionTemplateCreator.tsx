@@ -13,6 +13,7 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
 import { Checkbox } from './ui/checkbox';
+import { ClauseLexicalEditor } from './editor/ClauseLexicalEditor';
 import type { ClauseTemplate, SectionTemplateCreatorProps } from '../data/interfaces';
 
 export function SectionTemplateCreator({ onClose, onSave, availableClauses, editingSection }: SectionTemplateCreatorProps) {
@@ -165,9 +166,12 @@ export function SectionTemplateCreator({ onClose, onSave, availableClauses, edit
                           <div className="flex-1">
                             <p className="font-medium">{clause.name}</p>
                             {expandedPreview && (
-                              <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-                                {clause.content}
-                              </p>
+                              <div className="text-xs text-muted-foreground mt-1 leading-relaxed [&_.min-h-\[120px\]]:min-h-0">
+                                <ClauseLexicalEditor
+                                  initialContent={clause.content ?? ''}
+                                  readOnly
+                                />
+                              </div>
                             )}
                           </div>
                           <Button

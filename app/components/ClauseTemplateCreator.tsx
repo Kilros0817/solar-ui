@@ -3,7 +3,6 @@ import { X, Save } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
-import { Textarea } from './ui/textarea';
 import { 
   Select,
   SelectContent,
@@ -12,6 +11,7 @@ import {
   SelectValue,
 } from './ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
+import { ClauseLexicalEditor, serializeClauseContentToJson } from './editor/ClauseLexicalEditor';
 import type { ClauseTemplateCreatorProps } from '../data/interfaces';
 
 export function ClauseTemplateCreator({ onClose, onSave, editingClause }: ClauseTemplateCreatorProps) {
@@ -93,17 +93,13 @@ export function ClauseTemplateCreator({ onClose, onSave, editingClause }: Clause
 
             <div className="space-y-2">
               <Label htmlFor="content">Clause Content*</Label>
-              <Textarea
-                id="content"
+              <ClauseLexicalEditor
+                key={editingClause?.id ?? 'new'}
+                initialContent={content}
+                readOnly={false}
                 placeholder="Type the full clause text here..."
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                rows={12}
-                className="resize-none font-mono text-sm"
+                onChange={(json) => setContent(serializeClauseContentToJson(json))}
               />
-              <p className="text-xs text-muted-foreground">
-                {content.length} characters
-              </p>
             </div>
           </div>
 

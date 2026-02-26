@@ -2,6 +2,7 @@
 
 import type { ContractDocumentTemplateProps } from '../data/interfaces';
 import { formatRelativeDate } from '@/utils/utility';
+import { ClauseLexicalEditor } from '@/app/components/editor/ClauseLexicalEditor';
 
 export function ContractDocumentTemplate({ 
   title, 
@@ -33,7 +34,11 @@ export function ContractDocumentTemplate({
               <h3 className="text-xl font-semibold mb-4">{idx + 1}. {section.sectionName}</h3>
               <div className="space-y-3 text-sm leading-relaxed">
                 {section.sectionContent?.map((clause, cidx) => (
-                  <p key={cidx}>{clause.clauseContent}</p>
+                  <ClauseLexicalEditor
+                    key={cidx}
+                    initialContent={clause.clauseContent ?? ''}
+                    readOnly
+                  />
                 ))}
               </div>
             </div>

@@ -18,6 +18,7 @@ import { getClauseHistories } from '@/utils/subgraph';
 import { formatClauseHistoryReadable } from '@/utils/utility';
 import { toast } from 'sonner';
 import type { DocSection } from '@/app/data/interfaces';
+import { ClauseLexicalEditor, serializeClauseContentToJson } from '@/app/components/editor/ClauseLexicalEditor';
 
 type ClauseHistoryItem = { type?: string; id?: string; date?: string | number; cid?: string | null };
 
@@ -38,6 +39,7 @@ export default function ClauseAssignmentsClausePage() {
   const [docClauseId, setDocClauseId] = useState<string>('');
   const [subgraphClauseId, setSubgraphClauseId] = useState<number | null>(null);
   const [contentLoaded, setContentLoaded] = useState(false);
+  const [contentVersion, setContentVersion] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [showRejectReasonModal, setShowRejectReasonModal] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
@@ -93,6 +95,7 @@ export default function ClauseAssignmentsClausePage() {
           const content = typeof data?.clauseContent === 'string' ? data.clauseContent : '';
           const clauseId = data?.clauseId ?? '';
           setClauseContent(content);
+          setContentVersion((v) => v + 1);
           setDocClauseId(clauseId);
           currentClauseContentRef.current = content;
           currentDocClauseIdRef.current = clauseId;
@@ -100,6 +103,7 @@ export default function ClauseAssignmentsClausePage() {
         })
         .catch(() => {
           setClauseContent('');
+          setContentVersion((v) => v + 1);
           currentClauseContentRef.current = '';
           currentDocClauseIdRef.current = '';
           setIsViewingPastVersion(false);
@@ -112,6 +116,7 @@ export default function ClauseAssignmentsClausePage() {
     if (!sectionCid) {
       setSectionName(`Section ${sectionIndex + 1}`);
       setClauseContent('');
+      setContentVersion((v) => v + 1);
       currentClauseContentRef.current = '';
       currentDocClauseIdRef.current = '';
       setIsViewingPastVersion(false);
@@ -128,6 +133,7 @@ export default function ClauseAssignmentsClausePage() {
           const clauseId = clause.clauseId ?? '';
           setSectionName(section.sectionName ?? `Section ${sectionIndex + 1}`);
           setClauseContent(content);
+          setContentVersion((v) => v + 1);
           setDocClauseId(clauseId);
           currentClauseContentRef.current = content;
           currentDocClauseIdRef.current = clauseId;
@@ -135,6 +141,7 @@ export default function ClauseAssignmentsClausePage() {
         } else {
           setSectionName(`Section ${sectionIndex + 1}`);
           setClauseContent('');
+          setContentVersion((v) => v + 1);
           currentClauseContentRef.current = '';
           currentDocClauseIdRef.current = '';
           setIsViewingPastVersion(false);
@@ -143,6 +150,7 @@ export default function ClauseAssignmentsClausePage() {
       .catch(() => {
         setSectionName(`Section ${sectionIndex + 1}`);
         setClauseContent('');
+        setContentVersion((v) => v + 1);
         currentClauseContentRef.current = '';
         currentDocClauseIdRef.current = '';
         setIsViewingPastVersion(false);
@@ -192,6 +200,7 @@ export default function ClauseAssignmentsClausePage() {
       const data = res.ok ? await res.json() : null;
       const content = typeof data?.clauseContent === 'string' ? data.clauseContent : '';
       setClauseContent(content);
+      setContentVersion((v) => v + 1);
       setIsViewingPastVersion(true);
       setShowHistoryModal(false);
     } catch (e) {
@@ -350,14 +359,12 @@ export default function ClauseAssignmentsClausePage() {
           </div>
         </CardHeader>
         <CardContent>
-          <textarea
-            id="clause-content"
-            value={clauseContent}
-            onChange={(e) => isEditMode && setClauseContent(e.target.value)}
+          <ClauseLexicalEditor
+            key={`clause-editor-${contentVersion}`}
+            initialContent={clauseContent}
             readOnly={!isEditMode}
-            rows={8}
-            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 min-h-[160px]"
             placeholder="Enter clause content..."
+            onChange={isEditMode ? (json) => setClauseContent(serializeClauseContentToJson(json)) : undefined}
           />
           {isEditMode && (
             <div className="flex justify-end mt-2">
