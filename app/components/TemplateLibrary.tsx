@@ -166,7 +166,7 @@ export function TemplateLibrary({ onSelectContractTemplate }: TemplateLibraryPro
       const matchesSearch = sectionName.toLowerCase().includes(searchQuery.toLowerCase()) ||
                            version.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                            version.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                           (version.content ?? '').toLowerCase().includes(searchQuery.toLowerCase());
+                           getPlainTextPreview(version.content ?? '').toLowerCase().includes(searchQuery.toLowerCase());
       const matchesCategory = selectedCategory === 'all' || version.category === selectedCategory;
       return matchesSearch && matchesCategory;
     });
@@ -179,7 +179,7 @@ export function TemplateLibrary({ onSelectContractTemplate }: TemplateLibraryPro
   const filteredClauseTemplates = clauseTemplates.filter(clause => {
     const matchesSearch = clause.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          clause.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         clause.content.toLowerCase().includes(searchQuery.toLowerCase());
+                         getPlainTextPreview(clause.content).toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = selectedCategory === 'all' || clause.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });

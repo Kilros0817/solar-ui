@@ -11,6 +11,7 @@ import { useAssignment } from '@/app/contexts/AssignmentContext';
 import { useDivisionMemberClauses } from '@/app/contexts/DivisionMemberClausesContext';
 import { USER_ROLE, URLs } from '@/utils/constants';
 import { formatRelativeDate } from '@/utils/utility';
+import { getPlainTextPreview } from '@/app/components/editor/ClauseLexicalEditor';
 
 type ClauseWithSection = {
   id: string;
@@ -180,6 +181,10 @@ export default function ClauseAssignmentsClausesPage() {
             const content = clause.cid
               ? (clauseContents[clause.id] ?? 'Loading...')
               : 'Click Work on to edit clause';
+            const displayContent = clause.cid && clauseContents[clause.id] != null
+              ? getPlainTextPreview(clauseContents[clause.id])
+              : content;
+            const displayTruncated = displayContent.length > 60 ? `${displayContent.slice(0, 60)}...` : displayContent;
             const assignedTs = typeof clause.assignedAt === 'number'
               ? clause.assignedAt
               : typeof clause.assignedAt === 'string'
@@ -199,9 +204,9 @@ export default function ClauseAssignmentsClausesPage() {
                   </div>
                   <p
                     className="text-sm text-foreground line-clamp-2"
-                    title={clauseContents[clause.id] || undefined}
+                    title={displayContent}
                   >
-                    {content}
+                    {content === 'Loading...' || content === 'Click Work on to edit clause' ? content : displayTruncated}
                   </p>
                   {assignedTs != null && (
                     <p className="text-xs text-muted-foreground">

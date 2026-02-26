@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { ContractTemplate } from '../data/templates';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from './ui/hover-card';
+import { ClauseLexicalEditor } from './editor/ClauseLexicalEditor';
 import { useConnection, useConfig } from 'wagmi';
 import { DIVISION_LABELS, URLs } from '@/utils/constants';
 import { getAllDivisionLeaders, getAllClients } from '@/utils/subgraph';
@@ -491,8 +492,12 @@ export function ContractCreation({ onBack, selectedTemplate }: ContractCreationP
                                             {i + 1}
                                           </div>
                                         )}
-                                        <div className="text-sm leading-[1.7] text-foreground whitespace-pre-line">
-                                          {block.trim()}
+                                        <div className="text-sm leading-[1.7] text-foreground">
+                                          <ClauseLexicalEditor
+                                            initialContent={block.trim()}
+                                            readOnly
+                                            className="text-sm"
+                                          />
                                         </div>
                                       </div>
                                     ))
@@ -646,8 +651,12 @@ export function ContractCreation({ onBack, selectedTemplate }: ContractCreationP
                                                             {i + 1}
                                                           </div>
                                                         )}
-                                                        <div className="text-sm leading-[1.7] text-foreground whitespace-pre-line">
-                                                          {block.trim()}
+                                                        <div className="text-sm leading-[1.7] text-foreground">
+                                                          <ClauseLexicalEditor
+                                                            initialContent={block.trim()}
+                                                            readOnly
+                                                            className="text-sm"
+                                                          />
                                                         </div>
                                                       </div>
                                                     ))

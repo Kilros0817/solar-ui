@@ -26,6 +26,7 @@ import { toast } from 'sonner';
 import type { DocSection } from '@/app/data/interfaces';
 import type { SectionReviewTabProps } from '../data/interfaces';
 import { RejectReasonDialog } from './RejectReasonDialog';
+import { ClauseLexicalEditor } from './editor/ClauseLexicalEditor';
 
 type SectionHistoryItem = { type?: string; id?: string; date?: string | number; cid?: string | null };
 
@@ -304,11 +305,28 @@ export function SectionReviewTab({
                             </p>
                           )}
                           <div className="bg-white rounded p-3 border max-h-32 overflow-y-auto">
-                            <p className="text-sm leading-relaxed line-clamp-3">
-                              {sectionIdViewingPast === section.id && pastSectionDisplay
+                            {(() => {
+                              const raw = sectionIdViewingPast === section.id && pastSectionDisplay
                                 ? pastSectionDisplay.content
-                                : section.content}
-                            </p>
+                                : section.content;
+                              const blocks = (raw ?? '').split(/\n\n+/).filter((b) => b.trim());
+                              if (blocks.length === 0) {
+                                return <p className="text-sm leading-relaxed text-muted-foreground">No content</p>;
+                              }
+                              return (
+                                <div className="space-y-3">
+                                  {blocks.map((block, i) => (
+                                    <div key={i} className="text-sm leading-[1.7]">
+                                      <ClauseLexicalEditor
+                                        initialContent={block}
+                                        readOnly
+                                        className="text-sm"
+                                      />
+                                    </div>
+                                  ))}
+                                </div>
+                              );
+                            })()}
                           </div>
                         </div>
                       </div>

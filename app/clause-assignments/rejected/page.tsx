@@ -6,6 +6,7 @@ import { Card, CardContent } from '@/app/components/ui/card';
 import { Button } from '@/app/components/ui/button';
 import { FileText, Loader2, Eye, ClipboardList, AlertCircle } from 'lucide-react';
 import { USER_ROLE, URLs } from '@/utils/constants';
+import { getPlainTextPreview } from '@/app/components/editor/ClauseLexicalEditor';
 import { useUser } from '@/app/contexts/UserContext';
 import { useAssignment } from '@/app/contexts/AssignmentContext';
 import { useDivisionMemberClauses } from '@/app/contexts/DivisionMemberClausesContext';
@@ -168,9 +169,14 @@ export default function ClauseAssignmentsRejectedPage() {
                   <div className="rounded border bg-background/50 p-3">
                     <p
                       className="text-sm text-foreground line-clamp-2"
-                      title={clauseContents[clause.id] || undefined}
+                      title={clauseContents[clause.id] != null ? getPlainTextPreview(clauseContents[clause.id]) : undefined}
                     >
-                      {clauseContents[clause.id] ?? 'Loading...'}
+                      {clauseContents[clause.id] != null
+                        ? (() => {
+                            const plain = getPlainTextPreview(clauseContents[clause.id]);
+                            return plain.length > 60 ? `${plain.slice(0, 60)}...` : plain;
+                          })()
+                        : 'Loading...'}
                     </p>
                   </div>
                 )}

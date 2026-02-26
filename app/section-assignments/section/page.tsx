@@ -22,6 +22,7 @@ import { useUser } from '@/app/contexts/UserContext';
 import { formatSectionHistoryReadable } from '@/utils/utility';
 import { toast } from 'sonner';
 import type { Clause, DocSection, DivisionMember } from '@/app/data/interfaces';
+import { ClauseLexicalEditor } from '@/app/components/editor/ClauseLexicalEditor';
 
 type SectionHistoryItem = { type?: string; id?: string; date?: string | number; cid?: string | null };
 
@@ -486,11 +487,17 @@ export default function SectionAssignmentsSectionPage() {
                     className="rounded-lg border bg-muted/30 p-4 flex gap-4 items-start"
                   >
                     <div className="flex-1 min-w-0 space-y-3">
-                    <p className="text-sm leading-relaxed text-foreground">
-                      {clauseContentOverrides[i] !== undefined
-                        ? clauseContentOverrides[i]
-                        : clause.clauseContent}
-                    </p>
+                      <div className="text-sm leading-relaxed text-foreground">
+                        <ClauseLexicalEditor
+                          initialContent={
+                            clauseContentOverrides[i] !== undefined
+                              ? clauseContentOverrides[i]
+                              : clause.clauseContent ?? ''
+                          }
+                          readOnly
+                          className="text-sm"
+                        />
+                      </div>
                     <p className="text-xs text-muted-foreground">
                       Assigned to: <span className="font-medium text-foreground">{assignedLabel}</span>
                     </p>
