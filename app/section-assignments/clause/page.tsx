@@ -20,6 +20,7 @@ import { formatClauseHistoryReadable } from '@/utils/utility';
 import { toast } from 'sonner';
 import type { DocSection } from '@/app/data/interfaces';
 import { RejectReasonDialog } from '@/app/components/RejectReasonDialog';
+import { ClauseLexicalEditor } from '@/app/components/editor/ClauseLexicalEditor';
 
 type ClauseHistoryItem = { type?: string; id?: string; date?: string | number; cid?: string | null };
 
@@ -45,6 +46,7 @@ export default function SectionAssignmentsClausePage() {
   const [histories, setHistories] = useState<ClauseHistoryItem[]>([]);
   const [loadingHistories, setLoadingHistories] = useState(false);
   const [loadingHistoryCid, setLoadingHistoryCid] = useState<string | null>(null);
+  const [contentVersion, setContentVersion] = useState(0);
   const [isViewingPastVersion, setIsViewingPastVersion] = useState(false);
   const currentClauseContentRef = useRef('');
 
@@ -88,11 +90,13 @@ export default function SectionAssignmentsClausePage() {
           setClauseContent(content);
           currentClauseContentRef.current = content;
           setIsViewingPastVersion(false);
+          setContentVersion((v) => v + 1);
         })
         .catch(() => {
           setClauseContent('');
           currentClauseContentRef.current = '';
           setIsViewingPastVersion(false);
+          setContentVersion((v) => v + 1);
         })
         .finally(() => setContentLoaded(true));
       return;
@@ -105,6 +109,7 @@ export default function SectionAssignmentsClausePage() {
       setClauseContent('');
       currentClauseContentRef.current = '';
       setIsViewingPastVersion(false);
+      setContentVersion((v) => v + 1);
       setContentLoaded(true);
       return;
     }
@@ -119,11 +124,13 @@ export default function SectionAssignmentsClausePage() {
           setClauseContent(content);
           currentClauseContentRef.current = content;
           setIsViewingPastVersion(false);
+          setContentVersion((v) => v + 1);
         } else {
           setSectionName(`Section ${sectionIndex + 1}`);
           setClauseContent('');
           currentClauseContentRef.current = '';
           setIsViewingPastVersion(false);
+          setContentVersion((v) => v + 1);
         }
       })
       .catch(() => {
@@ -131,6 +138,7 @@ export default function SectionAssignmentsClausePage() {
         setClauseContent('');
         currentClauseContentRef.current = '';
         setIsViewingPastVersion(false);
+        setContentVersion((v) => v + 1);
       })
       .finally(() => setContentLoaded(true));
   }, [doc, sectionIndex, clauseIndex, contentLoaded, selectedClauseCid]);
@@ -187,6 +195,7 @@ export default function SectionAssignmentsClausePage() {
       const content = typeof data?.clauseContent === 'string' ? data.clauseContent : '';
       setClauseContent(content);
       setIsViewingPastVersion(true);
+      setContentVersion((v) => v + 1);
       setShowHistoryModal(false);
     } catch (e) {
       console.error('Failed to load history content:', e);
@@ -199,6 +208,7 @@ export default function SectionAssignmentsClausePage() {
   const goToCurrentVersion = () => {
     setClauseContent(currentClauseContentRef.current);
     setIsViewingPastVersion(false);
+    setContentVersion((v) => v + 1);
   };
 
   const handleApprove = async () => {
@@ -385,13 +395,12 @@ export default function SectionAssignmentsClausePage() {
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          <textarea
-            id="clause-content"
-            value={clauseContent}
+          <ClauseLexicalEditor
+            key={`section-assign-clause-${contentVersion}`}
+            initialContent={clauseContent}
             readOnly
-            rows={8}
-            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 min-h-[160px]"
-            placeholder="Enter clause content..."
+            placeholder="Clause content..."
+            className="min-h-[160px]"
           />
           {selectedFromRoute === 'review' && (
             <div className="flex items-center gap-3 pt-2 border-t">
