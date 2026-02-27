@@ -8,8 +8,7 @@ import { FileText, Loader2, Eye, ClipboardList } from 'lucide-react';
 import { useUser } from '@/app/contexts/UserContext';
 import { useAssignment } from '@/app/contexts/AssignmentContext';
 import { useDivisionMemberClauses } from '@/app/contexts/DivisionMemberClausesContext';
-import { USER_ROLE, URLs } from '@/utils/constants';
-import { getPlainTextPreview } from '@/app/components/editor/ClauseLexicalEditor';
+import { USER_ROLE } from '@/utils/constants';
 
 type ClauseWithSection = {
   id: string;
@@ -33,7 +32,6 @@ export default function ClauseAssignmentsReviewPage() {
   const { userRole } = useUser();
   const { setSelection } = useAssignment();
   const { clauses: allClauses, loading, getIndicesForClause } = useDivisionMemberClauses();
-  const [clauseContents, setClauseContents] = useState<Record<string, string>>({});
   const [navigatingClauseId, setNavigatingClauseId] = useState<string | null>(null);
 
   const clauses = useMemo(
@@ -47,31 +45,6 @@ export default function ClauseAssignmentsReviewPage() {
       return;
     }
   }, [userRole, router]);
-
-  useEffect(() => {
-    const withCid = clauses.filter((c) => c.cid);
-    if (withCid.length === 0) return;
-    let cancelled = false;
-    const fetchAll = async () => {
-      const next: Record<string, string> = {};
-      for (const clause of withCid) {
-        if (cancelled) return;
-        try {
-          const res = await fetch(`${URLs.TBGateWay}${clause.cid}`);
-          if (!res.ok) continue;
-          const data = await res.json();
-          const content =
-            typeof data?.clauseContent === 'string' ? data.clauseContent : '';
-          next[clause.id] = content || '';
-        } catch {
-          next[clause.id] = '';
-        }
-      }
-      if (!cancelled) setClauseContents((prev) => ({ ...prev, ...next }));
-    };
-    fetchAll();
-    return () => { cancelled = true; };
-  }, [clauses]);
 
   const handleViewClause = (clause: ClauseWithSection) => {
     const docId = clause.section?.doc?.id;
@@ -101,12 +74,6 @@ export default function ClauseAssignmentsReviewPage() {
 
   const contractTitle = (c: ClauseWithSection) =>
     c.section?.doc?.title ?? 'Untitled';
-  const clientName = (c: ClauseWithSection) => {
-    const client = c.section?.doc?.client;
-    return client
-      ? [client.firstName, client.lastName].filter(Boolean).join(' ').trim() || '—'
-      : '—';
-  };
 
   return (
     <div className="p-6 space-y-6">
@@ -128,55 +95,28 @@ export default function ClauseAssignmentsReviewPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fill, 400px)' }}>
           {clauses.map((clause) => (
-            <Card
-              key={clause.id}
-              className="rounded-lg border bg-muted/30 hover:border-brand-secondary/50 transition-colors"
-            >
-              <CardContent className="p-4 space-y-3">
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-brand-secondary/10 flex items-center justify-center shrink-0">
-                    <FileText className="h-5 w-5 text-brand-secondary" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-foreground truncate">
-                      {contractTitle(clause)}
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      Client: {clientName(clause)}
-                    </p>
-                  </div>
-                </div>
-                {clause.cid && (
-                  <div className="rounded border bg-background/50 p-3">
-                    <p
-                      className="text-sm text-foreground line-clamp-2"
-                      title={clauseContents[clause.id] != null ? getPlainTextPreview(clauseContents[clause.id]) : undefined}
-                    >
-                      {clauseContents[clause.id] != null
-                        ? (() => {
-                            const plain = getPlainTextPreview(clauseContents[clause.id]);
-                            return plain.length > 60 ? `${plain.slice(0, 60)}...` : plain;
-                          })()
-                        : 'Loading...'}
-                    </p>
-                  </div>
-                )}
-                <div className="pt-2 border-t">
+            <Card key={clause.id} className="flex flex-col w-full">
+              <CardContent className="p-4 flex flex-col gap-3 flex-1">
+                <span className="font-medium text-sm truncate">
+                  {contractTitle(clause)}
+                </span>
+                <p className="text-xs text-muted-foreground">Section ID: {clause.section?.id ?? '—'} / Clause ID: {clause.id ?? '—'}</p>
+                <div className="flex justify-end mt-auto pt-2 border-t">
                   <Button
                     variant="outline"
                     size="sm"
-                    className="w-full gap-2 cursor-pointer"
-                    onClick={() => handleViewClause(clause)}
+                    className="gap-1.5 shrink-0"
                     disabled={navigatingClauseId === clause.id}
+                    onClick={() => handleViewClause(clause)}
                   >
                     {navigatingClauseId === clause.id ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
                     ) : (
-                      <Eye className="h-4 w-4" />
+                      <Eye className="h-3.5 w-3.5" />
                     )}
-                    View
+                    {navigatingClauseId === clause.id ? 'Opening...' : 'View'}
                   </Button>
                 </div>
               </CardContent>

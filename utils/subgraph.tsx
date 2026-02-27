@@ -407,6 +407,25 @@ export const getClausesByDivisionMember = async (divisionMemberId: string) => {
   }
 }
 
+/** Fetch a single clause by its on-chain id; returns { id, cid } or null. Use clause id to get cid and then fetch content from gateway. */
+export const getClauseById = async (clauseId: string): Promise<{ id: string; cid: string | null } | null> => {
+  const id = String(clauseId).toLowerCase();
+  const query = `{
+    clause(id: "${id}") {
+      id
+      cid
+    }
+  }`;
+  try {
+    const res = await getDataFromSubgraph(query);
+    const clause = (res.data as { clause?: { id: string; cid: string | null } }).clause;
+    return clause ?? null;
+  } catch (e) {
+    console.log(e, "============error in getClauseById from subgraph============");
+    return null;
+  }
+};
+
 export const getClauseHistories = async (clauseId: string) => {
   const query = `{
     clauseHistories(orderBy: date, where: {clause: "${clauseId}"}) {

@@ -4,14 +4,12 @@ import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent } from '@/app/components/ui/card';
 import { Button } from '@/app/components/ui/button';
-import { Badge } from '@/app/components/ui/badge';
 import { ArrowLeft, FileText, Loader2, Eye, Pencil, ClipboardList } from 'lucide-react';
 import { useUser } from '@/app/contexts/UserContext';
 import { useAssignment } from '@/app/contexts/AssignmentContext';
 import { useDivisionMemberClauses } from '@/app/contexts/DivisionMemberClausesContext';
-import { USER_ROLE, URLs } from '@/utils/constants';
+import { USER_ROLE } from '@/utils/constants';
 import { formatRelativeDate } from '@/utils/utility';
-import { getPlainTextPreview } from '@/app/components/editor/ClauseLexicalEditor';
 
 type ClauseWithSection = {
   id: string;
@@ -29,7 +27,6 @@ export default function ClauseAssignmentsClausesPage() {
   const { userRole } = useUser();
   const { selectedContractId, setSelection } = useAssignment();
   const { clauses: allClauses, loading, getDocFromClauses, getIndicesForClause } = useDivisionMemberClauses();
-  const [clauseContents, setClauseContents] = useState<Record<string, string>>({});
 
   const clauses = useMemo(
     () =>
@@ -73,30 +70,6 @@ export default function ClauseAssignmentsClausesPage() {
     }
   }, [selectedContractId, router]);
 
-  useEffect(() => {
-    const withCid = clauses.filter((c) => c.cid);
-    if (withCid.length === 0) return;
-    let cancelled = false;
-    const fetchAll = async () => {
-      const next: Record<string, string> = {};
-      for (const clause of withCid) {
-        if (cancelled) return;
-        try {
-          const res = await fetch(`${URLs.TBGateWay}${clause.cid}`);
-          if (!res.ok) continue;
-          const data = await res.json();
-          const content = typeof data?.clauseContent === 'string' ? data.clauseContent : '';
-          next[clause.id] = content || '';
-        } catch {
-          next[clause.id] = '';
-        }
-      }
-      if (!cancelled) setClauseContents((prev) => ({ ...prev, ...next }));
-    };
-    fetchAll();
-    return () => { cancelled = true; };
-  }, [clauses]);
-
   const handleWorkOn = (clause: ClauseWithSection) => {
     const idx = indicesMap[clause.id];
     if (!idx) return;
@@ -109,24 +82,6 @@ export default function ClauseAssignmentsClausesPage() {
     if (!idx) return;
     setSelection(selectedContractId, idx.sectionIndex, idx.clauseIndex, clause.cid ?? null, 'clauses');
     router.push('/clause-assignments/clause');
-  };
-
-  const statusLabel = (status: number) => {
-    switch (status) {
-      case 0: return 'Assigned';
-      case 1: return 'Submitted';
-      case 2: return 'Approved';
-      case 3: return 'Rejected';
-      default: return 'Unknown';
-    }
-  };
-
-  const statusVariant = (status: number): 'secondary' | 'default' | 'destructive' | 'outline' => {
-    switch (status) {
-      case 2: return 'default';
-      case 3: return 'destructive';
-      default: return 'secondary';
-    }
   };
 
   if (userRole !== null && userRole !== USER_ROLE.DIVISION_MEMBER) {
@@ -174,17 +129,10 @@ export default function ClauseAssignmentsClausesPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fill, 400px)' }}>
           {clauses.map((clause) => {
             const status = typeof clause.status === 'number' ? clause.status : 0;
             const isPending = status === 0;
-            const content = clause.cid
-              ? (clauseContents[clause.id] ?? 'Loading...')
-              : 'Click Work on to edit clause';
-            const displayContent = clause.cid && clauseContents[clause.id] != null
-              ? getPlainTextPreview(clauseContents[clause.id])
-              : content;
-            const displayTruncated = displayContent.length > 60 ? `${displayContent.slice(0, 60)}...` : displayContent;
             const assignedTs = typeof clause.assignedAt === 'number'
               ? clause.assignedAt
               : typeof clause.assignedAt === 'string'
@@ -192,48 +140,38 @@ export default function ClauseAssignmentsClausesPage() {
                 : undefined;
 
             return (
-              <Card
-                key={clause.id}
-                className="rounded-lg border bg-muted/30 hover:border-brand-secondary/50 transition-colors"
-              >
-                <CardContent className="p-4 space-y-3">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Badge variant={statusVariant(status)} className={status === 2 ? 'bg-green-600' : ''}>
-                      {statusLabel(status)}
-                    </Badge>
-                  </div>
-                  <p
-                    className="text-sm text-foreground line-clamp-2"
-                    title={displayContent}
-                  >
-                    {content === 'Loading...' || content === 'Click Work on to edit clause' ? content : displayTruncated}
-                  </p>
+              <Card key={clause.id} className="flex flex-col w-full">
+                <CardContent className="p-4 flex flex-col gap-3 flex-1">
+                  <span className="font-medium text-sm truncate">
+                    {contractTitle}
+                  </span>
+                  <p className="text-xs text-muted-foreground">Section ID: {clause.section?.id ?? '—'} / Clause ID: {clause.id ?? '—'}</p>
                   {assignedTs != null && (
                     <p className="text-xs text-muted-foreground">
                       Assigned: {formatRelativeDate(assignedTs)}
                     </p>
                   )}
-                  <div className="pt-2 border-t">
+                  <div className="flex justify-end mt-auto pt-2 border-t">
                     {isPending ? (
                       <Button
                         variant="default"
                         size="sm"
-                        className="w-full gap-2"
-                        onClick={() => handleWorkOn(clause)}
+                        className="gap-1.5 shrink-0"
                         disabled={!indicesMap[clause.id]}
+                        onClick={() => handleWorkOn(clause)}
                       >
-                        <Pencil className="h-4 w-4" />
+                        <Pencil className="h-3.5 w-3.5" />
                         Work on
                       </Button>
                     ) : (
                       <Button
                         variant="outline"
                         size="sm"
-                        className="w-full gap-2 cursor-pointer"
-                        onClick={() => handleView(clause)}
+                        className="gap-1.5 shrink-0 cursor-pointer"
                         disabled={!indicesMap[clause.id]}
+                        onClick={() => handleView(clause)}
                       >
-                        <Eye className="h-4 w-4" />
+                        <Eye className="h-3.5 w-3.5" />
                         View
                       </Button>
                     )}

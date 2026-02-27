@@ -14,10 +14,9 @@ import { useAssignment } from '@/app/contexts/AssignmentContext';
 import { DIVISION_LABELS, USER_ROLE, URLs } from '@/utils/constants';
 import { useUser } from '@/app/contexts/UserContext';
 import { submitClauseToLeader } from '@/utils/interact';
-import { getClauseHistories } from '@/utils/subgraph';
+import { getClauseById, getClauseHistories } from '@/utils/subgraph';
 import { formatClauseHistoryReadable } from '@/utils/utility';
 import { toast } from 'sonner';
-import type { DocSection } from '@/app/data/interfaces';
 import { ClauseLexicalEditor, serializeClauseContentToJson } from '@/app/components/editor/ClauseLexicalEditor';
 
 type ClauseHistoryItem = { type?: string; id?: string; date?: string | number; cid?: string | null };
@@ -27,7 +26,7 @@ export default function ClauseAssignmentsClausePage() {
   const config = useConfig();
   const { address } = useConnection();
   const { userRole } = useUser();
-  const { selectedContractId, selectedSectionIndex, selectedClauseIndex, selectedClauseCid, selectedFromRoute } = useAssignment();
+  const { selectedContractId, selectedSectionIndex, selectedClauseIndex, selectedFromRoute } = useAssignment();
   const { profile, loadDoc, getDoc, loadingDocId, loadingProfile, error: contextError, refetchDoc } = useContractDoc();
   const { refetch: refetchContracts } = useContracts();
   const { refresh: refreshSubgraph } = useSubgraphRefresh();
@@ -40,6 +39,7 @@ export default function ClauseAssignmentsClausePage() {
   const [subgraphClauseId, setSubgraphClauseId] = useState<number | null>(null);
   const [contentLoaded, setContentLoaded] = useState(false);
   const [contentVersion, setContentVersion] = useState(0);
+  const [editorContentKey, setEditorContentKey] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [showRejectReasonModal, setShowRejectReasonModal] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
@@ -67,7 +67,7 @@ export default function ClauseAssignmentsClausePage() {
 
   useEffect(() => {
     setContentLoaded(false);
-  }, [contractId, sectionIndex, clauseIndex, selectedClauseCid]);
+  }, [contractId, sectionIndex, clauseIndex]);
 
   const doc = contractId ? getDoc(contractId) : undefined;
   const loading =
@@ -81,82 +81,63 @@ export default function ClauseAssignmentsClausePage() {
   useEffect(() => {
     if (!doc || sectionIndex < 0 || clauseIndex < 0 || contentLoaded) return;
 
-    const rawSections = (doc as { sections?: Array<{ cid?: string; clauses?: Array<{ id?: string }> }> }).sections ?? [];
-    const sectionAt = rawSections[sectionIndex];
-    const clauseAt = sectionAt?.clauses?.[clauseIndex];
-    const sgId = clauseAt?.id != null ? Number(clauseAt.id) : null;
-    if (sgId != null && !Number.isNaN(sgId)) setSubgraphClauseId(sgId);
+    const sections = (doc as { sections?: Array<{ clauses?: Array<{ id?: string }> }> }).sections ?? [];
+    const clauseAt = sections[sectionIndex]?.clauses?.[clauseIndex];
+    const sgId = clauseAt?.id != null ? String(clauseAt.id) : null;
+    if (sgId) setSubgraphClauseId(Number(sgId));
+    else setSubgraphClauseId(null);
 
-    if (selectedClauseCid) {
-      setSectionName(`Section ${sectionIndex + 1}`);
-      fetch(`${URLs.TBGateWay}${selectedClauseCid}`)
-        .then((res) => (res.ok ? res.json() : null))
-        .then((data) => {
-          const content = typeof data?.clauseContent === 'string' ? data.clauseContent : '';
-          const clauseId = data?.clauseId ?? '';
-          setClauseContent(content);
-          setContentVersion((v) => v + 1);
-          setDocClauseId(clauseId);
-          currentClauseContentRef.current = content;
-          currentDocClauseIdRef.current = clauseId;
-          setIsViewingPastVersion(false);
-        })
-        .catch(() => {
-          setClauseContent('');
-          setContentVersion((v) => v + 1);
-          currentClauseContentRef.current = '';
-          currentDocClauseIdRef.current = '';
-          setIsViewingPastVersion(false);
-        })
-        .finally(() => setContentLoaded(true));
-      return;
-    }
+    setSectionName(`Section ${sectionIndex + 1}`);
 
-    const sectionCid = sectionAt?.cid;
-    if (!sectionCid) {
-      setSectionName(`Section ${sectionIndex + 1}`);
+    if (!sgId) {
       setClauseContent('');
       setContentVersion((v) => v + 1);
+      setEditorContentKey('');
       currentClauseContentRef.current = '';
       currentDocClauseIdRef.current = '';
       setIsViewingPastVersion(false);
       setContentLoaded(true);
       return;
     }
-    fetch(`${URLs.TBGateWay}${sectionCid}`)
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        const section = data?.sectionName != null && Array.isArray(data?.sectionContent) ? (data as DocSection) : null;
-        if (section?.sectionContent?.[clauseIndex]) {
-          const clause = section.sectionContent[clauseIndex];
-          const content = clause.clauseContent ?? '';
-          const clauseId = clause.clauseId ?? '';
-          setSectionName(section.sectionName ?? `Section ${sectionIndex + 1}`);
-          setClauseContent(content);
-          setContentVersion((v) => v + 1);
-          setDocClauseId(clauseId);
-          currentClauseContentRef.current = content;
-          currentDocClauseIdRef.current = clauseId;
-          setIsViewingPastVersion(false);
-        } else {
-          setSectionName(`Section ${sectionIndex + 1}`);
+
+    // Fetch clause CID by clause id, then fetch content from gateway
+    getClauseById(sgId)
+      .then((clause) => {
+        const cid = clause?.cid ?? null;
+        if (!cid) {
           setClauseContent('');
           setContentVersion((v) => v + 1);
+          setEditorContentKey('');
           currentClauseContentRef.current = '';
           currentDocClauseIdRef.current = '';
           setIsViewingPastVersion(false);
+          setContentLoaded(true);
+          return;
         }
+        return fetch(`${URLs.TBGateWay}${cid}`)
+          .then((res) => (res.ok ? res.json() : null))
+          .then((data) => {
+            const content = typeof data?.clauseContent === 'string' ? data.clauseContent : '';
+            const clauseId = data?.clauseId ?? '';
+            setClauseContent(content);
+            setContentVersion((v) => v + 1);
+            setDocClauseId(clauseId);
+            setEditorContentKey('');
+            currentClauseContentRef.current = content;
+            currentDocClauseIdRef.current = clauseId;
+            setIsViewingPastVersion(false);
+          });
       })
       .catch(() => {
-        setSectionName(`Section ${sectionIndex + 1}`);
         setClauseContent('');
         setContentVersion((v) => v + 1);
+        setEditorContentKey('');
         currentClauseContentRef.current = '';
         currentDocClauseIdRef.current = '';
         setIsViewingPastVersion(false);
       })
       .finally(() => setContentLoaded(true));
-  }, [doc, sectionIndex, clauseIndex, contentLoaded, selectedClauseCid]);
+  }, [doc, sectionIndex, clauseIndex, contentLoaded]);
 
   const contractTitle = doc?.title ?? 'Untitled';
   const divisionLabel = profile ? (DIVISION_LABELS[profile.dcategory] ?? `Division #${profile.dcategory}`) : '';
@@ -201,6 +182,7 @@ export default function ClauseAssignmentsClausePage() {
       const content = typeof data?.clauseContent === 'string' ? data.clauseContent : '';
       setClauseContent(content);
       setContentVersion((v) => v + 1);
+      setEditorContentKey(cid);
       setIsViewingPastVersion(true);
       setShowHistoryModal(false);
     } catch (e) {
@@ -215,10 +197,12 @@ export default function ClauseAssignmentsClausePage() {
     setClauseContent(currentClauseContentRef.current);
     setDocClauseId(currentDocClauseIdRef.current);
     setIsViewingPastVersion(false);
+    setContentVersion((v) => v + 1);
+    setEditorContentKey('current');
   };
 
   // Edit mode + Request Review: when from Clauses or Pending, and clause not yet submitted (no CID)
-  const isEditMode = (selectedFromRoute === 'clauses' || selectedFromRoute === 'pending') && !selectedClauseCid;
+  const isEditMode = selectedFromRoute === 'clauses' || selectedFromRoute === 'pending';
   const backHref = selectedFromRoute === 'clauses' ? '/clause-assignments/clauses' : selectedFromRoute === 'pending' ? '/clause-assignments/pending' : selectedFromRoute === 'review' ? '/clause-assignments/review' : selectedFromRoute === 'approved' ? '/clause-assignments/approved' : selectedFromRoute === 'rejected' ? '/clause-assignments/rejected' : '/clause-assignments';
   const backLabel = selectedFromRoute === 'clauses' ? 'Back to Clauses' : selectedFromRoute === 'pending' ? 'Back to Pending' : selectedFromRoute === 'review' ? 'Back to Review' : selectedFromRoute === 'approved' ? 'Back to Approved' : selectedFromRoute === 'rejected' ? 'Back to Rejected' : 'Back to Clause Assignments';
 
@@ -360,13 +344,13 @@ export default function ClauseAssignmentsClausePage() {
         </CardHeader>
         <CardContent>
           <ClauseLexicalEditor
-            key={`clause-editor-${contentVersion}`}
+            key={`clause-editor-${contentVersion}-${editorContentKey}`}
             initialContent={clauseContent}
-            readOnly={!isEditMode}
+            readOnly={isViewingPastVersion || !isEditMode}
             placeholder="Enter clause content..."
-            onChange={isEditMode ? (json) => setClauseContent(serializeClauseContentToJson(json)) : undefined}
+            onChange={isEditMode && !isViewingPastVersion ? (json) => setClauseContent(serializeClauseContentToJson(json)) : undefined}
           />
-          {isEditMode && (
+          {isEditMode && !isViewingPastVersion && (
             <div className="flex justify-end mt-2">
               <Button onClick={handleRequestReview} disabled={submitting}>
                 {submitting ? 'Submitting...' : 'Request Review'}
