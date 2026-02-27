@@ -22,5 +22,6 @@ export default {
     strikethrough: 'clause-editor-text-strikethrough',
     underline: 'clause-editor-text-underline',
     underlineStrikethrough: 'clause-editor-text-underlineStrikethrough',
+    highlight: 'clause-editor-text-highlight',
   },
 };

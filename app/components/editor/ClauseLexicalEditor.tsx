@@ -17,6 +17,7 @@ import type { EditorState, LexicalEditor, SerializedEditorState } from 'lexical'
 
 import Theme from './theme';
 import ClauseToolbarPlugin from './ClauseToolbarPlugin';
+import { HighlightAddedPlugin } from './HighlightAddedPlugin';
 
 const CLAUSE_EDITOR_NAMESPACE = 'ClauseLexicalEditor';
 
@@ -52,6 +53,8 @@ type ClauseLexicalEditorProps = {
   /** Initial content: Lexical JSON string, or plain text (legacy). */
   initialContent: string;
   readOnly?: boolean;
+  /** When set (and not readOnly), content added beyond this baseline is highlighted. For division member clause edits. */
+  baselineContent?: string;
   /** Called when content changes (editable mode only). Passes Lexical JSON object. */
   onChange?: (json: SerializedEditorState) => void;
   placeholder?: string;
@@ -62,6 +65,7 @@ type ClauseLexicalEditorProps = {
 export function ClauseLexicalEditor({
   initialContent,
   readOnly = false,
+  baselineContent,
   onChange,
   placeholder,
   className = '',
@@ -125,6 +129,9 @@ export function ClauseLexicalEditor({
           {!readOnly && <ListPlugin />}
           {!readOnly && <HistoryPlugin />}
           {!readOnly && <AutoFocusPlugin />}
+          {!readOnly && baselineContent != null && baselineContent !== '' && (
+            <HighlightAddedPlugin baselineContent={baselineContent} />
+          )}
           {!readOnly && (
             <OnChangePlugin
               ignoreSelectionChange

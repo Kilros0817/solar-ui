@@ -40,6 +40,7 @@ export default function ClauseAssignmentsClausePage() {
   const [contentLoaded, setContentLoaded] = useState(false);
   const [contentVersion, setContentVersion] = useState(0);
   const [editorContentKey, setEditorContentKey] = useState('');
+  const [baselineContentForHighlight, setBaselineContentForHighlight] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [showRejectReasonModal, setShowRejectReasonModal] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
@@ -67,6 +68,7 @@ export default function ClauseAssignmentsClausePage() {
 
   useEffect(() => {
     setContentLoaded(false);
+    setBaselineContentForHighlight('');
   }, [contractId, sectionIndex, clauseIndex]);
 
   const doc = contractId ? getDoc(contractId) : undefined;
@@ -93,6 +95,7 @@ export default function ClauseAssignmentsClausePage() {
       setClauseContent('');
       setContentVersion((v) => v + 1);
       setEditorContentKey('');
+      setBaselineContentForHighlight('');
       currentClauseContentRef.current = '';
       currentDocClauseIdRef.current = '';
       setIsViewingPastVersion(false);
@@ -108,6 +111,7 @@ export default function ClauseAssignmentsClausePage() {
           setClauseContent('');
           setContentVersion((v) => v + 1);
           setEditorContentKey('');
+          setBaselineContentForHighlight('');
           currentClauseContentRef.current = '';
           currentDocClauseIdRef.current = '';
           setIsViewingPastVersion(false);
@@ -123,6 +127,7 @@ export default function ClauseAssignmentsClausePage() {
             setContentVersion((v) => v + 1);
             setDocClauseId(clauseId);
             setEditorContentKey('');
+            setBaselineContentForHighlight(content);
             currentClauseContentRef.current = content;
             currentDocClauseIdRef.current = clauseId;
             setIsViewingPastVersion(false);
@@ -132,6 +137,7 @@ export default function ClauseAssignmentsClausePage() {
         setClauseContent('');
         setContentVersion((v) => v + 1);
         setEditorContentKey('');
+        setBaselineContentForHighlight('');
         currentClauseContentRef.current = '';
         currentDocClauseIdRef.current = '';
         setIsViewingPastVersion(false);
@@ -347,6 +353,7 @@ export default function ClauseAssignmentsClausePage() {
             key={`clause-editor-${contentVersion}-${editorContentKey}`}
             initialContent={clauseContent}
             readOnly={isViewingPastVersion || !isEditMode}
+            baselineContent={isEditMode && !isViewingPastVersion ? baselineContentForHighlight : undefined}
             placeholder="Enter clause content..."
             onChange={isEditMode && !isViewingPastVersion ? (json) => setClauseContent(serializeClauseContentToJson(json)) : undefined}
           />

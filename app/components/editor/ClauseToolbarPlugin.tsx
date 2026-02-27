@@ -214,6 +214,7 @@ export default function ClauseToolbarPlugin() {
       <div className="clause-toolbar-divider" aria-hidden />
       <button
         type="button"
+        onMouseDown={(e) => e.preventDefault()}
         onClick={() => editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'bold')}
         className={cn('clause-toolbar-btn', isBold && 'clause-toolbar-btn-active')}
         style={isBold ? activeStyle : undefined}
@@ -223,6 +224,7 @@ export default function ClauseToolbarPlugin() {
       </button>
       <button
         type="button"
+        onMouseDown={(e) => e.preventDefault()}
         onClick={() => editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'italic')}
         className={cn('clause-toolbar-btn', isItalic && 'clause-toolbar-btn-active')}
         style={isItalic ? activeStyle : undefined}
@@ -232,6 +234,7 @@ export default function ClauseToolbarPlugin() {
       </button>
       <button
         type="button"
+        onMouseDown={(e) => e.preventDefault()}
         onClick={() => editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'underline')}
         className={cn('clause-toolbar-btn', isUnderline && 'clause-toolbar-btn-active')}
         style={isUnderline ? activeStyle : undefined}
