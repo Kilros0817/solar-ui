@@ -69,21 +69,21 @@ const TBProvider: React.FC<TBProviderProps> = ({ children }: TBProviderProps) =>
               <UserProvider>
                 <NewContractProvider>
                   <ContractsProvider>
-                    <ClientContractsProvider>
                     <SubgraphRefreshProvider>
-                      <DivisionLeaderSectionsProvider>
-                        <DivisionMemberClausesProvider>
-                          <ContractDocProvider>
-                            <SectionContentProvider>
-                              <AssignmentProvider>
-                                {children}
-                              </AssignmentProvider>
-                            </SectionContentProvider>
-                          </ContractDocProvider>
-                        </DivisionMemberClausesProvider>
-                      </DivisionLeaderSectionsProvider>
+                      <ClientContractsProvider>
+                        <DivisionLeaderSectionsProvider>
+                          <DivisionMemberClausesProvider>
+                            <ContractDocProvider>
+                              <SectionContentProvider>
+                                <AssignmentProvider>
+                                  {children}
+                                </AssignmentProvider>
+                              </SectionContentProvider>
+                            </ContractDocProvider>
+                          </DivisionMemberClausesProvider>
+                        </DivisionLeaderSectionsProvider>
+                      </ClientContractsProvider>
                     </SubgraphRefreshProvider>
-                    </ClientContractsProvider>
                   </ContractsProvider>
                 </NewContractProvider>
               </UserProvider>

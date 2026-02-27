@@ -371,8 +371,14 @@ export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
     setRefreshing(true);
     try {
       refreshSubgraph();
-      await refetchContracts();
-      if (userRole === USER_ROLE.CLIENT) await clientContracts.refetch();
+      await Promise.all([
+        refetchContracts(),
+        (userRole === USER_ROLE.DIVISION_LEADER || userRole === USER_ROLE.LEGAL_TEAM)
+          ? leaderSections.refetch()
+          : Promise.resolve(),
+        userRole === USER_ROLE.DIVISION_MEMBER ? memberClauses.refetch() : Promise.resolve(),
+        userRole === USER_ROLE.CLIENT ? clientContracts.refetch() : Promise.resolve(),
+      ]);
     } catch (e) {
       console.error('Refresh failed:', e);
     } finally {

@@ -4,6 +4,7 @@ import React, { createContext, useContext, useEffect, useState, useCallback } fr
 import { useConnection } from 'wagmi';
 import { getContractsByClient } from '@/utils/subgraph';
 import { useUser } from './UserContext';
+import { useSubgraphRefresh } from './SubgraphRefreshContext';
 import { USER_ROLE } from '@/utils/constants';
 import type { Contract } from '../data/interfaces';
 
@@ -55,6 +56,7 @@ const ClientContractsContext = createContext<ClientContractsContextType | undefi
 export function ClientContractsProvider({ children }: { children: React.ReactNode }) {
   const { userRole } = useUser();
   const { address } = useConnection();
+  const { refreshCounter } = useSubgraphRefresh();
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -66,6 +68,7 @@ export function ClientContractsProvider({ children }: { children: React.ReactNod
     }
     setLoading(true);
     setError(null);
+    setContracts([]);
     try {
       const docs = await getContractsByClient(address.toLowerCase());
       const list = Array.isArray(docs) ? docs : [];
@@ -81,7 +84,7 @@ export function ClientContractsProvider({ children }: { children: React.ReactNod
 
   useEffect(() => {
     fetchContracts();
-  }, [fetchContracts]);
+  }, [fetchContracts, refreshCounter]);
 
   const value: ClientContractsContextType = {
     contracts,

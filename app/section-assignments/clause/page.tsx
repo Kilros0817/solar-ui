@@ -154,12 +154,8 @@ export default function SectionAssignmentsClausePage() {
   const isClauseRejected = clauseStatus === 3;
   const clauseRejectReason = (clauseAt as { rejectReason?: string })?.rejectReason ?? '';
   const sectionStatus = typeof (sectionAt as { status?: number })?.status === 'number' ? (sectionAt as { status: number }).status : 0;
-  const showReassignForSection = sectionStatus === 0;
-  // Also show Reassign for approved/rejected clauses (like legal team can reassign section to division leader)
-  const showReassignForClause = clauseStatus === 2 || clauseStatus === 3;
-  // Don't show Reassign when section is already approved by legal team
-  const sectionApprovedByLegal = sectionStatus === 2;
-  const showReassignButton = !sectionApprovedByLegal && (showReassignForSection || showReassignForClause);
+  const canReassignSectionClauses = sectionStatus === 0;
+  const showReassignButton = canReassignSectionClauses && (clauseStatus === 2 || clauseStatus === 3);
   const subgraphClauseId = !Number.isNaN(clauseIdOnChain) ? clauseIdOnChain : null;
 
   const openHistoryModal = async () => {

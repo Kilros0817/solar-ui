@@ -98,6 +98,8 @@ export interface ContractDocumentTemplateProps {
   licensorSlot?: React.ReactNode;
   /** Slot for Licensee column when no signature yet (e.g. SignaturePad + Sign button for client). */
   licenseeSlot?: React.ReactNode;
+  /** When true, hide clause highlight styling (used for client-facing view). */
+  disableHighlight?: boolean;
 }
 
 export interface ContractTemplatePreviewModalProps {

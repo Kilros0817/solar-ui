@@ -9,7 +9,7 @@ import { HistoryPlugin } from '@lexical/react/LexicalHistoryPlugin';
 import { ListPlugin } from '@lexical/react/LexicalListPlugin';
 import { OnChangePlugin } from '@lexical/react/LexicalOnChangePlugin';
 import { AutoFocusPlugin } from '@lexical/react/LexicalAutoFocusPlugin';
-import { ParagraphNode, TextNode } from 'lexical';
+import { ParagraphNode, TextNode, IS_HIGHLIGHT } from 'lexical';
 import { ListItemNode, ListNode } from '@lexical/list';
 import { HeadingNode } from '@lexical/rich-text';
 import { $getRoot, $createParagraphNode, $createTextNode } from 'lexical';
@@ -49,12 +49,39 @@ function plainTextToEditorStateFn(plainText: string) {
   };
 }
 
+function stripHighlightFromLexicalJson(value: string): string {
+  if (!isLexicalJsonString(value)) return value;
+  try {
+    const parsed = JSON.parse(value) as {
+      root?: { children?: Array<{ type?: string; format?: number; children?: unknown[] }> };
+    };
+    const children = parsed.root?.children;
+    if (!Array.isArray(children)) return value;
+    function walk(nodes: Array<{ type?: string; format?: number; children?: unknown[] }>) {
+      for (const node of nodes) {
+        if (node.type === 'text' && typeof node.format === 'number') {
+          node.format = node.format & ~IS_HIGHLIGHT;
+        }
+        if (Array.isArray(node.children)) {
+          walk(node.children as Array<{ type?: string; format?: number; children?: unknown[] }>);
+        }
+      }
+    }
+    walk(children);
+    return JSON.stringify(parsed);
+  } catch {
+    return value;
+  }
+}
+
 type ClauseLexicalEditorProps = {
   /** Initial content: Lexical JSON string, or plain text (legacy). */
   initialContent: string;
   readOnly?: boolean;
   /** When set (and not readOnly), content added beyond this baseline is highlighted. For division member clause edits. */
   baselineContent?: string;
+  /** When true, suppress visual highlight styling (used for client views). */
+  disableHighlight?: boolean;
   /** Called when content changes (editable mode only). Passes Lexical JSON object. */
   onChange?: (json: SerializedEditorState) => void;
   placeholder?: string;
@@ -66,6 +93,7 @@ export function ClauseLexicalEditor({
   initialContent,
   readOnly = false,
   baselineContent,
+  disableHighlight = false,
   onChange,
   placeholder,
   className = '',
@@ -73,16 +101,29 @@ export function ClauseLexicalEditor({
 }: ClauseLexicalEditorProps) {
   const initialConfig = useMemo(() => {
     let editorState: null | string | ((editor: LexicalEditor) => void) = null;
-    if (initialContent) {
-      if (isLexicalJsonString(initialContent)) {
-        editorState = initialContent;
+    let contentForEditor = initialContent;
+    if (disableHighlight) {
+      contentForEditor = stripHighlightFromLexicalJson(initialContent);
+    }
+    if (contentForEditor) {
+      if (isLexicalJsonString(contentForEditor)) {
+        editorState = contentForEditor;
       } else {
-        editorState = plainTextToEditorStateFn(initialContent);
+        editorState = plainTextToEditorStateFn(contentForEditor);
       }
     }
+    const theme = disableHighlight
+      ? {
+          ...Theme,
+          text: {
+            ...Theme.text,
+            highlight: '',
+          },
+        }
+      : Theme;
     return {
       namespace: CLAUSE_EDITOR_NAMESPACE,
-      theme: Theme,
+      theme,
       nodes: [ParagraphNode, TextNode, ListNode, ListItemNode, HeadingNode],
       onError: (error: Error) => {
         console.error('[ClauseLexicalEditor]', error?.message ?? error);
@@ -91,7 +132,7 @@ export function ClauseLexicalEditor({
       editable: !readOnly,
       editorState: editorState ?? undefined,
     } as unknown as InitialConfigType;
-  }, [initialContent, readOnly]);
+  }, [initialContent, readOnly, disableHighlight]);
 
   const handleChange = useCallback(
     (editorState: EditorState, _editor: LexicalEditor, _tags: Set<string>) => {

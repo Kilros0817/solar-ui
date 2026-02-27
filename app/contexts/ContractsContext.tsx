@@ -64,6 +64,9 @@ export function ContractsProvider({ children }: { children: React.ReactNode }) {
 
     setLoading(true);
     setError(null);
+    // Reset store before refetch so consumers always see a fresh list after manual refresh
+    setContracts([]);
+
     try {
       if (isDivisionLeader && address) {
         const sections = await getSectionsByDivisionLeader(address.toLowerCase());
@@ -82,6 +85,7 @@ export function ContractsProvider({ children }: { children: React.ReactNode }) {
           )
         );
       } else {
+        // Legal division and all non-division-leader roles hit getAllContracts here
         const docs = await getAllContracts();
         const list = Array.isArray(docs) ? docs : [];
         setContracts(

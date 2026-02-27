@@ -166,7 +166,21 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
   const sectionsByDivision: DivisionSection[] = useMemo(() => {
     const sections = rawDocument?.sections ?? [];
     if (sections.length === 0) return [];
-    const byDivision: Record<string, Array<{ id: string; name: string; content: string; status: 'pending' | 'approved' | 'rejected'; statusNum?: number; submittedBy: string; submittedDate: string; division: string; divisionLeaderName?: string }>> = {};
+    const byDivision: Record<string, Array<{
+      id: string;
+      name: string;
+      content: string;
+      status: 'pending' | 'approved' | 'rejected';
+      /** Raw section status from subgraph: 0 = Pending, 1 = Review, 2 = Approved, 3 = Rejected */
+      statusNum?: number;
+      submittedBy: string;
+      submittedDate: string;
+      division: string;
+      /** Division leader display name (from subgraph) */
+      divisionLeaderName?: string;
+      /** Rejection reason from subgraph (for rejected sections) */
+      comments?: string;
+    }>> = {};
     for (const sec of sections) {
       const dcat = sec?.divisionLeader?.dcategory;
       const divisionLabel = dcat != null && Number(dcat) > 0 ? (DIVISION_LABELS[Number(dcat)] ?? `Division ${dcat}`) : 'Contract';
@@ -177,6 +191,7 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
       const contentMap = sectionContentBySectionId[sec.id];
       if (!byDivision[divisionLabel]) byDivision[divisionLabel] = [];
       const statusNum = typeof sec.status === 'number' ? sec.status : 0;
+      const rejectReason = (sec as { rejectReason?: string })?.rejectReason;
       byDivision[divisionLabel].push({
         id: String(sec.id),
         name: contentMap?.sectionName ?? `Section ${sec.id}`,
@@ -187,6 +202,7 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
         submittedDate: '—',
         division: divisionLabel,
         divisionLeaderName: divisionLeaderName || undefined,
+        comments: rejectReason && rejectReason.trim() ? rejectReason : undefined,
       });
     }
     return Object.entries(byDivision).map(([division, secs]) => ({ division, sections: secs }));
@@ -735,6 +751,7 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
                       licensorSignature={rawDocument?.legalESign ?? null}
                       licenseeSignature={rawDocument?.clientESign ?? null}
                       gatewayBaseUrl={URLs.TBGateWay}
+                      disableHighlight={userRole === USER_ROLE.CLIENT || (userRole === USER_ROLE.LEGAL_TEAM && (contract.status === CONTRACT_STATUS.APPROVED || contract.status === CONTRACT_STATUS.ESIGNED))}
                       licensorSlot={contract.status === CONTRACT_STATUS.APPROVED && userRole === USER_ROLE.LEGAL_TEAM && !rawDocument?.legalESign?.cid ? (
                         <div className="space-y-2">
                           <SignaturePad onSignatureChange={setEsignSignatureDataUrl} />
@@ -778,6 +795,7 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
                       licensorSignature={rawDocument?.legalESign ?? null}
                       licenseeSignature={rawDocument?.clientESign ?? null}
                       gatewayBaseUrl={URLs.TBGateWay}
+                      disableHighlight={userRole === USER_ROLE.CLIENT || (userRole === USER_ROLE.LEGAL_TEAM && (contract.status === CONTRACT_STATUS.APPROVED || contract.status === CONTRACT_STATUS.ESIGNED))}
                       licensorSlot={contract.status === CONTRACT_STATUS.APPROVED && userRole === USER_ROLE.LEGAL_TEAM && !rawDocument?.legalESign?.cid ? (
                         <div className="space-y-2">
                           <SignaturePad onSignatureChange={setEsignSignatureDataUrl} />
@@ -926,6 +944,7 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
                         licensorSignature={rawDocument?.legalESign ?? null}
                         licenseeSignature={rawDocument?.clientESign ?? null}
                         gatewayBaseUrl={URLs.TBGateWay}
+                        disableHighlight={userRole === USER_ROLE.CLIENT || (userRole === USER_ROLE.LEGAL_TEAM && (contract.status === CONTRACT_STATUS.APPROVED || contract.status === CONTRACT_STATUS.ESIGNED))}
                         licensorSlot={contract.status === CONTRACT_STATUS.APPROVED && userRole === USER_ROLE.LEGAL_TEAM && !rawDocument?.legalESign?.cid ? (
                           <div className="space-y-2">
                             <SignaturePad onSignatureChange={setEsignSignatureDataUrl} />
@@ -957,6 +976,7 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
                         licensorSignature={rawDocument?.legalESign ?? null}
                         licenseeSignature={rawDocument?.clientESign ?? null}
                         gatewayBaseUrl={URLs.TBGateWay}
+                        disableHighlight={userRole === USER_ROLE.CLIENT || (userRole === USER_ROLE.LEGAL_TEAM && (contract.status === CONTRACT_STATUS.APPROVED || contract.status === CONTRACT_STATUS.ESIGNED))}
                         licensorSlot={contract.status === CONTRACT_STATUS.APPROVED && userRole === USER_ROLE.LEGAL_TEAM && !rawDocument?.legalESign?.cid ? (
                           <div className="space-y-2">
                             <SignaturePad onSignatureChange={setEsignSignatureDataUrl} />
@@ -1087,6 +1107,7 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
                   docContent={viewHistoryDocContent}
                   showSignatureSection={false}
                   gatewayBaseUrl={URLs.TBGateWay}
+                  disableHighlight
                 />
               </div>
             </div>

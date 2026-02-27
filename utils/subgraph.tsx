@@ -288,6 +288,7 @@ export const getContractById = async (id: string | number) => {
         id
         cid
         status
+        rejectReason
         divisionLeader {
           dcategory
           firstName
@@ -323,6 +324,7 @@ export const getSectionsByDivisionLeader = async (divisionLeaderId: string) => {
       cid
       assignedAt
       status
+      rejectReason
       divisionLeader {
         dcategory
         firstName

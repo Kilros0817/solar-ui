@@ -47,6 +47,7 @@ export function SectionReviewTab({
   const [loadingViewHistoryCid, setLoadingViewHistoryCid] = useState<string | null>(null);
   const [sectionIdViewingPast, setSectionIdViewingPast] = useState<string | null>(null);
   const [pastSectionDisplay, setPastSectionDisplay] = useState<{ sectionName: string; content: string } | null>(null);
+  const [pastSectionDisplayKey, setPastSectionDisplayKey] = useState(0);
 
   const openSectionHistoryModal = useCallback(async (sectionId: string) => {
     setSectionHistorySectionId(sectionId);
@@ -87,6 +88,7 @@ export function SectionReviewTab({
         .join('\n\n');
       setSectionIdViewingPast(sectionId);
       setPastSectionDisplay({ sectionName, content: contentPreview || 'No content.' });
+      setPastSectionDisplayKey((k) => k + 1);
       setSectionHistorySectionId(null);
     } catch (e) {
       console.error('Failed to load section from history:', e);
@@ -99,6 +101,7 @@ export function SectionReviewTab({
   const goToCurrentSection = useCallback(() => {
     setSectionIdViewingPast(null);
     setPastSectionDisplay(null);
+    setPastSectionDisplayKey((k) => k + 1);
   }, []);
 
   const getSectionStatusBadge = (statusNum?: number) => {
@@ -318,6 +321,7 @@ export function SectionReviewTab({
                                   {blocks.map((block, i) => (
                                     <div key={i} className="text-sm leading-[1.7]">
                                       <ClauseLexicalEditor
+                                        key={`section-${section.id}-${sectionIdViewingPast === section.id ? 'past' : 'current'}-${pastSectionDisplayKey}-${i}`}
                                         initialContent={block}
                                         readOnly
                                         className="text-sm"

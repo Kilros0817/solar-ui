@@ -16,6 +16,7 @@ export function ContractDocumentTemplate({
   gatewayBaseUrl = '',
   licensorSlot,
   licenseeSlot,
+  disableHighlight = false,
 }: ContractDocumentTemplateProps) {
   const hasDocContent = docContent?.sections?.length;
 
@@ -38,6 +39,7 @@ export function ContractDocumentTemplate({
                     key={cidx}
                     initialContent={clause.clauseContent ?? ''}
                     readOnly
+                    disableHighlight={disableHighlight}
                   />
                 ))}
               </div>

@@ -9,9 +9,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/ca
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/app/components/ui/select';
 import { Label } from '@/app/components/ui/label';
 import { Badge } from '@/app/components/ui/badge';
-import { ArrowLeft, FileText, Loader2, UserPlus, Eye, History, RotateCcw } from 'lucide-react';
-import { getDivisionMembersByDivisionId, getSectionHistories } from '@/utils/subgraph';
-import { assignClausesToMembers } from '@/utils/interact';
+import { ArrowLeft, FileText, Loader2, UserPlus, History, RotateCcw, AlertCircle } from 'lucide-react';
+import { getDivisionMembersByDivisionId, getSectionHistories, getClauseHistories } from '@/utils/subgraph';
+import { assignClausesToMembers, reassignClause } from '@/utils/interact';
 import { useContractDoc } from '@/app/contexts/ContractDocContext';
 import { useContracts } from '@/app/contexts/ContractsContext';
 import { useSubgraphRefresh } from '@/app/contexts/SubgraphRefreshContext';
@@ -19,12 +19,13 @@ import { useAssignment } from '@/app/contexts/AssignmentContext';
 import { useSectionContent } from '@/app/contexts/SectionContentContext';
 import { DIVISION_LABELS, USER_ROLE, URLs } from '@/utils/constants';
 import { useUser } from '@/app/contexts/UserContext';
-import { formatSectionHistoryReadable } from '@/utils/utility';
+import { formatSectionHistoryReadable, formatClauseHistoryReadable } from '@/utils/utility';
 import { toast } from 'sonner';
 import type { Clause, DocSection, DivisionMember } from '@/app/data/interfaces';
 import { ClauseLexicalEditor } from '@/app/components/editor/ClauseLexicalEditor';
 
 type SectionHistoryItem = { type?: string; id?: string; date?: string | number; cid?: string | null };
+type ClauseHistoryItem = { type?: string; id?: string; date?: string | number; cid?: string | null };
 
 const getMemberLabel = (m: DivisionMember) =>
   [m.firstName, m.lastName].filter(Boolean).join(' ').trim() || m.email || m.id;
@@ -58,7 +59,17 @@ export default function SectionAssignmentsSectionPage() {
   const [histories, setHistories] = useState<SectionHistoryItem[]>([]);
   const [loadingHistories, setLoadingHistories] = useState(false);
   const [loadingHistoryCid, setLoadingHistoryCid] = useState<string | null>(null);
+  const [reassigningClauseId, setReassigningClauseId] = useState<number | null>(null);
   const [isViewingPastVersion, setIsViewingPastVersion] = useState(false);
+  const [sectionHistoryViewCid, setSectionHistoryViewCid] = useState<string | null>(null);
+  const [showClauseHistoryModal, setShowClauseHistoryModal] = useState(false);
+  const [clauseHistoryClauseId, setClauseHistoryClauseId] = useState<number | null>(null);
+  const [clauseHistories, setClauseHistories] = useState<ClauseHistoryItem[]>([]);
+  const [loadingClauseHistories, setLoadingClauseHistories] = useState(false);
+  const [loadingClauseHistoryCid, setLoadingClauseHistoryCid] = useState<string | null>(null);
+  const [clauseHistoryPreviewContent, setClauseHistoryPreviewContent] = useState<string | null>(null);
+  const [clauseHistoryPreviewKey, setClauseHistoryPreviewKey] = useState(0);
+  const [showSectionRejectModal, setShowSectionRejectModal] = useState(false);
   const currentSectionNameRef = useRef('');
   const currentClausesRef = useRef<Clause[]>([]);
 
@@ -83,6 +94,7 @@ export default function SectionAssignmentsSectionPage() {
     setSectionIdFromSubgraph(null);
     setSectionContentLoaded(false);
     setClauseContentOverrides({});
+    setSectionHistoryViewCid(null);
   }, [contractId, sectionIndex]);
 
   const doc = contractId ? getDoc(contractId) : undefined;
@@ -95,6 +107,7 @@ export default function SectionAssignmentsSectionPage() {
   const docNotFound = contractId && doc === null;
   const rawSections = doc?.sections ?? [];
   const sectionAt = rawSections[sectionIndex];
+  const sectionRejectReason = (sectionAt as { rejectReason?: string } | undefined)?.rejectReason ?? '';
   const leaderDcategory = profile?.dcategory ?? 0;
   const sectionDcategory =
     sectionAt?.divisionLeader?.dcategory != null ? Number(sectionAt.divisionLeader.dcategory) : null;
@@ -261,11 +274,13 @@ export default function SectionAssignmentsSectionPage() {
         setSectionName(name);
         setClauses(clauseList);
         setClauseContentOverrides({});
+        setSectionHistoryViewCid(cid);
         setIsViewingPastVersion(true);
       } else {
         setSectionName(section?.sectionName ?? `Section ${sectionIndex + 1}`);
         setClauses([]);
         setClauseContentOverrides({});
+        setSectionHistoryViewCid(cid);
         setIsViewingPastVersion(true);
       }
     } catch (e) {
@@ -279,7 +294,77 @@ export default function SectionAssignmentsSectionPage() {
   const goToCurrentVersion = () => {
     setSectionName(currentSectionNameRef.current);
     setClauses(currentClausesRef.current);
+    setSectionHistoryViewCid(null);
     setIsViewingPastVersion(false);
+  };
+
+  const openClauseHistoryModal = async (clauseIdOnChain: number) => {
+    if (Number.isNaN(clauseIdOnChain)) return;
+    setClauseHistoryClauseId(clauseIdOnChain);
+    setShowClauseHistoryModal(true);
+    setClauseHistoryPreviewContent(null);
+    setLoadingClauseHistories(true);
+    setClauseHistories([]);
+    try {
+      const list = await getClauseHistories(String(clauseIdOnChain));
+      const sorted = Array.isArray(list)
+        ? [...list].sort((a, b) => {
+            const da = a.date != null ? Number(a.date) : 0;
+            const db = b.date != null ? Number(b.date) : 0;
+            return da - db;
+          })
+        : [];
+      setClauseHistories(sorted);
+    } catch (e) {
+      console.error('Failed to load clause histories:', e);
+      toast.error('Failed to load history');
+      setClauseHistories([]);
+    } finally {
+      setLoadingClauseHistories(false);
+    }
+  };
+
+  const handleViewClauseHistoryCid = async (cid: string) => {
+    if (!cid || loadingClauseHistoryCid) return;
+    setLoadingClauseHistoryCid(cid);
+    try {
+      const res = await fetch(`${URLs.TBGateWay}${cid}`);
+      const data = res.ok ? await res.json() : null;
+      const content = typeof data?.clauseContent === 'string' ? data.clauseContent : '';
+      setClauseHistoryPreviewContent(content);
+      setClauseHistoryPreviewKey((k) => k + 1);
+    } catch (e) {
+      console.error('Failed to load clause history content:', e);
+      toast.error('Failed to load content from history');
+    } finally {
+      setLoadingClauseHistoryCid(null);
+    }
+  };
+
+  const handleReassignClause = async (clauseIdOnChain: number) => {
+    if (!config || !address) {
+      toast.error('Missing wallet connection');
+      return;
+    }
+    setReassigningClauseId(clauseIdOnChain);
+    try {
+      const ok = await reassignClause(config, address, clauseIdOnChain);
+      if (ok) {
+        toast.success('Clause reassigned');
+        setTimeout(async () => {
+          refreshSubgraph();
+          await refetchDoc(contractId);
+          await refetchContracts();
+        }, 4000);
+      } else {
+        toast.error('Failed to reassign clause');
+      }
+    } catch (e) {
+      console.error('Reassign error:', e);
+      toast.error(e instanceof Error ? e.message : 'Failed to reassign clause');
+    } finally {
+      setReassigningClauseId(null);
+    }
   };
 
   // For allocated clauses (have division member), load content from clause CID; unallocated use section CID content already in clauses
@@ -440,6 +525,19 @@ export default function SectionAssignmentsSectionPage() {
                   <History className="h-4 w-4 shrink-0" />
                   <span>History</span>
                 </Button>
+                {isDivisionLeader && !!sectionRejectReason.trim() && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="gap-1.5 shrink-0"
+                    onClick={() => setShowSectionRejectModal(true)}
+                    title="View section rejection reason"
+                  >
+                    <AlertCircle className="h-4 w-4 shrink-0 text-red-600" />
+                    <span className="text-red-700">Reject reason</span>
+                  </Button>
+                )}
                 {isViewingPastVersion && (
                   <Button
                     type="button"
@@ -468,9 +566,18 @@ export default function SectionAssignmentsSectionPage() {
                 const assignedMember = clauseData?.divisionMember;
                 const assignedLabel = getAssignedMemberLabel(assignedMember);
                 const clauseStatus = typeof clauseData?.status === 'number' ? clauseData.status : undefined;
+                const clauseIdOnChain = clauseData?.id != null ? Number(clauseData.id) : NaN;
                 const isAssignedOrSubmitted = clauseStatus === 0 || clauseStatus === 1;
                 const isApprovedOrRejected = clauseStatus === 2 || clauseStatus === 3;
-                const showAssignDropdown = isDivisionLeader && !isAssignedOrSubmitted && !isApprovedOrRejected;
+                const showAssignDropdown = isDivisionLeader && !isViewingPastVersion && !isAssignedOrSubmitted && !isApprovedOrRejected;
+                const sectionStatus = typeof sectionAt?.status === 'number' ? sectionAt.status : 0;
+                const canReassignSectionClauses = sectionStatus === 0;
+                const showReassignButton =
+                  isDivisionLeader &&
+                  !isViewingPastVersion &&
+                  canReassignSectionClauses &&
+                  (clauseStatus === 2 || clauseStatus === 3) &&
+                  !Number.isNaN(clauseIdOnChain);
                 const statusLabel =
                   clauseStatus === 0
                     ? 'Assigned'
@@ -484,15 +591,32 @@ export default function SectionAssignmentsSectionPage() {
                 return (
                   <div
                     key={clause.clauseId || i}
-                    className="rounded-lg border bg-muted/30 p-4 flex gap-4 items-start"
+                    className="rounded-lg border bg-muted/30 p-4 min-w-0"
                   >
+                    {isDivisionLeader && !Number.isNaN(clauseIdOnChain) && !isViewingPastVersion && (
+                      <div className="flex justify-end pb-2 border-b">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="gap-1.5 cursor-pointer mb-2"
+                          onClick={() => openClauseHistoryModal(clauseIdOnChain)}
+                          title="View clause history"
+                        >
+                          <History className="h-4 w-4 shrink-0" />
+                          <span>History</span>
+                        </Button>
+                      </div>
+                    )}
                     <div className="flex-1 min-w-0 space-y-3">
-                      <div className="text-sm leading-relaxed text-foreground">
+                      <div className="rounded-md border border-input bg-background/50 p-3 min-h-[4rem] [&_.clause-editor-container]:min-h-0 [&_.clause-editor-inner]:min-h-0">
                         <ClauseLexicalEditor
+                          key={`section-clause-${i}-${isViewingPastVersion ? `past-${sectionHistoryViewCid ?? ''}` : (clauseContentOverrides[i] !== undefined ? 'override' : 'section')}`}
                           initialContent={
-                            clauseContentOverrides[i] !== undefined
-                              ? clauseContentOverrides[i]
-                              : clause.clauseContent ?? ''
+                            isViewingPastVersion
+                              ? (clause.clauseContent ?? '')
+                              : (clauseContentOverrides[i] !== undefined
+                                  ? clauseContentOverrides[i]
+                                  : clause.clauseContent ?? '')
                           }
                           readOnly
                           className="text-sm"
@@ -501,20 +625,40 @@ export default function SectionAssignmentsSectionPage() {
                     <p className="text-xs text-muted-foreground">
                       Assigned to: <span className="font-medium text-foreground">{assignedLabel}</span>
                     </p>
-                    {statusLabel && (
-                      <div className="flex flex-wrap items-center gap-2 pt-2 border-t">
-                        <Badge
-                          variant={
-                            clauseStatus === 2
-                              ? 'destructive'
-                              : clauseStatus === 3
+                    {(statusLabel || showReassignButton) && (
+                      <div className="flex flex-wrap items-center gap-2 pt-2 border-t justify-between">
+                        {statusLabel ? (
+                          <Badge
+                            variant={
+                              clauseStatus === 2
                                 ? 'destructive'
-                                : 'secondary'
-                          }
-                          className={clauseStatus === 2 ? 'bg-green-600' : ''}
-                        >
-                          {statusLabel}
-                        </Badge>
+                                : clauseStatus === 3
+                                  ? 'destructive'
+                                  : 'secondary'
+                            }
+                            className={clauseStatus === 2 ? 'bg-green-600' : ''}
+                          >
+                            {statusLabel}
+                          </Badge>
+                        ) : (
+                          <span />
+                        )}
+                        {showReassignButton && (
+                          <Button
+                            variant="reassign"
+                            size="sm"
+                            className="gap-1.5 cursor-pointer shrink-0"
+                            disabled={reassigningClauseId === clauseIdOnChain}
+                            onClick={() => handleReassignClause(clauseIdOnChain)}
+                          >
+                            {reassigningClauseId === clauseIdOnChain ? (
+                              <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
+                            ) : (
+                              <UserPlus className="h-4 w-4 shrink-0" />
+                            )}
+                            <span>{reassigningClauseId === clauseIdOnChain ? 'Reassigning...' : 'Reassign'}</span>
+                          </Button>
+                        )}
                       </div>
                     )}
                     {showAssignDropdown && (
@@ -549,31 +693,6 @@ export default function SectionAssignmentsSectionPage() {
                       </div>
                     )}
                     </div>
-                    {isDivisionLeader && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 shrink-0 cursor-pointer"
-                        onClick={() => {
-                          const fromRoute =
-                            clauseStatus === 0
-                              ? 'pending'
-                              : clauseStatus === 1
-                                ? 'review'
-                                : clauseStatus === 2
-                                  ? 'approved'
-                                  : clauseStatus === 3
-                                    ? 'rejected'
-                                    : null;
-                          const clauseCid = (clauseData as { cid?: string | null } | undefined)?.cid ?? null;
-                          setSelection(contractId, sectionIndex, i, clauseCid, fromRoute);
-                          router.push('/section-assignments/clause');
-                        }}
-                        title="View clause"
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                    )}
                   </div>
                 );
               })}
@@ -670,6 +789,152 @@ export default function SectionAssignmentsSectionPage() {
               )}
               <div className="flex justify-end mt-4 pt-2 border-t">
                 <Button type="button" variant="outline" onClick={() => setShowHistoryModal(false)}>
+                  Close
+                </Button>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
+
+      {typeof document !== 'undefined' &&
+        showSectionRejectModal &&
+        createPortal(
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="section-reject-reason-modal-title"
+            className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+          >
+            <div
+              className="absolute inset-0 bg-black/70"
+              onClick={() => setShowSectionRejectModal(false)}
+            />
+            <div
+              className="relative z-10 w-sm rounded-lg border bg-background p-6 shadow-lg max-h-[80vh] flex flex-col"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h2
+                id="section-reject-reason-modal-title"
+                className="text-lg font-semibold leading-none tracking-tight mb-4 flex items-center gap-2"
+              >
+                <AlertCircle className="h-5 w-5 text-red-600 shrink-0" />
+                <span>Section rejection reason</span>
+              </h2>
+              <div className="flex-1 min-h-0 overflow-y-auto">
+                <p className="text-sm text-red-700 whitespace-pre-wrap">
+                  {sectionRejectReason || 'No rejection reason provided.'}
+                </p>
+              </div>
+              <div className="flex justify-end mt-4 pt-2 border-t">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowSectionRejectModal(false)}
+                >
+                  Close
+                </Button>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
+
+      {typeof document !== 'undefined' &&
+        showClauseHistoryModal &&
+        createPortal(
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="clause-history-modal-title"
+            className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+          >
+            <div
+              className="absolute inset-0 bg-black/70"
+              onClick={() => {
+                setShowClauseHistoryModal(false);
+                setClauseHistoryPreviewContent(null);
+              }}
+            />
+            <div
+              className="relative z-10 w-sm rounded-lg border bg-background p-6 shadow-lg max-h-[80vh] flex flex-col"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h2 id="clause-history-modal-title" className="text-lg font-semibold leading-none tracking-tight mb-4">
+                Clause history
+              </h2>
+              {clauseHistoryPreviewContent !== null ? (
+                <>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="gap-1.5 self-start mb-3"
+                    onClick={() => setClauseHistoryPreviewContent(null)}
+                  >
+                    <ArrowLeft className="h-4 w-4 shrink-0" />
+                    Back to list
+                  </Button>
+                  <div className="rounded-md border border-input bg-muted/30 p-3 flex-1 min-h-0 overflow-y-auto [&_.clause-editor-container]:min-h-0 [&_.clause-editor-inner]:min-h-0">
+                    <ClauseLexicalEditor
+                      key={`clause-history-preview-${clauseHistoryPreviewKey}`}
+                      initialContent={clauseHistoryPreviewContent}
+                      readOnly
+                      className="text-sm"
+                    />
+                  </div>
+                </>
+              ) : loadingClauseHistories ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                </div>
+              ) : clauseHistories.length === 0 ? (
+                <p className="text-sm text-muted-foreground py-4">No history for this clause.</p>
+              ) : (
+                <ul className="space-y-2 overflow-y-auto flex-1 min-h-0 pr-1">
+                  {clauseHistories.map((h, i) => {
+                    const description = formatClauseHistoryReadable(h);
+                    const hasCid = !!h.cid;
+                    const isLoading = hasCid && loadingClauseHistoryCid === h.cid;
+                    return (
+                      <li
+                        key={h.id ?? i}
+                        className="text-sm rounded-md border bg-muted/30 px-3 py-2"
+                      >
+                        {hasCid ? (
+                          <button
+                            type="button"
+                            onClick={() => handleViewClauseHistoryCid(h.cid!)}
+                            disabled={!!loadingClauseHistoryCid}
+                            className="clause-history-link text-left w-full text-foreground cursor-pointer"
+                            title="View content at this point in history"
+                          >
+                            {isLoading ? (
+                              <span className="inline-flex items-center gap-1.5">
+                                <Loader2 className="h-3.5 w-3.5 animate-spin shrink-0" />
+                                {description}
+                              </span>
+                            ) : (
+                              description
+                            )}
+                          </button>
+                        ) : (
+                          <span className="text-foreground">{description}</span>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+              <div className="flex justify-end mt-4 pt-2 border-t">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setShowClauseHistoryModal(false);
+                    setClauseHistoryPreviewContent(null);
+                  }}
+                >
                   Close
                 </Button>
               </div>
