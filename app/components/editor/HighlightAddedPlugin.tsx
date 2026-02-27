@@ -29,14 +29,15 @@ function getPlainTextFromContent(content: string): string {
     const children = parsed?.root?.children;
     if (!Array.isArray(children)) return trimmed;
     const parts: string[] = [];
-    function walk(nodes: typeof children): void {
+    function walk(nodes: Array<{ type?: string; text?: string; children?: unknown[] }> | undefined): void {
+      if (!nodes || !Array.isArray(nodes)) return;
       for (const node of nodes) {
         if (node.type === 'text' && typeof node.text === 'string') {
           parts.push(node.text);
           continue;
         }
         if (Array.isArray((node as { children?: unknown[] }).children)) {
-          walk((node as { children: typeof children }).children);
+          walk((node as { children: Array<{ type?: string; text?: string; children?: unknown[] }> }).children);
         }
       }
     }
