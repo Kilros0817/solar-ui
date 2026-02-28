@@ -9,7 +9,6 @@ import { useUser } from '@/app/contexts/UserContext';
 import { useAssignment } from '@/app/contexts/AssignmentContext';
 import { useDivisionMemberClauses } from '@/app/contexts/DivisionMemberClausesContext';
 import { USER_ROLE, URLs } from '@/utils/constants';
-import { getPlainTextPreview } from '@/app/components/editor/ClauseLexicalEditor';
 
 type ClauseWithSection = {
   id: string;
@@ -33,7 +32,6 @@ export default function ClauseAssignmentsApprovedPage() {
   const { userRole } = useUser();
   const { setSelection } = useAssignment();
   const { clauses: allClauses, loading, getIndicesForClause } = useDivisionMemberClauses();
-  const [clauseContents, setClauseContents] = useState<Record<string, string>>({});
   const [navigatingClauseId, setNavigatingClauseId] = useState<string | null>(null);
 
   const clauses = useMemo(
@@ -47,31 +45,6 @@ export default function ClauseAssignmentsApprovedPage() {
       return;
     }
   }, [userRole, router]);
-
-  useEffect(() => {
-    const withCid = clauses.filter((c) => c.cid);
-    if (withCid.length === 0) return;
-    let cancelled = false;
-    const fetchAll = async () => {
-      const next: Record<string, string> = {};
-      for (const clause of withCid) {
-        if (cancelled) return;
-        try {
-          const res = await fetch(`${URLs.TBGateWay}${clause.cid}`);
-          if (!res.ok) continue;
-          const data = await res.json();
-          const content =
-            typeof data?.clauseContent === 'string' ? data.clauseContent : '';
-          next[clause.id] = content || '';
-        } catch {
-          next[clause.id] = '';
-        }
-      }
-      if (!cancelled) setClauseContents((prev) => ({ ...prev, ...next }));
-    };
-    fetchAll();
-    return () => { cancelled = true; };
-  }, [clauses]);
 
   const handleViewClause = (clause: ClauseWithSection) => {
     const docId = clause.section?.doc?.id;
@@ -148,21 +121,15 @@ export default function ClauseAssignmentsApprovedPage() {
                     </p>
                   </div>
                 </div>
-                {clause.cid && (
-                  <div className="rounded border bg-background/50 p-3">
-                    <p
-                      className="text-sm text-foreground line-clamp-2"
-                      title={clauseContents[clause.id] != null ? getPlainTextPreview(clauseContents[clause.id]) : undefined}
-                    >
-                      {clauseContents[clause.id] != null
-                        ? (() => {
-                            const plain = getPlainTextPreview(clauseContents[clause.id]);
-                            return plain.length > 60 ? `${plain.slice(0, 60)}...` : plain;
-                          })()
-                        : 'Loading...'}
-                    </p>
-                  </div>
-                )}
+                <div className="rounded border bg-background/50 p-3 text-sm text-muted-foreground">
+                  <span>
+                    Section ID: <span className="font-medium text-foreground">{clause.section?.id ?? '—'}</span>
+                  </span>
+                  <span className="mx-2 text-muted-foreground">•</span>
+                  <span>
+                    Clause ID: <span className="font-medium text-foreground">{clause.id}</span>
+                  </span>
+                </div>
                 <div className="pt-2 border-t">
                   <Button
                     variant="outline"

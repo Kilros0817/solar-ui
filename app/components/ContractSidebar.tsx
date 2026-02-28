@@ -156,6 +156,7 @@ export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
     '/legal-review/rejected': 'legal-rejected',
     '/rejected': 'legal-rejected',
     '/divisions': 'team',
+    '/clients': 'clients',
     '/pending-users': 'pending-users',
     '/client-contracts': 'client-my-contracts',
     '/client-contracts/pending': 'client-pending',
@@ -236,6 +237,7 @@ export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
         { id: 'legal-rejected', label: 'Rejected', icon: Archive, count: counts.rejected },
         { id: 'esigned', label: 'Esigned', icon: PenLine, count: counts.esigned },
         { id: 'templates', label: 'Template Library', icon: FolderOpen, count: null },
+        { id: 'clients', label: 'Clients', icon: Users, count: null },
         { id: 'team', label: 'Team', icon: Users, count: null },
       ];
     }
@@ -323,6 +325,7 @@ export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
         { id: 'my-contracts', label: 'All Contracts', icon: FileText, count: counts.all },
         { id: 'templates', label: 'All Templates', icon: FolderOpen, count: null },
         { id: 'pending-users', label: 'Pending Users', icon: Users, count: null },
+        { id: 'clients', label: 'Clients', icon: Users, count: null },
         { id: 'team', label: 'Team', icon: Users, count: null },
       ];
     }
@@ -472,6 +475,7 @@ export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
               'templates': '/templates',
               'clause-assignments': '/clause-assignments',
               'rejected-tasks': '/clause-assignments/rejected',
+              'clients': '/clients',
               'pending-users': '/pending-users',
               'team': '/divisions',
               'client-my-contracts': '/client-contracts',

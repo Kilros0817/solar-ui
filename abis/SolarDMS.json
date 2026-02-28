@@ -1,6 +1,6 @@
 {
   "contractName": "SolarDMS",
-  "contractAddress": "0x08De8De76F5d5d631bCe4034d272C08A617273DC",
+  "contractAddress": "0xD8B2F6D44130728cE1B7A7d66ef85d662eC5e773",
   "abi": [
     {
       "inputs": [],
@@ -40,6 +40,11 @@
     {
       "inputs": [],
       "name": "InvalidSection",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "LeaderExistAlready",
       "type": "error"
     },
     {
@@ -800,6 +805,25 @@
       "name": "declineRegisterRequest",
       "outputs": [],
       "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "enum SolarDMS.DivisionCategory",
+          "name": "dCategory",
+          "type": "uint8"
+        }
+      ],
+      "name": "divisionLeaderList",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "leader",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
       "type": "function"
     },
     {

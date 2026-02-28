@@ -119,14 +119,11 @@ export const getAllMemebers = async () => {
     const users = (res.data as any).users || [];
     const grouped = groupUsersByDivision(users);
 
-    // Add legal team members (role 3) to Legal division (dcategory 1)
-    // Legal division users have dcategory = 0, add them as leader
-    users.forEach((user: User) => {
-      const role = Number(user.role);
-      if (role === 3) { // Legal Team
-        grouped[0] = { leader: user, members: [] };
-      }
-    });
+    // Add all legal team members (role 3) to Legal division (dcategory 0) as multiple leaders
+    const legalUsers = users.filter((user: User) => Number(user.role) === 3);
+    if (legalUsers.length > 0) {
+      grouped[0] = { leader: null, members: legalUsers };
+    }
 
     return grouped;
   } catch (e) {
@@ -136,7 +133,7 @@ export const getAllMemebers = async () => {
 };
 
 export const getAllDivisionLeadersAndMembers = async () => {
-  let query = `{
+  const query = `{
     users(where: {dcategory_gt: 0}) {
       id
       firstName
@@ -146,10 +143,28 @@ export const getAllDivisionLeadersAndMembers = async () => {
       role
     }
   }`;
+  const legalQuery = `{
+    users(where: {role: 3}) {
+      id
+      firstName
+      lastName
+      email
+      dcategory
+      role
+    }
+  }`;
   try {
-    const res = await getDataFromSubgraph(query);
+    const [res, legalRes] = await Promise.all([
+      getDataFromSubgraph(query),
+      getDataFromSubgraph(legalQuery),
+    ]);
     const users = (res.data as any).users || [];
-    return groupUsersByDivision(users);
+    const legalUsers = (legalRes.data as any).users || [];
+    const grouped = groupUsersByDivision(users);
+    if (legalUsers.length > 0) {
+      grouped[0] = { leader: null, members: legalUsers };
+    }
+    return grouped;
   } catch (e) {
     console.log(e, "============error in get all users from subgraph============");
     return {};

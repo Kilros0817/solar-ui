@@ -105,14 +105,19 @@ export function TeamManagement({ userRole }: TeamManagementProps) {
   // Filter divisions based on search
   const filteredDivisions = divisions.filter((division) => {
     if (!searchQuery) return true;
-    const label = getDivisionLabel(division);
-    const leader = divisionGroups[division]?.leader ?? null;
-    const leaderName = leader ? getDisplayName(leader) : '';
-    return (
-      label.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      leaderName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (leader?.email ?? '').toLowerCase().includes(searchQuery.toLowerCase())
+    const term = searchQuery.toLowerCase();
+    const label = getDivisionLabel(division).toLowerCase();
+    const group = divisionGroups[division];
+    const leader = group?.leader ?? null;
+    const members = group?.members ?? [];
+    const leaderMatch =
+      leader &&
+      (getDisplayName(leader).toLowerCase().includes(term) || (leader.email ?? '').toLowerCase().includes(term));
+    const memberMatch = members.some(
+      (m) =>
+        getDisplayName(m).toLowerCase().includes(term) || (m.email ?? '').toLowerCase().includes(term)
     );
+    return label.includes(term) || !!leaderMatch || memberMatch;
   });
 
   const handleCopyAddress = async (address: string) => {
@@ -179,6 +184,7 @@ export function TeamManagement({ userRole }: TeamManagementProps) {
             const leader = group.leader;
             const hasLeader = !!leader;
             const memberCount = group.members?.length ?? 0;
+            const isLegalTeam = division === 0;
 
             return (
               <Card key={division} className="hover:shadow-lg transition-shadow">
@@ -193,6 +199,11 @@ export function TeamManagement({ userRole }: TeamManagementProps) {
                         {division > 0 && (
                           <CardDescription className="text-xs mt-1">
                             Division #{division}
+                          </CardDescription>
+                        )}
+                        {isLegalTeam && memberCount > 0 && (
+                          <CardDescription className="text-xs mt-1">
+                            {memberCount} {memberCount === 1 ? 'leader' : 'leaders'}
                           </CardDescription>
                         )}
                       </div>
@@ -217,10 +228,73 @@ export function TeamManagement({ userRole }: TeamManagementProps) {
                         </DropdownMenuContent>
                       </DropdownMenu>
                     )}
+                    {isLegalTeam && memberCount > 0 && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setViewingMembers(division)}
+                        className="gap-2"
+                      >
+                        <Eye className="h-4 w-4" />
+                        View all
+                      </Button>
+                    )}
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {hasLeader ? (
+                  {isLegalTeam ? (
+                    memberCount > 0 ? (
+                      <>
+                        <div className="space-y-2">
+                          {group.members.slice(0, 3).map((member, idx) => (
+                            <div key={member.id ?? idx} className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                              <Avatar className="h-10 w-10">
+                                <AvatarFallback className="bg-brand-secondary/10 text-brand-secondary">
+                                  {getInitials(member)}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="flex-1 min-w-0">
+                                <p className="font-medium text-sm truncate">{getDisplayName(member)}</p>
+                                <p className="text-xs text-muted-foreground truncate">{member.email}</p>
+                              </div>
+                              <div className="flex items-center gap-2 text-xs text-muted-foreground shrink-0">
+                                <span className="font-mono">{formatAddress(member.id)}</span>
+                                <button
+                                  type="button"
+                                  onClick={() => handleCopyAddress(member.id)}
+                                  className="text-muted-foreground hover:text-foreground transition-colors"
+                                  title="Copy address"
+                                  aria-label="Copy address"
+                                >
+                                  {copiedAddress === member.id ? (
+                                    <Check className="h-4 w-4 text-green-600" />
+                                  ) : (
+                                    <Copy className="h-4 w-4" />
+                                  )}
+                                </button>
+                              </div>
+                              <CheckCircle2 className="h-5 w-5 text-green-600 shrink-0" />
+                            </div>
+                          ))}
+                        </div>
+                        {memberCount > 3 && (
+                          <p className="text-xs text-muted-foreground text-center">
+                            +{memberCount - 3} more — use View all to see everyone
+                          </p>
+                        )}
+                      </>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center py-6 text-center">
+                        <div className="bg-muted rounded-full flex items-center justify-center mb-3">
+                          <AlertCircle className="h-8 w-8 text-muted-foreground" />
+                        </div>
+                        <p className="text-sm font-medium mb-1">No legal team members</p>
+                        <p className="text-xs text-muted-foreground">
+                          No users with Legal Team role assigned yet.
+                        </p>
+                      </div>
+                    )
+                  ) : hasLeader ? (
                     <>
                       <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
                         <Avatar className="h-10 w-10">
@@ -250,23 +324,21 @@ export function TeamManagement({ userRole }: TeamManagementProps) {
                           )}
                         </button>
                       </div>
-                      {division > 0 && (
-                        <div className="flex items-center gap-2 w-full">
-                          <Badge variant="outline" className="flex-1 justify-center py-1.5">
-                            <Users className="mr-2 h-3 w-3" />
-                            Leader Assigned
-                          </Badge>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setViewingMembers(division)}
-                            className="flex-1"
-                          >
-                            <Eye className="mr-2 h-3 w-3" />
-                            View Members ({memberCount})
-                          </Button>
-                        </div>
-                      )}
+                      <div className="flex items-center gap-2 w-full">
+                        <Badge variant="outline" className="flex-1 justify-center py-1.5">
+                          <Users className="mr-2 h-3 w-3" />
+                          Leader Assigned
+                        </Badge>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setViewingMembers(division)}
+                          className="flex-1"
+                        >
+                          <Eye className="mr-2 h-3 w-3" />
+                          View Members ({memberCount})
+                        </Button>
+                      </div>
                     </>
                   ) : (
                     <div className="flex flex-col items-center justify-center py-6 text-center">
@@ -305,10 +377,12 @@ export function TeamManagement({ userRole }: TeamManagementProps) {
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle>
-                    {DIVISION_LABELS[viewingMembers]} - Team Members
+                    {getDivisionLabel(viewingMembers)} - {viewingMembers === 0 ? 'Leaders' : 'Team Members'}
                   </CardTitle>
                   <CardDescription className="mt-1">
-                    View all members in this division (Read-only)
+                    {viewingMembers === 0
+                      ? 'Legal team leaders (read-only)'
+                      : 'View all members in this division (Read-only)'}
                   </CardDescription>
                 </div>
                 <Button
@@ -326,13 +400,15 @@ export function TeamManagement({ userRole }: TeamManagementProps) {
                   <div className="flex items-center justify-between mb-4">
                     <Badge variant="outline" className="px-3 py-1.5">
                       {divisionGroups[viewingMembers].members.length}{' '}
-                      {divisionGroups[viewingMembers].members.length === 1 ? 'Member' : 'Members'}
+                      {viewingMembers === 0
+                        ? (divisionGroups[viewingMembers].members.length === 1 ? 'Leader' : 'Leaders')
+                        : (divisionGroups[viewingMembers].members.length === 1 ? 'Member' : 'Members')}
                     </Badge>
                   </div>
                   <div className="space-y-2">
                     {divisionGroups[viewingMembers].members.map((member, index) => (
                       <div
-                        key={index}
+                        key={member.id ?? index}
                         className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg border hover:bg-muted/70 transition-colors"
                       >
                         <Avatar className="h-10 w-10">
@@ -362,7 +438,7 @@ export function TeamManagement({ userRole }: TeamManagementProps) {
                             </button>
                           </div>
                           <Badge variant="secondary" className="mt-1 text-xs">
-                            Member
+                            {viewingMembers === 0 ? 'Legal team leader' : 'Member'}
                           </Badge>
                         </div>
                       </div>
