@@ -77,29 +77,31 @@ function getTextSegments(root: ReturnType<typeof $getRoot>): { text: string; seg
 
 /**
  * Compute [start, end) ranges in `current` that are "added" compared to `baseline`.
- * Uses right-to-left alignment so that when you insert in the middle (e.g. "limited " before "the"),
- * the inserted text is marked as added and the following original text is not.
- * (Left-to-right would match the first "t" typed with the "t" of "the", highlighting the wrong character.)
+ * Uses longest-common-prefix then longest-common-suffix of the remainder so that:
+ * - Insertion in the middle (e.g. "t" before "the" → "tthe"): prefix "Agreement in ", suffix "the twelve" → added "t".
+ * - Append at end (e.g. " the" → "Agreement in the twelve the"): prefix matches all baseline, remainder is added.
  */
 function getAddedRanges(baseline: string, current: string): [number, number][] {
   const ranges: [number, number][] = [];
-  let i = baseline.length - 1;
-  let j = current.length - 1;
-  let addEnd = -1;
-  while (j >= 0) {
-    if (i >= 0 && baseline[i] === current[j]) {
-      if (addEnd >= 0) {
-        ranges.push([j + 1, addEnd + 1]);
-        addEnd = -1;
-      }
-      i--;
-      j--;
-    } else {
-      if (addEnd < 0) addEnd = j;
-      j--;
-    }
+  let i = 0;
+  while (i < baseline.length && i < current.length && baseline[i] === current[i]) {
+    i++;
   }
-  if (addEnd >= 0) ranges.push([0, addEnd + 1]);
+  const prefixLen = i;
+  const baselineRest = baseline.slice(prefixLen);
+  const currentRest = current.slice(prefixLen);
+  let suffixLen = 0;
+  while (
+    suffixLen < baselineRest.length &&
+    suffixLen < currentRest.length &&
+    baselineRest[baselineRest.length - 1 - suffixLen] === currentRest[currentRest.length - 1 - suffixLen]
+  ) {
+    suffixLen++;
+  }
+  const addedLen = currentRest.length - suffixLen;
+  if (addedLen > 0) {
+    ranges.push([prefixLen, prefixLen + addedLen]);
+  }
   return ranges;
 }
 
