@@ -75,26 +75,31 @@ function getTextSegments(root: ReturnType<typeof $getRoot>): { text: string; seg
   return { text, segments };
 }
 
-/** Compute [start, end) ranges in `current` that are "added" compared to `baseline`. */
+/**
+ * Compute [start, end) ranges in `current` that are "added" compared to `baseline`.
+ * Uses right-to-left alignment so that when you insert in the middle (e.g. "limited " before "the"),
+ * the inserted text is marked as added and the following original text is not.
+ * (Left-to-right would match the first "t" typed with the "t" of "the", highlighting the wrong character.)
+ */
 function getAddedRanges(baseline: string, current: string): [number, number][] {
   const ranges: [number, number][] = [];
-  let i = 0;
-  let j = 0;
-  let addStart = -1;
-  while (j < current.length) {
-    if (i < baseline.length && baseline[i] === current[j]) {
-      if (addStart >= 0) {
-        ranges.push([addStart, j]);
-        addStart = -1;
+  let i = baseline.length - 1;
+  let j = current.length - 1;
+  let addEnd = -1;
+  while (j >= 0) {
+    if (i >= 0 && baseline[i] === current[j]) {
+      if (addEnd >= 0) {
+        ranges.push([j + 1, addEnd + 1]);
+        addEnd = -1;
       }
-      i++;
-      j++;
+      i--;
+      j--;
     } else {
-      if (addStart < 0) addStart = j;
-      j++;
+      if (addEnd < 0) addEnd = j;
+      j--;
     }
   }
-  if (addStart >= 0) ranges.push([addStart, current.length]);
+  if (addEnd >= 0) ranges.push([0, addEnd + 1]);
   return ranges;
 }
 
