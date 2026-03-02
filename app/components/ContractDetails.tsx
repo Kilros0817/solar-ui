@@ -613,7 +613,7 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
       </div>
 
       <div className="space-y-6">
-        {/* Client: overview only, no tabs. Legal/others: full tabs with Overview, Section Review, Activity */}
+        {/* Client: overview only, no tabs. Admin: overview only (Section Review not available). Legal/Division Leader: full tabs */}
         {userRole === USER_ROLE.CLIENT ? (
           <div className="space-y-6">
             {/* Overview content for client (no tabs) */}
@@ -820,7 +820,7 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
               </Card>
             </div>
           </div>
-        ) : (
+        ) : (userRole === USER_ROLE.LEGAL_TEAM || userRole === USER_ROLE.DIVISION_LEADER) ? (
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-2 h-auto">
               <TabsTrigger value="overview">Overview</TabsTrigger>
@@ -1013,6 +1013,115 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
               />
             </TabsContent>
           </Tabs>
+        ) : (
+          <div className="space-y-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="rounded-lg border bg-card p-4">
+                <div className="flex items-center gap-2 text-muted-foreground mb-2">
+                  <ClipboardList className="h-4 w-4" />
+                  <span className="text-xs font-medium uppercase tracking-wider">Status</span>
+                </div>
+                <Badge className={getStatusColor(contract.status)}>
+                  {CONTRACT_STATUS_LABELS[contract.status] ?? 'Unknown'}
+                </Badge>
+              </div>
+              <div className="rounded-lg border bg-card p-4">
+                <div className="flex items-center gap-2 text-muted-foreground mb-2">
+                  <Tag className="h-4 w-4" />
+                  <span className="text-xs font-medium uppercase tracking-wider">Category</span>
+                </div>
+                <p className="font-medium">{contract.category || '—'}</p>
+              </div>
+              <div className="rounded-lg border bg-card p-4">
+                <div className="flex items-center gap-2 text-muted-foreground mb-2">
+                  <DollarSign className="h-4 w-4" />
+                  <span className="text-xs font-medium uppercase tracking-wider">Value</span>
+                </div>
+                <p className="font-semibold text-green-600">{contract.value}</p>
+              </div>
+              <div className="rounded-lg border bg-card p-4">
+                <div className="flex items-center gap-2 text-muted-foreground mb-2">
+                  <Calendar className="h-4 w-4" />
+                  <span className="text-xs font-medium uppercase tracking-wider">Created</span>
+                </div>
+                <p className="font-medium">{contract.createdDate}</p>
+              </div>
+            </div>
+            <div className="rounded-lg border bg-card p-4">
+              <div className="flex items-center gap-2 text-muted-foreground mb-2">
+                <Building2 className="h-4 w-4" />
+                <span className="text-xs font-medium uppercase tracking-wider">Involved Divisions</span>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {contract.involvedDivisions.length > 0 ? (
+                  contract.involvedDivisions.map((division: string) => (
+                    <Badge key={division} variant="secondary" className="text-xs">
+                      {division}
+                    </Badge>
+                  ))
+                ) : (
+                  <p className="font-medium text-muted-foreground">—</p>
+                )}
+              </div>
+            </div>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <FileText className="h-4 w-4 text-muted-foreground" />
+                  Summary
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground leading-relaxed">{contract.description}</p>
+              </CardContent>
+            </Card>
+            <div className="flex justify-center">
+              <Card className="w-full max-w-3xl">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0">
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <FileText className="h-4 w-4 text-muted-foreground" />
+                    Document View
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {docLoading ? (
+                    <div className="flex items-center justify-center py-12">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+                    </div>
+                  ) : docError ? (
+                    <p className="text-muted-foreground py-6 text-center">{docError}</p>
+                  ) : docContent ? (
+                    <ContractDocumentTemplate
+                      title={contract.title}
+                      client={contract.client}
+                      value={contract.value}
+                      createdDate={contract.createdDate}
+                      docContent={docContent}
+                      showSignatureSection={contract.status === CONTRACT_STATUS.APPROVED || contract.status === CONTRACT_STATUS.ESIGNED}
+                      licensorSignature={rawDocument?.legalESign ?? null}
+                      licenseeSignature={rawDocument?.clientESign ?? null}
+                      gatewayBaseUrl={URLs.TBGateWay}
+                      disableHighlight={userRole === USER_ROLE.CLIENT || (userRole === USER_ROLE.LEGAL_TEAM && (contract.status === CONTRACT_STATUS.APPROVED || contract.status === CONTRACT_STATUS.ESIGNED))}
+                    />
+                  ) : foundContract?.cid ? (
+                    <p className="text-muted-foreground py-6 text-center">Document content unavailable</p>
+                  ) : (
+                    <ContractDocumentTemplate
+                      title={contract.title}
+                      client={contract.client}
+                      value={contract.value}
+                      createdDate={contract.createdDate}
+                      showSignatureSection={contract.status === CONTRACT_STATUS.APPROVED || contract.status === CONTRACT_STATUS.ESIGNED}
+                      licensorSignature={rawDocument?.legalESign ?? null}
+                      licenseeSignature={rawDocument?.clientESign ?? null}
+                      gatewayBaseUrl={URLs.TBGateWay}
+                      disableHighlight={userRole === USER_ROLE.CLIENT || (userRole === USER_ROLE.LEGAL_TEAM && (contract.status === CONTRACT_STATUS.APPROVED || contract.status === CONTRACT_STATUS.ESIGNED))}
+                    />
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </div>
         )}
       </div>
 
