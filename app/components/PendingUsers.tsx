@@ -37,7 +37,7 @@ import { toast } from 'sonner';
 import { acceptRegisterRequest, declineRegisterRequest } from '@/utils/interact';
 import { useSubgraphRefresh } from '@/app/contexts/SubgraphRefreshContext';
 import { USER_ROLE, DIVISION_CATEGORY, ROLE_LABELS, DIVISION_LABELS } from '@/utils/constants';
-import { getPendingUsers } from '@/utils/subgraph';
+import { getPendingUsers, getAllDivisionLeaders } from '@/utils/subgraph';
 import { copyAddressToClipboard } from '@/utils/utility';
 import type { PendingUser } from '../data/interfaces';
 
@@ -63,13 +63,25 @@ export function PendingUsers() {
   const [selectedDivisions, setSelectedDivisions] = useState<Record<string, number>>({});
   const [copiedAddress, setCopiedAddress] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [leaderDivisions, setLeaderDivisions] = useState<number[]>([]);
 
   // Fetch pending users function (silent = true skips loading state for background refetch)
   const fetchPendingUsers = async (silent = false) => {
     if (!silent) setLoading(true);
     try {
-      const requests = await getPendingUsers();
+      const [requests, leaders] = await Promise.all([
+        getPendingUsers(),
+        getAllDivisionLeaders().catch(() => []),
+      ]);
       setPendingUsers(requests);
+      const usedDivisions = Array.from(
+        new Set(
+          (leaders as Array<{ dcategory?: number }> | undefined ?? [])
+            .map((l) => (l?.dcategory != null ? Number(l.dcategory) : NaN))
+            .filter((n) => Number.isFinite(n) && n > 0),
+        ),
+      ) as number[];
+      setLeaderDivisions(usedDivisions);
     } catch (error) {
       console.error('Error fetching pending users:', error);
       toast.error('Failed to load pending users');
@@ -380,6 +392,11 @@ export function PendingUsers() {
                       </Select>
                     </TableCell>
                     <TableCell>
+                      {/*
+                        Division select:
+                        - Disabled for Legal Team and Client (no division)
+                        - When assigning Division Leader, only show divisions that don't already have a leader.
+                      */}
                       <Select
                         value={selectedDivisions[user.id]?.toString() || ''}
                         onValueChange={(value) =>
@@ -398,7 +415,10 @@ export function PendingUsers() {
                           <SelectValue placeholder="Select division" />
                         </SelectTrigger>
                         <SelectContent>
-                          {divisionOptions.map((option) => (
+                          {(selectedRoles[user.id] === USER_ROLE.DIVISION_LEADER
+                            ? divisionOptions.filter((option) => !leaderDivisions.includes(option.value))
+                            : divisionOptions
+                          ).map((option) => (
                             <SelectItem key={option.value} value={option.value.toString()}>
                               {option.label}
                             </SelectItem>
