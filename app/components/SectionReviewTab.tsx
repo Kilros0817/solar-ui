@@ -20,8 +20,8 @@ import {
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collapsible';
 import { useState, useCallback } from 'react';
 import { USER_ROLE, CONTRACT_STATUS, URLs } from '@/utils/constants';
-import { getSectionHistories } from '@/utils/subgraph';
-import { formatSectionHistoryReadable } from '@/utils/utility';
+import { getSectionHistories, getClauseHistories } from '@/utils/subgraph';
+import { formatSectionHistoryReadable, formatClauseHistoryReadable } from '@/utils/utility';
 import { toast } from 'sonner';
 import type { DocSection } from '@/app/data/interfaces';
 import type { SectionReviewTabProps } from '../data/interfaces';
@@ -29,6 +29,7 @@ import { RejectReasonDialog } from './RejectReasonDialog';
 import { ClauseLexicalEditor } from './editor/ClauseLexicalEditor';
 
 type SectionHistoryItem = { type?: string; id?: string; date?: string | number; cid?: string | null };
+type ClauseHistoryItem = { type?: string; id?: string; date?: string | number; cid?: string | null };
 
 export function SectionReviewTab({
   sections,
@@ -48,6 +49,53 @@ export function SectionReviewTab({
   const [sectionIdViewingPast, setSectionIdViewingPast] = useState<string | null>(null);
   const [pastSectionDisplay, setPastSectionDisplay] = useState<{ sectionName: string; content: string } | null>(null);
   const [pastSectionDisplayKey, setPastSectionDisplayKey] = useState(0);
+  const [clauseHistoryClauseId, setClauseHistoryClauseId] = useState<string | null>(null);
+  const [clauseHistories, setClauseHistories] = useState<ClauseHistoryItem[]>([]);
+  const [loadingClauseHistories, setLoadingClauseHistories] = useState(false);
+  const [clauseHistoryPreviewContent, setClauseHistoryPreviewContent] = useState<string | null>(null);
+  const [loadingClauseHistoryCid, setLoadingClauseHistoryCid] = useState<string | null>(null);
+  const [clauseHistoryPreviewKey, setClauseHistoryPreviewKey] = useState(0);
+
+  const openClauseHistoryModal = useCallback(async (onChainClauseId: string) => {
+    setClauseHistoryClauseId(onChainClauseId);
+    setClauseHistoryPreviewContent(null);
+    setLoadingClauseHistories(true);
+    setClauseHistories([]);
+    try {
+      const list = await getClauseHistories(onChainClauseId);
+      const sorted = Array.isArray(list)
+        ? [...list].sort((a, b) => {
+            const da = a.date != null ? Number(a.date) : 0;
+            const db = b.date != null ? Number(b.date) : 0;
+            return da - db;
+          })
+        : [];
+      setClauseHistories(sorted);
+    } catch (e) {
+      console.error('Failed to load clause histories:', e);
+      toast.error('Failed to load history');
+      setClauseHistories([]);
+    } finally {
+      setLoadingClauseHistories(false);
+    }
+  }, []);
+
+  const handleViewClauseHistoryCid = useCallback(async (cid: string) => {
+    if (!cid || loadingClauseHistoryCid) return;
+    setLoadingClauseHistoryCid(cid);
+    try {
+      const res = await fetch(`${URLs.TBGateWay}${cid}`);
+      const data = res.ok ? await res.json() : null;
+      const content = typeof data?.clauseContent === 'string' ? data.clauseContent : '';
+      setClauseHistoryPreviewContent(content);
+      setClauseHistoryPreviewKey((k) => k + 1);
+    } catch (e) {
+      console.error('Failed to load clause history content:', e);
+      toast.error('Failed to load content from history');
+    } finally {
+      setLoadingClauseHistoryCid(null);
+    }
+  }, [loadingClauseHistoryCid]);
 
   const openSectionHistoryModal = useCallback(async (sectionId: string) => {
     setSectionHistorySectionId(sectionId);
@@ -309,10 +357,59 @@ export function SectionReviewTab({
                           )}
                           <div className="bg-white rounded p-3 border max-h-32 overflow-y-auto">
                             {(() => {
-                              const raw = sectionIdViewingPast === section.id && pastSectionDisplay
-                                ? pastSectionDisplay.content
-                                : section.content;
-                              const blocks = (raw ?? '').split(/\n\n+/).filter((b) => b.trim());
+                              const viewingPast = sectionIdViewingPast === section.id && pastSectionDisplay;
+                              if (viewingPast) {
+                                const blocks = (pastSectionDisplay.content ?? '').split(/\n\n+/).filter((b) => b.trim());
+                                if (blocks.length === 0) {
+                                  return <p className="text-sm leading-relaxed text-muted-foreground">No content</p>;
+                                }
+                                return (
+                                  <div className="space-y-3">
+                                    {blocks.map((block, i) => (
+                                      <div key={i} className="text-sm leading-[1.7]">
+                                        <ClauseLexicalEditor
+                                          key={`section-${section.id}-past-${pastSectionDisplayKey}-${i}`}
+                                          initialContent={block}
+                                          readOnly
+                                          className="text-sm"
+                                        />
+                                      </div>
+                                    ))}
+                                  </div>
+                                );
+                              }
+                              if (section.clauseBlocks && section.clauseBlocks.length > 0) {
+                                return (
+                                  <div className="space-y-3">
+                                    {section.clauseBlocks.map((block, i) => (
+                                      <div key={i} className="text-sm leading-[1.7]">
+                                        {block.onChainClauseId && userRole === USER_ROLE.ADMIN && (
+                                          <div className="flex justify-end mb-1">
+                                            <Button
+                                              type="button"
+                                              variant="ghost"
+                                              size="sm"
+                                              className="gap-1.5 h-8 shrink-0"
+                                              onClick={() => openClauseHistoryModal(block.onChainClauseId!)}
+                                              title="View clause history"
+                                            >
+                                              <History className="h-3.5 w-3.5" />
+                                              Clause history
+                                            </Button>
+                                          </div>
+                                        )}
+                                        <ClauseLexicalEditor
+                                          key={`section-${section.id}-clause-${i}`}
+                                          initialContent={block.clauseContent}
+                                          readOnly
+                                          className="text-sm"
+                                        />
+                                      </div>
+                                    ))}
+                                  </div>
+                                );
+                              }
+                              const blocks = (section.content ?? '').split(/\n\n+/).filter((b) => b.trim());
                               if (blocks.length === 0) {
                                 return <p className="text-sm leading-relaxed text-muted-foreground">No content</p>;
                               }
@@ -321,7 +418,7 @@ export function SectionReviewTab({
                                   {blocks.map((block, i) => (
                                     <div key={i} className="text-sm leading-[1.7]">
                                       <ClauseLexicalEditor
-                                        key={`section-${section.id}-${sectionIdViewingPast === section.id ? 'past' : 'current'}-${pastSectionDisplayKey}-${i}`}
+                                        key={`section-${section.id}-current-${i}`}
                                         initialContent={block}
                                         readOnly
                                         className="text-sm"
@@ -472,6 +569,106 @@ export function SectionReviewTab({
               )}
               <div className="flex justify-end mt-4 pt-2 border-t">
                 <Button type="button" variant="outline" onClick={() => setSectionHistorySectionId(null)}>
+                  Close
+                </Button>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
+
+      {typeof document !== 'undefined' &&
+        clauseHistoryClauseId !== null &&
+        createPortal(
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="clause-history-modal-title"
+            className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+          >
+            <div
+              className="absolute inset-0 bg-black/70"
+              onClick={() => {
+                setClauseHistoryClauseId(null);
+                setClauseHistoryPreviewContent(null);
+              }}
+            />
+            <div
+              className="relative z-10 w-sm rounded-lg border bg-background p-6 shadow-lg max-h-[80vh] flex flex-col"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h2 id="clause-history-modal-title" className="text-lg font-semibold leading-none tracking-tight mb-4">
+                Clause history
+              </h2>
+              {clauseHistoryPreviewContent !== null ? (
+                <>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="gap-1.5 self-start mb-3"
+                    onClick={() => setClauseHistoryPreviewContent(null)}
+                  >
+                    <RotateCcw className="h-4 w-4 shrink-0" />
+                    Back to list
+                  </Button>
+                  <div className="rounded-md border border-input bg-muted/30 p-3 flex-1 min-h-0 overflow-y-auto [&_.clause-editor-container]:min-h-0 [&_.clause-editor-inner]:min-h-0">
+                    <ClauseLexicalEditor
+                      key={`clause-history-preview-${clauseHistoryPreviewKey}`}
+                      initialContent={clauseHistoryPreviewContent}
+                      readOnly
+                      className="text-sm"
+                    />
+                  </div>
+                </>
+              ) : loadingClauseHistories ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                </div>
+              ) : clauseHistories.length === 0 ? (
+                <p className="text-sm text-muted-foreground py-4">No history for this clause.</p>
+              ) : (
+                <ul className="space-y-2 overflow-y-auto flex-1 min-h-0 pr-1">
+                  {clauseHistories.map((h, i) => {
+                    const description = formatClauseHistoryReadable(h);
+                    const hasCid = !!h.cid;
+                    const isLoading = hasCid && loadingClauseHistoryCid === h.cid;
+                    return (
+                      <li key={h.id ?? i} className="text-sm rounded-md border bg-muted/30 px-3 py-2">
+                        {hasCid ? (
+                          <button
+                            type="button"
+                            onClick={() => handleViewClauseHistoryCid(h.cid!)}
+                            disabled={!!loadingClauseHistoryCid}
+                            className="clause-history-link text-left w-full text-foreground cursor-pointer"
+                            title="View content at this point in history"
+                          >
+                            {isLoading ? (
+                              <span className="inline-flex items-center gap-1.5">
+                                <Loader2 className="h-3.5 w-3.5 animate-spin shrink-0" />
+                                {description}
+                              </span>
+                            ) : (
+                              description
+                            )}
+                          </button>
+                        ) : (
+                          <span className="text-foreground">{description}</span>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+              <div className="flex justify-end mt-4 pt-2 border-t shrink-0">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setClauseHistoryClauseId(null);
+                    setClauseHistoryPreviewContent(null);
+                  }}
+                >
                   Close
                 </Button>
               </div>

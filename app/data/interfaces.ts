@@ -136,6 +136,13 @@ export type SectionWithDivision = {
   divisionLeader?: { dcategory?: number; firstName?: string; lastName?: string };
 };
 
+/** One clause block in a section (for Section Review clause history). */
+export interface SectionClauseBlock {
+  /** On-chain clause id when clause has been assigned; absent for unassigned. */
+  onChainClauseId?: string;
+  clauseContent: string;
+}
+
 export interface Section {
   id: string;
   name: string;
@@ -149,6 +156,8 @@ export interface Section {
   /** Division leader display name (from subgraph) */
   divisionLeaderName?: string;
   comments?: string;
+  /** Per-clause blocks with on-chain id when available (for clause history in Section Review). */
+  clauseBlocks?: SectionClauseBlock[];
 }
 
 export interface DivisionSection {

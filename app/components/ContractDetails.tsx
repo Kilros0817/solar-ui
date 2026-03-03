@@ -14,7 +14,7 @@ import { getContractById, getContractHistories } from '@/utils/subgraph';
 import { legalReviewSection, reassignSection, submitDocToClient, clientReview, clientReassignDoc, legalEsign, clientEsign } from '@/utils/interact';
 import { uploadContractToPinata, uploadSignatureToPinata } from '@/utils/utility';
 import type { Contract, ContractDocPayload, ContractDetailsProps } from '../data/interfaces';
-import type { DivisionSection } from '../data/interfaces';
+import type { DivisionSection, Section } from '../data/interfaces';
 import { useUser } from '../contexts/UserContext';
 import { useSubgraphRefresh } from '../contexts/SubgraphRefreshContext';
 import { USER_ROLE, CONTRACT_STATUS, CONTRACT_STATUS_LABELS, DIVISION_LABELS, URLs } from '@/utils/constants';
@@ -166,21 +166,7 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
   const sectionsByDivision: DivisionSection[] = useMemo(() => {
     const sections = rawDocument?.sections ?? [];
     if (sections.length === 0) return [];
-    const byDivision: Record<string, Array<{
-      id: string;
-      name: string;
-      content: string;
-      status: 'pending' | 'approved' | 'rejected';
-      /** Raw section status from subgraph: 0 = Pending, 1 = Review, 2 = Approved, 3 = Rejected */
-      statusNum?: number;
-      submittedBy: string;
-      submittedDate: string;
-      division: string;
-      /** Division leader display name (from subgraph) */
-      divisionLeaderName?: string;
-      /** Rejection reason from subgraph (for rejected sections) */
-      comments?: string;
-    }>> = {};
+    const byDivision: Record<string, Section[]> = {};
     for (const sec of sections) {
       const dcat = sec?.divisionLeader?.dcategory;
       const divisionLabel = dcat != null && Number(dcat) > 0 ? (DIVISION_LABELS[Number(dcat)] ?? `Division ${dcat}`) : 'Contract';
@@ -189,6 +175,14 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
         ? [leader.firstName, leader.lastName].filter(Boolean).join(' ').trim() || undefined
         : undefined;
       const contentMap = sectionContentBySectionId[sec.id];
+      const subgraphClauses = (sec as { clauses?: Array<{ id?: string }> })?.clauses ?? [];
+      const sectionContent = contentMap?.sectionContent ?? [];
+      const clauseBlocks = sectionContent.map(
+        (c: { clauseId: string; clauseContent: string }, i: number) => ({
+          onChainClauseId: subgraphClauses[i]?.id != null ? String(subgraphClauses[i].id) : undefined,
+          clauseContent: c.clauseContent ?? '',
+        })
+      );
       if (!byDivision[divisionLabel]) byDivision[divisionLabel] = [];
       const statusNum = typeof sec.status === 'number' ? sec.status : 0;
       const rejectReason = (sec as { rejectReason?: string })?.rejectReason;
@@ -203,6 +197,7 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
         division: divisionLabel,
         divisionLeaderName: divisionLeaderName || undefined,
         comments: rejectReason && rejectReason.trim() ? rejectReason : undefined,
+        clauseBlocks: clauseBlocks.length > 0 ? clauseBlocks : undefined,
       });
     }
     return Object.entries(byDivision).map(([division, secs]) => ({ division, sections: secs }));
