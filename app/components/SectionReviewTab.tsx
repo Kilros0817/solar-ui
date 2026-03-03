@@ -148,16 +148,16 @@ export function SectionReviewTab({
     setExpandedDivisions({ ...expandedDivisions, [division]: !expandedDivisions[division] });
   };
 
-  // Show message for non-legal team members, but still allow tab to be visible
-  const isLegalTeam = userRole === USER_ROLE.LEGAL_TEAM;
+  const canAccessSectionReview = userRole === USER_ROLE.LEGAL_TEAM || userRole === USER_ROLE.ADMIN;
+  const isReadOnly = userRole === USER_ROLE.ADMIN;
 
-  if (!isLegalTeam) {
+  if (!canAccessSectionReview) {
     return (
       <Card>
         <CardContent className="pt-6 pb-6">
           <div className="text-center text-muted-foreground py-8">
             <AlertCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <p className="text-sm">Section review is only available for legal team members.</p>
+            <p className="text-sm">Section review is only available for legal team members and admins.</p>
           </div>
         </CardContent>
       </Card>
@@ -335,7 +335,7 @@ export function SectionReviewTab({
                         </div>
                       </div>
 
-                      {section.status === 'pending' && section.statusNum === 1 && (
+                      {!isReadOnly && sectionIdViewingPast !== section.id && section.status === 'pending' && section.statusNum === 1 && (
                         <div className="flex items-end gap-2 pt-2 border-t">
                           <div className="flex gap-2">
                             <Button
@@ -362,7 +362,7 @@ export function SectionReviewTab({
                         </div>
                       )}
 
-                      {section.status === 'approved' && contractStatus === CONTRACT_STATUS.PENDING && (
+                      {!isReadOnly && sectionIdViewingPast !== section.id && section.status === 'approved' && contractStatus === CONTRACT_STATUS.PENDING && (
                         <div className="flex items-end gap-2 pt-2 border-t">
                           <Button
                             variant="reassign"
@@ -388,7 +388,7 @@ export function SectionReviewTab({
                         </div>
                       )}
 
-                      {section.status === 'rejected' && (
+                      {!isReadOnly && sectionIdViewingPast !== section.id && section.status === 'rejected' && (
                         <div className="flex items-end gap-2 pt-2 border-t">
                           <Button
                             variant="reassign"

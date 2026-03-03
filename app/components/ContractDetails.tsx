@@ -820,7 +820,7 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
               </Card>
             </div>
           </div>
-        ) : (userRole === USER_ROLE.LEGAL_TEAM || userRole === USER_ROLE.DIVISION_LEADER) ? (
+        ) : (userRole === USER_ROLE.LEGAL_TEAM || userRole === USER_ROLE.DIVISION_LEADER || userRole === USER_ROLE.ADMIN) ? (
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-2 h-auto">
               <TabsTrigger value="overview">Overview</TabsTrigger>
@@ -895,7 +895,7 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
                       Document View
                     </CardTitle>
                     <div className="flex items-center gap-2 shrink-0">
-                      {userRole === USER_ROLE.LEGAL_TEAM && (
+                      {(userRole === USER_ROLE.LEGAL_TEAM || userRole === USER_ROLE.ADMIN) && (
                         <Button
                           type="button"
                           variant="outline"

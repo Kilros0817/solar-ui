@@ -18,7 +18,7 @@ import { $wrapNodes } from '@lexical/selection';
 import { $insertList, $removeList, ListNode } from '@lexical/list';
 import { $createHeadingNode, $isHeadingNode } from '@lexical/rich-text';
 import { useCallback, useEffect, useState, type CSSProperties } from 'react';
-import { Undo2, Redo2, Bold, Italic, Underline, List, ListOrdered, Heading1, Heading2, Heading3, Pilcrow } from 'lucide-react';
+import { Undo2, Redo2, Bold, Italic, Underline, Strikethrough, List, ListOrdered, Heading1, Heading2, Heading3, Pilcrow } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
 type BlockType = 'paragraph' | 'h1' | 'h2' | 'h3' | 'ul' | 'ol';
@@ -37,6 +37,7 @@ export default function ClauseToolbarPlugin() {
   const [isBold, setIsBold] = useState(false);
   const [isItalic, setIsItalic] = useState(false);
   const [isUnderline, setIsUnderline] = useState(false);
+  const [isStrikethrough, setIsStrikethrough] = useState(false);
   const [blockType, setBlockType] = useState<BlockType>('paragraph');
 
   const $updateToolbar = useCallback(() => {
@@ -45,6 +46,7 @@ export default function ClauseToolbarPlugin() {
       setIsBold(selection.hasFormat('bold'));
       setIsItalic(selection.hasFormat('italic'));
       setIsUnderline(selection.hasFormat('underline'));
+      setIsStrikethrough(selection.hasFormat('strikethrough'));
       const anchorNode = selection.anchor.getNode();
       const listNode = $getNearestNodeOfType(anchorNode, ListNode);
       if (listNode !== null) {
@@ -241,6 +243,16 @@ export default function ClauseToolbarPlugin() {
         aria-label="Underline"
       >
         <Underline size={iconSize} />
+      </button>
+      <button
+        type="button"
+        onMouseDown={(e) => e.preventDefault()}
+        onClick={() => editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'strikethrough')}
+        className={cn('clause-toolbar-btn', isStrikethrough && 'clause-toolbar-btn-active')}
+        style={isStrikethrough ? activeStyle : undefined}
+        aria-label="Strikethrough"
+      >
+        <Strikethrough size={iconSize} />
       </button>
       <div className="clause-toolbar-divider" aria-hidden />
       <button

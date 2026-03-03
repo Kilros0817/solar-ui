@@ -398,7 +398,7 @@ export default function SectionAssignmentsClausePage() {
             placeholder="Clause content..."
             className="min-h-[160px]"
           />
-          {selectedFromRoute === 'review' && (
+          {selectedFromRoute === 'review' && !isViewingPastVersion && (
             <div className="flex items-center gap-3 pt-2 border-t">
               <Button
                 variant="default"
@@ -425,7 +425,7 @@ export default function SectionAssignmentsClausePage() {
               </Button>
             </div>
           )}
-          {(selectedFromRoute === 'rejected' || selectedFromRoute === 'approved') && showReassignButton && (
+          {(selectedFromRoute === 'rejected' || selectedFromRoute === 'approved') && showReassignButton && !isViewingPastVersion && (
             <div className="flex items-center gap-3 pt-2 border-t">
               <Button
                 variant="reassign"

@@ -244,45 +244,38 @@ export function TeamManagement({ userRole }: TeamManagementProps) {
                 <CardContent className="space-y-4">
                   {isLegalTeam ? (
                     memberCount > 0 ? (
-                      <>
-                        <div className="space-y-2">
-                          {group.members.slice(0, 3).map((member, idx) => (
-                            <div key={member.id ?? idx} className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
-                              <Avatar className="h-10 w-10">
-                                <AvatarFallback className="bg-brand-secondary/10 text-brand-secondary">
-                                  {getInitials(member)}
-                                </AvatarFallback>
-                              </Avatar>
-                              <div className="flex-1 min-w-0">
-                                <p className="font-medium text-sm truncate">{getDisplayName(member)}</p>
-                                <p className="text-xs text-muted-foreground truncate">{member.email}</p>
-                              </div>
-                              <div className="flex items-center gap-2 text-xs text-muted-foreground shrink-0">
-                                <span className="font-mono">{formatAddress(member.id)}</span>
-                                <button
-                                  type="button"
-                                  onClick={() => handleCopyAddress(member.id)}
-                                  className="text-muted-foreground hover:text-foreground transition-colors"
-                                  title="Copy address"
-                                  aria-label="Copy address"
-                                >
-                                  {copiedAddress === member.id ? (
-                                    <Check className="h-4 w-4 text-green-600" />
-                                  ) : (
-                                    <Copy className="h-4 w-4" />
-                                  )}
-                                </button>
-                              </div>
-                              <CheckCircle2 className="h-5 w-5 text-green-600 shrink-0" />
+                      <div className="space-y-2 overflow-y-auto overflow-x-hidden pr-1" style={{ maxHeight: '9rem' }}>
+                        {group.members.map((member, idx) => (
+                          <div key={member.id ?? idx} className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg shrink-0">
+                            <Avatar className="h-10 w-10">
+                              <AvatarFallback className="bg-brand-secondary/10 text-brand-secondary">
+                                {getInitials(member)}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-sm truncate">{getDisplayName(member)}</p>
+                              <p className="text-xs text-muted-foreground truncate">{member.email}</p>
                             </div>
-                          ))}
-                        </div>
-                        {memberCount > 3 && (
-                          <p className="text-xs text-muted-foreground text-center">
-                            +{memberCount - 3} more — use View all to see everyone
-                          </p>
-                        )}
-                      </>
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground shrink-0">
+                              <span className="font-mono">{formatAddress(member.id)}</span>
+                              <button
+                                type="button"
+                                onClick={() => handleCopyAddress(member.id)}
+                                className="text-muted-foreground hover:text-foreground transition-colors"
+                                title="Copy address"
+                                aria-label="Copy address"
+                              >
+                                {copiedAddress === member.id ? (
+                                  <Check className="h-4 w-4 text-green-600" />
+                                ) : (
+                                  <Copy className="h-4 w-4" />
+                                )}
+                              </button>
+                            </div>
+                            <CheckCircle2 className="h-5 w-5 text-green-600 shrink-0" />
+                          </div>
+                        ))}
+                      </div>
                     ) : (
                       <div className="flex flex-col items-center justify-center py-6 text-center">
                         <div className="bg-muted rounded-full flex items-center justify-center mb-3">
