@@ -16,6 +16,7 @@ import {
   PenLine,
   UserPlus,
   LogOut,
+  BarChart2,
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useUser } from '../contexts/UserContext';
@@ -158,6 +159,7 @@ export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
     '/divisions': 'team',
     '/clients': 'clients',
     '/pending-users': 'pending-users',
+    '/analytics': 'analytics',
     '/client-contracts': 'client-my-contracts',
     '/client-contracts/pending': 'client-pending',
     '/client-contracts/review': 'client-review',
@@ -327,6 +329,7 @@ export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
         { id: 'pending-users', label: 'Pending Users', icon: Users, count: null },
         { id: 'clients', label: 'Clients', icon: Users, count: null },
         { id: 'team', label: 'Team', icon: Users, count: null },
+        { id: 'analytics', label: 'Analytics', icon: BarChart2, count: null },
       ];
     }
 
@@ -477,6 +480,7 @@ export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
               'rejected-tasks': '/clause-assignments/rejected',
               'clients': '/clients',
               'pending-users': '/pending-users',
+              'analytics': '/analytics',
               'team': '/divisions',
               'client-my-contracts': '/client-contracts',
               'client-pending': '/client-contracts/pending',

@@ -5,6 +5,7 @@ export const URLs = {
 	ContractAPI: "https://api.tomeblock.com/contract",
 	UploadAPI: "https://api.tomeblock.com/upload",
 	SubgraphAPI: "https://api.tomeblock.com/subgraph",
+	AnalysisAPI: "https://api.tomeblock.com/analysis",
 	TBGateWay: "https://jade-wonderful-hawk-382.mypinata.cloud/ipfs/",
 };
 
