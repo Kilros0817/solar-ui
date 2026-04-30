@@ -4,14 +4,14 @@ import { useEffect, useState } from 'react';
 import axios from 'axios';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  LineChart, Line, AreaChart, Area,
+  AreaChart, Area,
 } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './ui/card';
 import { Badge } from './ui/badge';
 import { URLs } from '@/utils/constants';
 import {
   AlertTriangle, CheckCircle, Clock, TrendingUp,
-  Activity, Users, BarChart2, RefreshCw,
+  Activity, Users, BarChart2, RefreshCw, Download,
 } from 'lucide-react';
 import { Button } from './ui/button';
 import { cn } from '../lib/utils';
@@ -567,6 +567,20 @@ export function AnalyticsDashboard() {
       .finally(() => setLoading(false));
   };
 
+  const downloadReport = () => {
+    const downloadUrl = `${URLs.AnalysisAPI}/download-report`;
+    
+    // Create a temporary anchor element to trigger download
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   useEffect(() => { fetchReport(); }, []);
 
   if (loading) return <LoadingSkeleton />;
@@ -602,10 +616,21 @@ export function AnalyticsDashboard() {
             Workflow performance across {report.summary.total_workflows} contracts
           </p>
         </div>
-        <Button variant="outline" size="sm" onClick={fetchReport} className="shrink-0">
-          <RefreshCw className="h-3.5 w-3.5 mr-2" />
-          Refresh
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={fetchReport} className="shrink-0">
+            <RefreshCw className="h-3.5 w-3.5 mr-2" />
+            Refresh
+          </Button>
+          <Button 
+            variant="default" 
+            size="sm" 
+            onClick={downloadReport}
+            className="shrink-0"
+          >
+            <Download className="h-3.5 w-3.5 mr-2" />
+            Download Report
+          </Button>
+        </div>
       </div>
 
       {/* Summary */}
