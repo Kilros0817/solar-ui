@@ -298,6 +298,7 @@ export const getContractById = async (id: string | number) => {
       title
       cid
       status
+      rejectReason
       createdAt
       sections {
         id

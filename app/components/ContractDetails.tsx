@@ -1,15 +1,13 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useConfig, useConnection } from 'wagmi';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { ContractDocumentTemplate } from './ContractDocumentTemplate';
+import { ContractOverviewTab } from './ContractOverviewTab';
 import { SectionReviewTab } from './SectionReviewTab';
-import { SignaturePad } from './SignaturePad';
 import { RejectReasonDialog } from './RejectReasonDialog';
 import { createPortal } from 'react-dom';
-import { ArrowLeft, FileText, Calendar, DollarSign, Tag, ClipboardList, Building2, Send, Loader2, Check, X, RefreshCw, History } from 'lucide-react';
+import { ArrowLeft, Loader2 } from 'lucide-react';
 import { getContractById, getContractHistories } from '@/utils/subgraph';
 import { legalApproveSection, legalRejectSection, submitDocToClient, clientReview, legalEsign, clientEsign } from '@/utils/interact';
 import { uploadContractToPinata, uploadSignatureToPinata } from '@/utils/utility';
@@ -17,7 +15,7 @@ import type { Contract, ContractDocPayload, ContractDetailsProps, SectionStatus 
 import type { DivisionSection, Section } from '../data/interfaces';
 import { useUser } from '../contexts/UserContext';
 import { useSubgraphRefresh } from '../contexts/SubgraphRefreshContext';
-import { USER_ROLE, CONTRACT_STATUS, CONTRACT_STATUS_LABELS, DIVISION_LABELS, URLs } from '@/utils/constants';
+import { USER_ROLE, DIVISION_LABELS, URLs } from '@/utils/constants';
 import { formatRelativeDate, formatDocHistoryReadable } from '@/utils/utility';
 import { toast } from 'sonner';
 
@@ -500,17 +498,6 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
     involvedDivisions: involvedDivisions.length > 0 ? involvedDivisions : (foundContract.category ? [foundContract.category] : []),
   } : null;
 
-  const getStatusColor = (status: number) => {
-    switch (status) {
-      case 0: return 'bg-orange-100 text-orange-800 border-orange-200';
-      case 1: return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 2: return 'bg-green-100 text-green-800 border-green-200';
-      case 3: return 'bg-red-100 text-red-800 border-red-200';
-      case 4: return 'bg-emerald-100 text-emerald-800 border-emerald-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
-    }
-  };
-
   if (loading) {
     return (
       <div className="p-6 flex items-center justify-center min-h-[400px]">
@@ -552,375 +539,64 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
       <div className="space-y-6">
         {/* Client: overview only, no tabs. Admin: overview only (Section Review not available). Legal/Division Leader: full tabs */}
         {userRole === USER_ROLE.CLIENT ? (
-          <div className="space-y-6">
-            {/* Overview content for client (no tabs) */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="rounded-lg border bg-card p-4">
-                <div className="flex items-center gap-2 text-muted-foreground mb-2">
-                  <ClipboardList className="h-4 w-4" />
-                  <span className="text-xs font-medium uppercase tracking-wider">Status</span>
-                </div>
-                <Badge className={getStatusColor(contract.status)}>
-                  {CONTRACT_STATUS_LABELS[contract.status] ?? 'Unknown'}
-                </Badge>
-              </div>
-              <div className="rounded-lg border bg-card p-4">
-                <div className="flex items-center gap-2 text-muted-foreground mb-2">
-                  <Tag className="h-4 w-4" />
-                  <span className="text-xs font-medium uppercase tracking-wider">Category</span>
-                </div>
-                <p className="font-medium">{contract.category || '—'}</p>
-              </div>
-              <div className="rounded-lg border bg-card p-4">
-                <div className="flex items-center gap-2 text-muted-foreground mb-2">
-                  <DollarSign className="h-4 w-4" />
-                  <span className="text-xs font-medium uppercase tracking-wider">Value</span>
-                </div>
-                <p className="font-semibold text-green-600">{contract.value}</p>
-              </div>
-              <div className="rounded-lg border bg-card p-4">
-                <div className="flex items-center gap-2 text-muted-foreground mb-2">
-                  <Calendar className="h-4 w-4" />
-                  <span className="text-xs font-medium uppercase tracking-wider">Created</span>
-                </div>
-                <p className="font-medium">{contract.createdDate}</p>
-              </div>
-            </div>
-            <div className="rounded-lg border bg-card p-4">
-              <div className="flex items-center gap-2 text-muted-foreground mb-2">
-                <Building2 className="h-4 w-4" />
-                <span className="text-xs font-medium uppercase tracking-wider">Involved Divisions</span>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {contract.involvedDivisions.length > 0 ? (
-                  contract.involvedDivisions.map((division: string) => (
-                    <Badge key={division} variant="secondary" className="text-xs">
-                      {division}
-                    </Badge>
-                  ))
-                ) : (
-                  <p className="font-medium text-muted-foreground">—</p>
-                )}
-              </div>
-            </div>
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <FileText className="h-4 w-4 text-muted-foreground" />
-                  Summary
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground leading-relaxed">{contract.description}</p>
-              </CardContent>
-            </Card>
-            <div className="flex justify-center">
-              <Card className="w-full max-w-3xl">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0">
-                  <CardTitle className="flex items-center gap-2 text-base">
-                    <FileText className="h-4 w-4 text-muted-foreground" />
-                    Document View
-                  </CardTitle>
-                  {contract.status === CONTRACT_STATUS.REQUEST && (
-                    <div className="flex items-center gap-2 shrink-0">
-                      <Button
-                        variant="default"
-                        size="sm"
-                        className="gap-2 bg-green-600 hover:bg-green-700"
-                        disabled={clientReviewAction !== null}
-                        onClick={handleClientApprove}
-                      >
-                        {clientReviewAction === 'approve' ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <Check className="h-4 w-4" />
-                        )}
-                        {clientReviewAction === 'approve' ? 'Approving...' : 'Approve'}
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        className="gap-2"
-                        disabled={clientReviewAction !== null}
-                        onClick={() => setShowRejectContractDialog(true)}
-                      >
-                        {clientReviewAction === 'reject' ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <X className="h-4 w-4" />
-                        )}
-                        {clientReviewAction === 'reject' ? 'Rejecting...' : 'Reject'}
-                      </Button>
-                    </div>
-                  )}
-                </CardHeader>
-                <CardContent>
-                  {docLoading ? (
-                    <div className="flex items-center justify-center py-12">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-                    </div>
-                  ) : docError ? (
-                    <p className="text-muted-foreground py-6 text-center">{docError}</p>
-                  ) : docContent ? (
-                    <ContractDocumentTemplate
-                      title={contract.title}
-                      client={contract.client}
-                      value={contract.value}
-                      createdDate={contract.createdDate}
-                      docContent={docContent}
-                      showSignatureSection={contract.status === CONTRACT_STATUS.APPROVED || contract.status === CONTRACT_STATUS.ESIGNED}
-                      licensorSignature={rawDocument?.legalESign ?? null}
-                      licenseeSignature={rawDocument?.clientESign ?? null}
-                      gatewayBaseUrl={URLs.TBGateWay}
-                      disableHighlight={userRole === USER_ROLE.CLIENT || (userRole === USER_ROLE.LEGAL_TEAM && (contract.status === CONTRACT_STATUS.APPROVED || contract.status === CONTRACT_STATUS.ESIGNED))}
-                      licensorSlot={contract.status === CONTRACT_STATUS.APPROVED && userRole === USER_ROLE.LEGAL_TEAM && !rawDocument?.legalESign?.cid ? (
-                        <div className="space-y-2">
-                          <SignaturePad onSignatureChange={setEsignSignatureDataUrl} />
-                          <Button
-                            variant="default"
-                            size="sm"
-                            className="gap-2"
-                            disabled={!esignSignatureDataUrl || esignSubmitting}
-                            onClick={() => handleEsignSubmit(true)}
-                          >
-                            {esignSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                            {esignSubmitting ? 'Submitting...' : 'Sign'}
-                          </Button>
-                        </div>
-                      ) : undefined}
-                      licenseeSlot={contract.status === CONTRACT_STATUS.APPROVED && userRole === USER_ROLE.CLIENT && !rawDocument?.clientESign?.cid ? (
-                        <div className="space-y-2">
-                          <SignaturePad onSignatureChange={setEsignSignatureDataUrl} />
-                          <Button
-                            variant="default"
-                            size="sm"
-                            className="gap-2"
-                            disabled={!esignSignatureDataUrl || esignSubmitting}
-                            onClick={() => handleEsignSubmit(false)}
-                          >
-                            {esignSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                            {esignSubmitting ? 'Submitting...' : 'Sign'}
-                          </Button>
-                        </div>
-                      ) : undefined}
-                    />
-                  ) : foundContract?.cid ? (
-                    <p className="text-muted-foreground py-6 text-center">Document content unavailable</p>
-                  ) : (
-                    <ContractDocumentTemplate
-                      title={contract.title}
-                      client={contract.client}
-                      value={contract.value}
-                      createdDate={contract.createdDate}
-                      showSignatureSection={contract.status === CONTRACT_STATUS.APPROVED || contract.status === CONTRACT_STATUS.ESIGNED}
-                      licensorSignature={rawDocument?.legalESign ?? null}
-                      licenseeSignature={rawDocument?.clientESign ?? null}
-                      gatewayBaseUrl={URLs.TBGateWay}
-                      disableHighlight={userRole === USER_ROLE.CLIENT || (userRole === USER_ROLE.LEGAL_TEAM && (contract.status === CONTRACT_STATUS.APPROVED || contract.status === CONTRACT_STATUS.ESIGNED))}
-                      licensorSlot={contract.status === CONTRACT_STATUS.APPROVED && userRole === USER_ROLE.LEGAL_TEAM && !rawDocument?.legalESign?.cid ? (
-                        <div className="space-y-2">
-                          <SignaturePad onSignatureChange={setEsignSignatureDataUrl} />
-                          <Button variant="default" size="sm" className="gap-2" disabled={!esignSignatureDataUrl || esignSubmitting} onClick={() => handleEsignSubmit(true)}>
-                            {esignSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                            {esignSubmitting ? 'Submitting...' : 'Sign'}
-                          </Button>
-                        </div>
-                      ) : undefined}
-                      licenseeSlot={contract.status === CONTRACT_STATUS.APPROVED && userRole === USER_ROLE.CLIENT && !rawDocument?.clientESign?.cid ? (
-                        <div className="space-y-2">
-                          <SignaturePad onSignatureChange={setEsignSignatureDataUrl} />
-                          <Button variant="default" size="sm" className="gap-2" disabled={!esignSignatureDataUrl || esignSubmitting} onClick={() => handleEsignSubmit(false)}>
-                            {esignSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                            {esignSubmitting ? 'Submitting...' : 'Sign'}
-                          </Button>
-                        </div>
-                      ) : undefined}
-                    />
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        ) : (userRole === USER_ROLE.LEGAL_TEAM || userRole === USER_ROLE.ADMIN) ? (
+          <ContractOverviewTab
+            contract={contract}
+            userRole={userRole}
+            docLoading={docLoading}
+            docError={docError}
+            docContent={docContent}
+            foundContract={foundContract}
+            rawDocument={rawDocument}
+            gatewayBaseUrl={URLs.TBGateWay}
+            clientReviewAction={clientReviewAction}
+            onClientApprove={handleClientApprove}
+            onClientReject={() => setShowRejectContractDialog(true)}
+            esignSignatureDataUrl={esignSignatureDataUrl}
+            onEsignSignatureChange={setEsignSignatureDataUrl}
+            esignSubmitting={esignSubmitting}
+            onEsignSubmit={handleEsignSubmit}
+          />
+        ) : userRole === USER_ROLE.ADMIN ? (
+          <ContractOverviewTab
+            contract={contract}
+            userRole={userRole}
+            docLoading={docLoading}
+            docError={docError}
+            docContent={docContent}
+            foundContract={foundContract}
+            rawDocument={rawDocument}
+            gatewayBaseUrl={URLs.TBGateWay}
+            onOpenDocHistory={openDocHistoryModal}
+            esignSignatureDataUrl={esignSignatureDataUrl}
+            onEsignSignatureChange={setEsignSignatureDataUrl}
+            esignSubmitting={esignSubmitting}
+            onEsignSubmit={handleEsignSubmit}
+          />
+        ) : userRole === USER_ROLE.LEGAL_TEAM ? (
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-2 h-auto">
               <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="sections">Section Review</TabsTrigger>
             </TabsList>
             <TabsContent value="overview" className="space-y-6">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="rounded-lg border bg-card p-4">
-                  <div className="flex items-center gap-2 text-muted-foreground mb-2">
-                    <ClipboardList className="h-4 w-4" />
-                    <span className="text-xs font-medium uppercase tracking-wider">Status</span>
-                  </div>
-                  <Badge className={getStatusColor(contract.status)}>
-                    {CONTRACT_STATUS_LABELS[contract.status] ?? 'Unknown'}
-                  </Badge>
-                </div>
-                <div className="rounded-lg border bg-card p-4">
-                  <div className="flex items-center gap-2 text-muted-foreground mb-2">
-                    <Tag className="h-4 w-4" />
-                    <span className="text-xs font-medium uppercase tracking-wider">Category</span>
-                  </div>
-                  <p className="font-medium">{contract.category || '—'}</p>
-                </div>
-                <div className="rounded-lg border bg-card p-4">
-                  <div className="flex items-center gap-2 text-muted-foreground mb-2">
-                    <DollarSign className="h-4 w-4" />
-                    <span className="text-xs font-medium uppercase tracking-wider">Value</span>
-                  </div>
-                  <p className="font-semibold text-green-600">{contract.value}</p>
-                </div>
-                <div className="rounded-lg border bg-card p-4">
-                  <div className="flex items-center gap-2 text-muted-foreground mb-2">
-                    <Calendar className="h-4 w-4" />
-                    <span className="text-xs font-medium uppercase tracking-wider">Created</span>
-                  </div>
-                  <p className="font-medium">{contract.createdDate}</p>
-                </div>
-              </div>
-              <div className="rounded-lg border bg-card p-4">
-                <div className="flex items-center gap-2 text-muted-foreground mb-2">
-                  <Building2 className="h-4 w-4" />
-                  <span className="text-xs font-medium uppercase tracking-wider">Involved Divisions</span>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {contract.involvedDivisions.length > 0 ? (
-                    contract.involvedDivisions.map((division: string) => (
-                      <Badge key={division} variant="secondary" className="text-xs">
-                        {division}
-                      </Badge>
-                    ))
-                  ) : (
-                    <p className="font-medium text-muted-foreground">—</p>
-                  )}
-                </div>
-              </div>
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-base">
-                    <FileText className="h-4 w-4 text-muted-foreground" />
-                    Summary
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground leading-relaxed">{contract.description}</p>
-                </CardContent>
-              </Card>
-              <div className="flex justify-center">
-                <Card className="w-full max-w-3xl">
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0">
-                    <CardTitle className="flex items-center gap-2 text-base">
-                      <FileText className="h-4 w-4 text-muted-foreground" />
-                      Document View
-                    </CardTitle>
-                    <div className="flex items-center gap-2 shrink-0">
-                      {(userRole === USER_ROLE.LEGAL_TEAM || userRole === USER_ROLE.ADMIN) && (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          className="gap-1.5"
-                          onClick={openDocHistoryModal}
-                          title="View document history"
-                        >
-                          <History className="h-4 w-4" />
-                          Document history
-                        </Button>
-                      )}
-                      {userRole === USER_ROLE.LEGAL_TEAM && allSectionsApproved && foundContract?.status === CONTRACT_STATUS.PENDING && foundContract?.cid?.trim() && (
-                        <Button
-                          variant="default"
-                          size="sm"
-                          className="gap-2 bg-green-600 hover:bg-green-700"
-                          disabled={submittingToClient}
-                          onClick={handleSubmitToClient}
-                        >
-                          {submittingToClient ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <Send className="h-4 w-4" />
-                          )}
-                          {submittingToClient ? 'Submitting...' : 'Submit to Client'}
-                        </Button>
-                      )}
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    {docLoading ? (
-                      <div className="flex items-center justify-center py-12">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-                      </div>
-                    ) : docError ? (
-                      <p className="text-muted-foreground py-6 text-center">{docError}</p>
-                    ) : docContent ? (
-                      <ContractDocumentTemplate
-                        title={contract.title}
-                        client={contract.client}
-                        value={contract.value}
-                        createdDate={contract.createdDate}
-                        docContent={docContent}
-                        showSignatureSection={contract.status === CONTRACT_STATUS.APPROVED || contract.status === CONTRACT_STATUS.ESIGNED}
-                        licensorSignature={rawDocument?.legalESign ?? null}
-                        licenseeSignature={rawDocument?.clientESign ?? null}
-                        gatewayBaseUrl={URLs.TBGateWay}
-                        disableHighlight={userRole === USER_ROLE.CLIENT || (userRole === USER_ROLE.LEGAL_TEAM && (contract.status === CONTRACT_STATUS.APPROVED || contract.status === CONTRACT_STATUS.ESIGNED))}
-                        licensorSlot={contract.status === CONTRACT_STATUS.APPROVED && userRole === USER_ROLE.LEGAL_TEAM && !rawDocument?.legalESign?.cid ? (
-                          <div className="space-y-2">
-                            <SignaturePad onSignatureChange={setEsignSignatureDataUrl} />
-                            <Button variant="default" size="sm" className="gap-2" disabled={!esignSignatureDataUrl || esignSubmitting} onClick={() => handleEsignSubmit(true)}>
-                              {esignSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                              {esignSubmitting ? 'Submitting...' : 'Sign'}
-                            </Button>
-                          </div>
-                        ) : undefined}
-                        licenseeSlot={contract.status === CONTRACT_STATUS.APPROVED && userRole === USER_ROLE.CLIENT && !rawDocument?.clientESign?.cid ? (
-                          <div className="space-y-2">
-                            <SignaturePad onSignatureChange={setEsignSignatureDataUrl} />
-                            <Button variant="default" size="sm" className="gap-2" disabled={!esignSignatureDataUrl || esignSubmitting} onClick={() => handleEsignSubmit(false)}>
-                              {esignSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                              {esignSubmitting ? 'Submitting...' : 'Sign'}
-                            </Button>
-                          </div>
-                        ) : undefined}
-                      />
-                    ) : foundContract?.cid ? (
-                      <p className="text-muted-foreground py-6 text-center">Document content unavailable</p>
-                    ) : (
-                      <ContractDocumentTemplate
-                        title={contract.title}
-                        client={contract.client}
-                        value={contract.value}
-                        createdDate={contract.createdDate}
-                        showSignatureSection={contract.status === CONTRACT_STATUS.APPROVED || contract.status === CONTRACT_STATUS.ESIGNED}
-                        licensorSignature={rawDocument?.legalESign ?? null}
-                        licenseeSignature={rawDocument?.clientESign ?? null}
-                        gatewayBaseUrl={URLs.TBGateWay}
-                        disableHighlight={userRole === USER_ROLE.CLIENT || (userRole === USER_ROLE.LEGAL_TEAM && (contract.status === CONTRACT_STATUS.APPROVED || contract.status === CONTRACT_STATUS.ESIGNED))}
-                        licensorSlot={contract.status === CONTRACT_STATUS.APPROVED && userRole === USER_ROLE.LEGAL_TEAM && !rawDocument?.legalESign?.cid ? (
-                          <div className="space-y-2">
-                            <SignaturePad onSignatureChange={setEsignSignatureDataUrl} />
-                            <Button variant="default" size="sm" className="gap-2" disabled={!esignSignatureDataUrl || esignSubmitting} onClick={() => handleEsignSubmit(true)}>
-                              {esignSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                              {esignSubmitting ? 'Submitting...' : 'Sign'}
-                            </Button>
-                          </div>
-                        ) : undefined}
-                        licenseeSlot={contract.status === CONTRACT_STATUS.APPROVED && userRole === USER_ROLE.CLIENT && !rawDocument?.clientESign?.cid ? (
-                          <div className="space-y-2">
-                            <SignaturePad onSignatureChange={setEsignSignatureDataUrl} />
-                            <Button variant="default" size="sm" className="gap-2" disabled={!esignSignatureDataUrl || esignSubmitting} onClick={() => handleEsignSubmit(false)}>
-                              {esignSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                              {esignSubmitting ? 'Submitting...' : 'Sign'}
-                            </Button>
-                          </div>
-                        ) : undefined}
-                      />
-                    )}
-                  </CardContent>
-                </Card>
-              </div>
+              <ContractOverviewTab
+                contract={contract}
+                userRole={userRole}
+                docLoading={docLoading}
+                docError={docError}
+                docContent={docContent}
+                foundContract={foundContract}
+                rawDocument={rawDocument}
+                gatewayBaseUrl={URLs.TBGateWay}
+                allSectionsApproved={allSectionsApproved}
+                submittingToClient={submittingToClient}
+                onSubmitToClient={handleSubmitToClient}
+                onOpenDocHistory={openDocHistoryModal}
+                esignSignatureDataUrl={esignSignatureDataUrl}
+                onEsignSignatureChange={setEsignSignatureDataUrl}
+                esignSubmitting={esignSubmitting}
+                onEsignSubmit={handleEsignSubmit}
+              />
             </TabsContent>
             <TabsContent value="sections" className="space-y-4">
               <SectionReviewTab
@@ -934,114 +610,20 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
             </TabsContent>
           </Tabs>
         ) : (
-          <div className="space-y-6">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="rounded-lg border bg-card p-4">
-                <div className="flex items-center gap-2 text-muted-foreground mb-2">
-                  <ClipboardList className="h-4 w-4" />
-                  <span className="text-xs font-medium uppercase tracking-wider">Status</span>
-                </div>
-                <Badge className={getStatusColor(contract.status)}>
-                  {CONTRACT_STATUS_LABELS[contract.status] ?? 'Unknown'}
-                </Badge>
-              </div>
-              <div className="rounded-lg border bg-card p-4">
-                <div className="flex items-center gap-2 text-muted-foreground mb-2">
-                  <Tag className="h-4 w-4" />
-                  <span className="text-xs font-medium uppercase tracking-wider">Category</span>
-                </div>
-                <p className="font-medium">{contract.category || '—'}</p>
-              </div>
-              <div className="rounded-lg border bg-card p-4">
-                <div className="flex items-center gap-2 text-muted-foreground mb-2">
-                  <DollarSign className="h-4 w-4" />
-                  <span className="text-xs font-medium uppercase tracking-wider">Value</span>
-                </div>
-                <p className="font-semibold text-green-600">{contract.value}</p>
-              </div>
-              <div className="rounded-lg border bg-card p-4">
-                <div className="flex items-center gap-2 text-muted-foreground mb-2">
-                  <Calendar className="h-4 w-4" />
-                  <span className="text-xs font-medium uppercase tracking-wider">Created</span>
-                </div>
-                <p className="font-medium">{contract.createdDate}</p>
-              </div>
-            </div>
-            <div className="rounded-lg border bg-card p-4">
-              <div className="flex items-center gap-2 text-muted-foreground mb-2">
-                <Building2 className="h-4 w-4" />
-                <span className="text-xs font-medium uppercase tracking-wider">Involved Divisions</span>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {contract.involvedDivisions.length > 0 ? (
-                  contract.involvedDivisions.map((division: string) => (
-                    <Badge key={division} variant="secondary" className="text-xs">
-                      {division}
-                    </Badge>
-                  ))
-                ) : (
-                  <p className="font-medium text-muted-foreground">—</p>
-                )}
-              </div>
-            </div>
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <FileText className="h-4 w-4 text-muted-foreground" />
-                  Summary
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground leading-relaxed">{contract.description}</p>
-              </CardContent>
-            </Card>
-            <div className="flex justify-center">
-              <Card className="w-full max-w-3xl">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0">
-                  <CardTitle className="flex items-center gap-2 text-base">
-                    <FileText className="h-4 w-4 text-muted-foreground" />
-                    Document View
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {docLoading ? (
-                    <div className="flex items-center justify-center py-12">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-                    </div>
-                  ) : docError ? (
-                    <p className="text-muted-foreground py-6 text-center">{docError}</p>
-                  ) : docContent ? (
-                    <ContractDocumentTemplate
-                      title={contract.title}
-                      client={contract.client}
-                      value={contract.value}
-                      createdDate={contract.createdDate}
-                      docContent={docContent}
-                      showSignatureSection={contract.status === CONTRACT_STATUS.APPROVED || contract.status === CONTRACT_STATUS.ESIGNED}
-                      licensorSignature={rawDocument?.legalESign ?? null}
-                      licenseeSignature={rawDocument?.clientESign ?? null}
-                      gatewayBaseUrl={URLs.TBGateWay}
-                      disableHighlight={userRole === USER_ROLE.CLIENT || (userRole === USER_ROLE.LEGAL_TEAM && (contract.status === CONTRACT_STATUS.APPROVED || contract.status === CONTRACT_STATUS.ESIGNED))}
-                    />
-                  ) : foundContract?.cid ? (
-                    <p className="text-muted-foreground py-6 text-center">Document content unavailable</p>
-                  ) : (
-                    <ContractDocumentTemplate
-                      title={contract.title}
-                      client={contract.client}
-                      value={contract.value}
-                      createdDate={contract.createdDate}
-                      showSignatureSection={contract.status === CONTRACT_STATUS.APPROVED || contract.status === CONTRACT_STATUS.ESIGNED}
-                      licensorSignature={rawDocument?.legalESign ?? null}
-                      licenseeSignature={rawDocument?.clientESign ?? null}
-                      gatewayBaseUrl={URLs.TBGateWay}
-                      disableHighlight={userRole === USER_ROLE.CLIENT || (userRole === USER_ROLE.LEGAL_TEAM && (contract.status === CONTRACT_STATUS.APPROVED || contract.status === CONTRACT_STATUS.ESIGNED))}
-                    />
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-          </div>
+          <ContractOverviewTab
+            contract={contract}
+            userRole={userRole}
+            docLoading={docLoading}
+            docError={docError}
+            docContent={docContent}
+            foundContract={foundContract}
+            rawDocument={rawDocument}
+            gatewayBaseUrl={URLs.TBGateWay}
+            esignSignatureDataUrl={esignSignatureDataUrl}
+            onEsignSignatureChange={setEsignSignatureDataUrl}
+            esignSubmitting={esignSubmitting}
+            onEsignSubmit={handleEsignSubmit}
+          />
         )}
       </div>
 

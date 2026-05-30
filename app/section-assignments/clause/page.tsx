@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useConfig, useConnection } from 'wagmi';
 import { Button } from '@/app/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card';
-import { ArrowLeft, FileText, Loader2, CheckCircle, XCircle, UserPlus, MessageCircle, History, RotateCcw } from 'lucide-react';
+import { ArrowLeft, FileText, Loader2, CheckCircle, XCircle, History, RotateCcw } from 'lucide-react';
 import { useContractDoc } from '@/app/contexts/ContractDocContext';
 import { useContracts } from '@/app/contexts/ContractsContext';
 import { useSubgraphRefresh } from '@/app/contexts/SubgraphRefreshContext';
@@ -20,6 +20,8 @@ import { formatClauseHistoryReadable } from '@/utils/utility';
 import { toast } from 'sonner';
 import type { DocSection } from '@/app/data/interfaces';
 import { RejectReasonDialog } from '@/app/components/RejectReasonDialog';
+import { RejectionReasonButton } from '@/app/components/RejectionReasonButton';
+import { RejectionReasonModal } from '@/app/components/RejectionReasonModal';
 import { ClauseLexicalEditor } from '@/app/components/editor/ClauseLexicalEditor';
 
 type ClauseHistoryItem = { type?: string; id?: string; date?: string | number; cid?: string | null };
@@ -349,15 +351,7 @@ export default function SectionAssignmentsClausePage() {
               </>
             )}
             {isClauseRejected && (
-              <button
-                type="button"
-                onClick={() => setShowRejectReasonModal(true)}
-                title="View rejection reason"
-                className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-sm font-medium text-destructive bg-destructive/10 hover:bg-destructive/20 focus:outline-none focus:ring-2 focus:ring-destructive/50 cursor-pointer"
-              >
-                <MessageCircle className="h-4 w-4 shrink-0" />
-                <span>Rejection reason</span>
-              </button>
+              <RejectionReasonButton onClick={() => setShowRejectReasonModal(true)} />
             )}
           </div>
         </CardHeader>
@@ -415,33 +409,12 @@ export default function SectionAssignmentsClausePage() {
         onSubmit={handleRejectWithReason}
       />
 
-      {typeof document !== 'undefined' &&
-        showRejectReasonModal &&
-        createPortal(
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="reject-reason-modal-title"
-            className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
-          >
-            <div className="absolute inset-0 bg-black/70" onClick={() => setShowRejectReasonModal(false)} />
-            <div
-              className="relative z-10 w-full max-w-md rounded-lg border bg-background p-6 shadow-lg"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <h2 id="reject-reason-modal-title" className="text-lg font-semibold leading-none tracking-tight mb-2">
-                Rejection reason
-              </h2>
-              <p className="text-sm text-muted-foreground whitespace-pre-wrap break-words">{clauseRejectReason || 'No reason provided.'}</p>
-              <div className="flex justify-end mt-4">
-                <Button type="button" variant="outline" onClick={() => setShowRejectReasonModal(false)}>
-                  Close
-                </Button>
-              </div>
-            </div>
-          </div>,
-          document.body
-        )}
+      <RejectionReasonModal
+        isOpen={showRejectReasonModal}
+        onClose={() => setShowRejectReasonModal(false)}
+        reason={clauseRejectReason}
+        title="Rejection reason"
+      />
 
       {typeof document !== 'undefined' &&
         showHistoryModal &&
