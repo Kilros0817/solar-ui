@@ -14,7 +14,7 @@ import { useAssignment } from '@/app/contexts/AssignmentContext';
 import { DIVISION_LABELS, USER_ROLE, URLs } from '@/utils/constants';
 import { useUser } from '@/app/contexts/UserContext';
 import { approveClauseWithSectionUpdate } from '@/utils/utility';
-import { rejectClause, reassignClause } from '@/utils/interact';
+import { rejectClause } from '@/utils/interact';
 import { getClauseHistories } from '@/utils/subgraph';
 import { formatClauseHistoryReadable } from '@/utils/utility';
 import { toast } from 'sonner';
@@ -154,8 +154,6 @@ export default function SectionAssignmentsClausePage() {
   const isClauseRejected = clauseStatus === 3;
   const clauseRejectReason = (clauseAt as { rejectReason?: string })?.rejectReason ?? '';
   const sectionStatus = typeof (sectionAt as { status?: number })?.status === 'number' ? (sectionAt as { status: number }).status : 0;
-  const canReassignSectionClauses = sectionStatus === 0;
-  const showReassignButton = canReassignSectionClauses && (clauseStatus === 2 || clauseStatus === 3);
   const subgraphClauseId = !Number.isNaN(clauseIdOnChain) ? clauseIdOnChain : null;
 
   const openHistoryModal = async () => {
@@ -167,10 +165,10 @@ export default function SectionAssignmentsClausePage() {
       const list = await getClauseHistories(String(subgraphClauseId));
       const sorted = Array.isArray(list)
         ? [...list].sort((a, b) => {
-            const da = a.date != null ? Number(a.date) : 0;
-            const db = b.date != null ? Number(b.date) : 0;
-            return da - db; // chronological: oldest first
-          })
+          const da = a.date != null ? Number(a.date) : 0;
+          const db = b.date != null ? Number(b.date) : 0;
+          return da - db; // chronological: oldest first
+        })
         : [];
       setHistories(sorted);
     } catch (e) {
@@ -276,33 +274,6 @@ export default function SectionAssignmentsClausePage() {
     }
   };
 
-  const handleReassign = async () => {
-    if (!config || !address || Number.isNaN(clauseIdOnChain)) {
-      toast.error('Missing data to reassign');
-      return;
-    }
-    setActionLoading('reassign');
-    try {
-      const ok = await reassignClause(config, address, clauseIdOnChain);
-      if (ok) {
-        toast.success('Clause reassigned');
-        router.back();
-        setTimeout(async () => {
-          refreshSubgraph();
-          await refetchDoc(contractId);
-          await refetchContracts();
-        }, 4000);
-      } else {
-        toast.error('Failed to reassign clause');
-      }
-    } catch (e) {
-      console.error('Reassign error:', e);
-      toast.error(e instanceof Error ? e.message : 'Failed to reassign clause');
-    } finally {
-      setActionLoading(null);
-    }
-  };
-
   if (userRole !== null && userRole !== USER_ROLE.DIVISION_LEADER) {
     return null;
   }
@@ -398,44 +369,37 @@ export default function SectionAssignmentsClausePage() {
             placeholder="Clause content..."
             className="min-h-[160px]"
           />
-          {selectedFromRoute === 'review' && !isViewingPastVersion && (
+          {selectedFromRoute && ['review', 'approved'].includes(selectedFromRoute) && !isViewingPastVersion && (
             <div className="flex items-center gap-3 pt-2 border-t">
-              <Button
-                variant="default"
-                className="gap-2 cursor-pointer"
-                disabled={actionLoading !== null}
-                onClick={handleApprove}
-              >
-                {actionLoading === 'approve' ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4" />}
-                {actionLoading === 'approve' ? 'Approving...' : 'Approve'}
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                className="gap-2 text-destructive hover:text-destructive hover:bg-destructive/10 cursor-pointer"
-                disabled={actionLoading !== null}
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setShowRejectClauseDialog(true);
-                }}
-              >
-                {actionLoading === 'reject' ? <Loader2 className="h-4 w-4 animate-spin" /> : <XCircle className="h-4 w-4" />}
-                {actionLoading === 'reject' ? 'Rejecting...' : 'Reject'}
-              </Button>
-            </div>
-          )}
-          {(selectedFromRoute === 'rejected' || selectedFromRoute === 'approved') && showReassignButton && !isViewingPastVersion && (
-            <div className="flex items-center gap-3 pt-2 border-t">
-              <Button
-                variant="reassign"
-                className="gap-2 cursor-pointer"
-                disabled={actionLoading !== null}
-                onClick={handleReassign}
-              >
-                {actionLoading === 'reassign' ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserPlus className="h-4 w-4" />}
-                {actionLoading === 'reassign' ? 'Reassigning...' : 'Reassign'}
-              </Button>
+              {selectedFromRoute === 'review' && (
+                <Button
+                  variant="default"
+                  className="gap-2 cursor-pointer"
+                  disabled={actionLoading !== null}
+                  onClick={handleApprove}
+                >
+                  {actionLoading === 'approve' ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4" />}
+                  {actionLoading === 'approve' ? 'Approving...' : 'Approve'}
+                </Button>
+              )}
+              {
+                (sectionStatus == 0 || sectionStatus == 3) && (
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    className="gap-2 cursor-pointer"
+                    disabled={actionLoading !== null}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setShowRejectClauseDialog(true);
+                    }}
+                  >
+                    {actionLoading === 'reject' ? <Loader2 className="h-4 w-4 animate-spin" /> : <XCircle className="h-4 w-4" />}
+                    {actionLoading === 'reject' ? 'Rejecting...' : 'Reject'}
+                  </Button>
+                )
+              }
             </div>
           )}
         </CardContent>

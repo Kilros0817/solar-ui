@@ -9,9 +9,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/ca
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/app/components/ui/select';
 import { Label } from '@/app/components/ui/label';
 import { Badge } from '@/app/components/ui/badge';
-import { ArrowLeft, FileText, Loader2, UserPlus, History, RotateCcw, AlertCircle } from 'lucide-react';
+import { ArrowLeft, FileText, Loader2, UserPlus, History, RotateCcw, AlertCircle, MessageCircle } from 'lucide-react';
 import { getDivisionMembersByDivisionId, getSectionHistories, getClauseHistories } from '@/utils/subgraph';
-import { assignClausesToMembers, reassignClause } from '@/utils/interact';
+import { assignClausesToMembers } from '@/utils/interact';
 import { useContractDoc } from '@/app/contexts/ContractDocContext';
 import { useContracts } from '@/app/contexts/ContractsContext';
 import { useSubgraphRefresh } from '@/app/contexts/SubgraphRefreshContext';
@@ -40,7 +40,7 @@ export default function SectionAssignmentsSectionPage() {
   const config = useConfig();
   const { address } = useConnection();
   const { userRole } = useUser();
-  const { selectedContractId, selectedSectionIndex, setSelection } = useAssignment();
+  const { selectedContractId, selectedSectionIndex } = useAssignment();
   const { profile, loadDoc, getDoc, loadingDocId, loadingProfile, error: contextError, refetchDoc } = useContractDoc();
   const { refetch: refetchContracts } = useContracts();
   const { refresh: refreshSubgraph } = useSubgraphRefresh();
@@ -59,11 +59,9 @@ export default function SectionAssignmentsSectionPage() {
   const [histories, setHistories] = useState<SectionHistoryItem[]>([]);
   const [loadingHistories, setLoadingHistories] = useState(false);
   const [loadingHistoryCid, setLoadingHistoryCid] = useState<string | null>(null);
-  const [reassigningClauseId, setReassigningClauseId] = useState<number | null>(null);
   const [isViewingPastVersion, setIsViewingPastVersion] = useState(false);
   const [sectionHistoryViewCid, setSectionHistoryViewCid] = useState<string | null>(null);
   const [showClauseHistoryModal, setShowClauseHistoryModal] = useState(false);
-  const [clauseHistoryClauseId, setClauseHistoryClauseId] = useState<number | null>(null);
   const [clauseHistories, setClauseHistories] = useState<ClauseHistoryItem[]>([]);
   const [loadingClauseHistories, setLoadingClauseHistories] = useState(false);
   const [loadingClauseHistoryCid, setLoadingClauseHistoryCid] = useState<string | null>(null);
@@ -114,6 +112,7 @@ export default function SectionAssignmentsSectionPage() {
   const sectionNotForDivision =
     isDivisionLeader && doc && profile != null && sectionDcategory !== leaderDcategory;
 
+  const sectionStatus = sectionAt?.status;
   const error =
     contextError ??
     (notInDivision ? 'You are not assigned to a division.' : null) ??
@@ -246,10 +245,10 @@ export default function SectionAssignmentsSectionPage() {
       const list = await getSectionHistories(String(sectionIdFromSubgraph));
       const sorted = Array.isArray(list)
         ? [...list].sort((a, b) => {
-            const da = a.date != null ? Number(a.date) : 0;
-            const db = b.date != null ? Number(b.date) : 0;
-            return da - db; // chronological: oldest first
-          })
+          const da = a.date != null ? Number(a.date) : 0;
+          const db = b.date != null ? Number(b.date) : 0;
+          return da - db; // chronological: oldest first
+        })
         : [];
       setHistories(sorted);
     } catch (e) {
@@ -300,7 +299,6 @@ export default function SectionAssignmentsSectionPage() {
 
   const openClauseHistoryModal = async (clauseIdOnChain: number) => {
     if (Number.isNaN(clauseIdOnChain)) return;
-    setClauseHistoryClauseId(clauseIdOnChain);
     setShowClauseHistoryModal(true);
     setClauseHistoryPreviewContent(null);
     setLoadingClauseHistories(true);
@@ -309,10 +307,10 @@ export default function SectionAssignmentsSectionPage() {
       const list = await getClauseHistories(String(clauseIdOnChain));
       const sorted = Array.isArray(list)
         ? [...list].sort((a, b) => {
-            const da = a.date != null ? Number(a.date) : 0;
-            const db = b.date != null ? Number(b.date) : 0;
-            return da - db;
-          })
+          const da = a.date != null ? Number(a.date) : 0;
+          const db = b.date != null ? Number(b.date) : 0;
+          return da - db;
+        })
         : [];
       setClauseHistories(sorted);
     } catch (e) {
@@ -338,32 +336,6 @@ export default function SectionAssignmentsSectionPage() {
       toast.error('Failed to load content from history');
     } finally {
       setLoadingClauseHistoryCid(null);
-    }
-  };
-
-  const handleReassignClause = async (clauseIdOnChain: number) => {
-    if (!config || !address) {
-      toast.error('Missing wallet connection');
-      return;
-    }
-    setReassigningClauseId(clauseIdOnChain);
-    try {
-      const ok = await reassignClause(config, address, clauseIdOnChain);
-      if (ok) {
-        toast.success('Clause reassigned');
-        setTimeout(async () => {
-          refreshSubgraph();
-          await refetchDoc(contractId);
-          await refetchContracts();
-        }, 4000);
-      } else {
-        toast.error('Failed to reassign clause');
-      }
-    } catch (e) {
-      console.error('Reassign error:', e);
-      toast.error(e instanceof Error ? e.message : 'Failed to reassign clause');
-    } finally {
-      setReassigningClauseId(null);
     }
   };
 
@@ -507,7 +479,6 @@ export default function SectionAssignmentsSectionPage() {
           <p className="text-xs text-muted-foreground">{divisionLabel}</p>
         </div>
       </div>
-
       <Card>
         <CardHeader>
           <div className="flex flex-wrap items-center gap-2">
@@ -525,18 +496,19 @@ export default function SectionAssignmentsSectionPage() {
                   <History className="h-4 w-4 shrink-0" />
                   <span>History</span>
                 </Button>
-                {isDivisionLeader && !!sectionRejectReason.trim() && (
-                  <Button
+                {isDivisionLeader && sectionStatus == 3 && (
+                  <button
                     type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="gap-1.5 shrink-0"
-                    onClick={() => setShowSectionRejectModal(true)}
-                    title="View section rejection reason"
+                    onClick={() => {
+                      setShowSectionRejectModal(true);
+                    }}
+                    title="View rejection reason"
+                    className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-sm font-medium text-destructive bg-destructive/10 hover:bg-destructive/20 focus:outline-none focus:ring-2 focus:ring-destructive/50 cursor-pointer"
                   >
-                    <AlertCircle className="h-4 w-4 shrink-0 text-red-600" />
-                    <span className="text-red-700">Reject reason</span>
-                  </Button>
+                    <MessageCircle className="h-4 w-4 shrink-0" />
+                    <span>Rejection reason</span>
+                  </button>
+
                 )}
                 {isViewingPastVersion && (
                   <Button
@@ -615,83 +587,67 @@ export default function SectionAssignmentsSectionPage() {
                             isViewingPastVersion
                               ? (clause.clauseContent ?? '')
                               : (clauseContentOverrides[i] !== undefined
-                                  ? clauseContentOverrides[i]
-                                  : clause.clauseContent ?? '')
+                                ? clauseContentOverrides[i]
+                                : clause.clauseContent ?? '')
                           }
                           readOnly
                           className="text-sm"
                         />
                       </div>
-                    <p className="text-xs text-muted-foreground">
-                      Assigned to: <span className="font-medium text-foreground">{assignedLabel}</span>
-                    </p>
-                    {(statusLabel || showReassignButton) && (
-                      <div className="flex flex-wrap items-center gap-2 pt-2 border-t justify-between">
-                        {statusLabel ? (
-                          <Badge
-                            variant={
-                              clauseStatus === 2
-                                ? 'destructive'
-                                : clauseStatus === 3
+                      <p className="text-xs text-muted-foreground">
+                        Assigned to: <span className="font-medium text-foreground">{assignedLabel}</span>
+                      </p>
+                      {(statusLabel || showReassignButton) && (
+                        <div className="flex flex-wrap items-center gap-2 pt-2 border-t justify-between">
+                          {statusLabel ? (
+                            <Badge
+                              variant={
+                                clauseStatus === 2
                                   ? 'destructive'
-                                  : 'secondary'
-                            }
-                            className={clauseStatus === 2 ? 'bg-green-600' : ''}
-                          >
-                            {statusLabel}
-                          </Badge>
-                        ) : (
-                          <span />
-                        )}
-                        {showReassignButton && (
-                          <Button
-                            variant="reassign"
-                            size="sm"
-                            className="gap-1.5 cursor-pointer shrink-0"
-                            disabled={reassigningClauseId === clauseIdOnChain}
-                            onClick={() => handleReassignClause(clauseIdOnChain)}
-                          >
-                            {reassigningClauseId === clauseIdOnChain ? (
-                              <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
-                            ) : (
-                              <UserPlus className="h-4 w-4 shrink-0" />
-                            )}
-                            <span>{reassigningClauseId === clauseIdOnChain ? 'Reassigning...' : 'Reassign'}</span>
-                          </Button>
-                        )}
-                      </div>
-                    )}
-                    {showAssignDropdown && (
-                      <div className="flex items-center gap-3 pt-2 border-t">
-                        <UserPlus className="h-4 w-4 text-muted-foreground shrink-0" />
-                        <div className="flex-1 min-w-0 flex flex-wrap items-center gap-2">
-                          <div>
-                            <Label className="text-xs text-muted-foreground">Assign to</Label>
-                            <Select
-                              value={clauseAssignments[clause.clauseId] ?? (assignedMember?.id ?? 'unassigned')}
-                              onValueChange={(v) =>
-                                setClauseAssignments((prev) => ({
-                                  ...prev,
-                                  [clause.clauseId]: v === 'unassigned' ? '' : v,
-                                }))
+                                  : clauseStatus === 3
+                                    ? 'destructive'
+                                    : 'secondary'
                               }
+                              className={clauseStatus === 2 ? 'bg-green-600' : ''}
                             >
-                              <SelectTrigger className="mt-1 max-w-[240px]">
-                                <SelectValue placeholder="Select member" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="unassigned">Unassigned</SelectItem>
-                                {members.map((m) => (
-                                  <SelectItem key={m.id} value={m.id}>
-                                    {getMemberLabel(m)}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
+                              {statusLabel}
+                            </Badge>
+                          ) : (
+                            <span />
+                          )}
+                        </div>
+                      )}
+                      {showAssignDropdown && (
+                        <div className="flex items-center gap-3 pt-2 border-t">
+                          <UserPlus className="h-4 w-4 text-muted-foreground shrink-0" />
+                          <div className="flex-1 min-w-0 flex flex-wrap items-center gap-2">
+                            <div>
+                              <Label className="text-xs text-muted-foreground">Assign to</Label>
+                              <Select
+                                value={clauseAssignments[clause.clauseId] ?? (assignedMember?.id ?? 'unassigned')}
+                                onValueChange={(v) =>
+                                  setClauseAssignments((prev) => ({
+                                    ...prev,
+                                    [clause.clauseId]: v === 'unassigned' ? '' : v,
+                                  }))
+                                }
+                              >
+                                <SelectTrigger className="mt-1 max-w-[240px]">
+                                  <SelectValue placeholder="Select member" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="unassigned">Unassigned</SelectItem>
+                                  {members.map((m) => (
+                                    <SelectItem key={m.id} value={m.id}>
+                                      {getMemberLabel(m)}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    )}
+                      )}
                     </div>
                   </div>
                 );
@@ -700,7 +656,6 @@ export default function SectionAssignmentsSectionPage() {
           )}
         </CardContent>
       </Card>
-
       {(() => {
         if (!isDivisionLeader) return null;
         const allClausesAssigned =

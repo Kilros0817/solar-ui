@@ -236,7 +236,7 @@ export const approveClause = async (
   clauseId: number,
   sectionCid: string,
 ) => {
-  const res = await runSponsorTx(config, account, "leaderReviewClause", [clauseId, true, sectionCid, ""]);
+  const res = await runSponsorTx(config, account, "leaderApproveClause", [clauseId, sectionCid]);
   if (res.isSuccess) {
     return true;
   }
@@ -250,20 +250,7 @@ export const rejectClause = async (
   clauseId: number,
   rejectReason: string
 ) => {
-  const res = await runSponsorTx(config, account, "leaderReviewClause", [clauseId, false, "", rejectReason]);
-  if (res.isSuccess) {
-    return true;
-  }
-  return false;
-}
-
-// reassign clause
-export const reassignClause = async (
-  config: any,
-  account: string,
-  clauseId: number,
-) => {
-  const res = await runSponsorTx(config, account, "reassignClause", [clauseId]);
+  const res = await runSponsorTx(config, account, "leaderRejectClause", [clauseId, rejectReason]);
   if (res.isSuccess) {
     return true;
   }
@@ -285,33 +272,30 @@ export const submitSectionToLegal = async (
 }
 
 // legal team: approve or reject a section (newDocCid: pass updated doc CID for approve, or "" for reject)
-export const legalReviewSection = async (
+export const legalApproveSection = async (
   config: any,
   account: string,
   sectionId: number,
-  approve: boolean,
   newDocCid: string,
-  rejectReason: string
 ) => {
-  const res = await runSponsorTx(config, account, "legalReviewSection", [sectionId, approve, newDocCid, rejectReason]);
+  const res = await runSponsorTx(config, account, "legalApproveSection", [sectionId, newDocCid]);
   if (res.isSuccess) {
     return true;
   }
   return false;
 }
-
-// reassign section
-export const reassignSection = async (
+export const legalRejectSection = async (
   config: any,
   account: string,
   sectionId: number,
+  rejectReason: string
 ) => {
-  const res = await runSponsorTx(config, account, "reassignSection", [sectionId]);
+  const res = await runSponsorTx(config, account, "legalRejectSection", [sectionId, rejectReason]);
   if (res.isSuccess) {
     return true;
   }
   return false;
-};
+}
 
 // legal: submit document to client (all sections must be approved by legal)
 export const submitDocToClient = async (
@@ -336,19 +320,6 @@ export const clientReview = async (
   rejectReason: string
 ) => {
   const res = await runSponsorTx(config, account, "clientReview", [docId, approve, rejectReason]);
-  if (res.isSuccess) {
-    return true;
-  }
-  return false;
-};
-
-// client: reassign rejected document (back to legal/division)
-export const clientReassignDoc = async (
-  config: any,
-  account: string,
-  docId: number,
-) => {
-  const res = await runSponsorTx(config, account, "clientReassignDoc", [docId]);
   if (res.isSuccess) {
     return true;
   }

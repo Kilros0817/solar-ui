@@ -25,7 +25,6 @@ import { USER_ROLE } from '@/utils/constants';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { getContractCounts } from '../data/interfaces';
-import type { SidebarProps } from '../data/interfaces';
 import { useDivisionLeaderSections } from '@/app/contexts/DivisionLeaderSectionsContext';
 import { useDivisionMemberClauses } from '@/app/contexts/DivisionMemberClausesContext';
 import { useClientContracts, getClientContractCounts } from '@/app/contexts/ClientContractsContext';
@@ -33,7 +32,7 @@ import { useSectionContent } from '@/app/contexts/SectionContentContext';
 import { useAssignment } from '@/app/contexts/AssignmentContext';
 import { useSubgraphRefresh } from '@/app/contexts/SubgraphRefreshContext';
 
-export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
+export function ContractSidebar({ activeTab }: { activeTab: string }) {
   const router = useRouter();
   const pathname = usePathname();
   const { userRole, logout } = useUser();
@@ -95,15 +94,13 @@ export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
           let ready = 0;
           let review = 0;
           let approved = 0;
-          let rejected = 0;
           divisionLeaderSections.forEach((sec) => {
             const s = typeof (sec as { status?: number }).status === 'number'
               ? (sec as { status: number }).status
               : 0;
             if (s === 1) review++;
             else if (s === 2) approved++;
-            else if (s === 3) rejected++;
-            else if (s === 0) {
+            else {
               const clauses = sec.clauses ?? [];
               let approvedCount = 0;
               clauses.forEach((c: { status?: number }) => {
@@ -114,7 +111,7 @@ export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
               if (total > 0 && approvedCount === total) ready++;
             }
           });
-          return { ready, review, approved, rejected };
+          return { ready, review, approved };
         })()
       : null;
 
@@ -154,7 +151,6 @@ export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
     '/legal-review/pending': 'legal-pending',
     '/legal-review/review': 'legal-review-tab',
     '/legal-review/approved': 'legal-approved',
-    '/legal-review/rejected': 'legal-rejected',
     '/rejected': 'legal-rejected',
     '/divisions': 'team',
     '/clients': 'clients',
@@ -291,14 +287,6 @@ export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
           route: '/legal-review/approved',
           icon: CheckCircle,
           count: dlSectionStatus?.approved ?? null,
-        },
-        {
-          type: 'item',
-          id: 'legal-rejected',
-          label: 'Rejected',
-          route: '/legal-review/rejected',
-          icon: Archive,
-          count: dlSectionStatus?.rejected ?? null,
         },
         { id: 'templates', label: 'Division Templates', icon: FolderOpen, count: null },
         { id: 'team', label: 'My Team', icon: Users, count: null },
@@ -492,8 +480,6 @@ export function ContractSidebar({ activeTab, onTabChange }: SidebarProps) {
             const route = routeMap[flatItem.id];
             if (route) {
               router.push(route);
-            } else {
-              onTabChange(flatItem.id);
             }
           };
 

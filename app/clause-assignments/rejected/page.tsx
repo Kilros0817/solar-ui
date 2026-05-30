@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent } from '@/app/components/ui/card';
 import { Button } from '@/app/components/ui/button';
-import { FileText, Loader2, Eye, ClipboardList, AlertCircle } from 'lucide-react';
+import { FileText, Loader2, ClipboardList, AlertCircle, Pencil } from 'lucide-react';
 import { USER_ROLE, URLs } from '@/utils/constants';
 import { getPlainTextPreview } from '@/app/components/editor/ClauseLexicalEditor';
 import { useUser } from '@/app/contexts/UserContext';
@@ -182,7 +182,7 @@ export default function ClauseAssignmentsRejectedPage() {
                 )}
                 <div className="pt-2 border-t">
                   <Button
-                    variant="outline"
+                    variant="default"
                     size="sm"
                     className="w-full gap-2 cursor-pointer"
                     onClick={() => handleViewClause(clause)}
@@ -191,9 +191,9 @@ export default function ClauseAssignmentsRejectedPage() {
                     {navigatingClauseId === clause.id ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
                     ) : (
-                      <Eye className="h-4 w-4" />
+                      <Pencil className="h-3.5 w-3.5" />
                     )}
-                    View
+                    Work On
                   </Button>
                 </div>
               </CardContent>

@@ -136,6 +136,9 @@ export type SectionWithDivision = {
   divisionLeader?: { dcategory?: number; firstName?: string; lastName?: string };
 };
 
+/** Section status values */
+export type SectionStatus = 'pending' | 'review' | 'approved' | 'rejected';
+
 /** One clause block in a section (for Section Review clause history). */
 export interface SectionClauseBlock {
   /** On-chain clause id when clause has been assigned; absent for unassigned. */
@@ -147,7 +150,7 @@ export interface Section {
   id: string;
   name: string;
   content: string;
-  status: 'pending' | 'approved' | 'rejected';
+  status: SectionStatus;
   /** Raw section status from subgraph: 0 = Pending, 1 = Review, 2 = Approved, 3 = Rejected */
   statusNum?: number;
   submittedBy: string;

@@ -1,6 +1,6 @@
 {
   "contractName": "SolarDMS",
-  "contractAddress": "0xe0Af997a8eF7DD9D6575AfE7CC7c7c14eD17D58d",
+  "contractAddress": "0xf993E44266938Be28f15a727Be7E779b9D5E4748",
   "abi": [
     {
       "inputs": [],
@@ -148,19 +148,6 @@
           "internalType": "uint256",
           "name": "clauseId",
           "type": "uint256"
-        }
-      ],
-      "name": "ClauseReAssigned",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": true,
-          "internalType": "uint256",
-          "name": "clauseId",
-          "type": "uint256"
         },
         {
           "indexed": false,
@@ -251,19 +238,6 @@
         }
       ],
       "name": "DocCreated",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": true,
-          "internalType": "uint256",
-          "name": "docId",
-          "type": "uint256"
-        }
-      ],
-      "name": "DocReassigned",
       "type": "event"
     },
     {
@@ -372,6 +346,31 @@
         }
       ],
       "name": "LegalRejectedSection",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "enum SolarDMS.MemberRole",
+          "name": "newRole",
+          "type": "uint8"
+        },
+        {
+          "indexed": false,
+          "internalType": "enum SolarDMS.DivisionCategory",
+          "name": "dCategory",
+          "type": "uint8"
+        }
+      ],
+      "name": "MemberRoleUpdated",
       "type": "event"
     },
     {
@@ -530,25 +529,6 @@
         {
           "indexed": true,
           "internalType": "uint256",
-          "name": "docId",
-          "type": "uint256"
-        },
-        {
-          "indexed": true,
-          "internalType": "uint256",
-          "name": "sectionId",
-          "type": "uint256"
-        }
-      ],
-      "name": "SectionReAssigned",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": true,
-          "internalType": "uint256",
           "name": "sectionId",
           "type": "uint256"
         },
@@ -581,29 +561,6 @@
         }
       ],
       "name": "acceptRegisterRequest",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "sectionId",
-          "type": "uint256"
-        },
-        {
-          "internalType": "address",
-          "name": "member",
-          "type": "address"
-        },
-        {
-          "internalType": "string",
-          "name": "cid",
-          "type": "string"
-        }
-      ],
-      "name": "assignClause",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
@@ -716,19 +673,6 @@
         }
       ],
       "name": "clientEsign",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "docId",
-          "type": "uint256"
-        }
-      ],
-      "name": "clientReassignDoc",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
@@ -886,14 +830,22 @@
           "type": "uint256"
         },
         {
-          "internalType": "bool",
-          "name": "approve",
-          "type": "bool"
-        },
-        {
           "internalType": "string",
           "name": "newSectionCid",
           "type": "string"
+        }
+      ],
+      "name": "leaderApproveClause",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "clauseId",
+          "type": "uint256"
         },
         {
           "internalType": "string",
@@ -901,7 +853,25 @@
           "type": "string"
         }
       ],
-      "name": "leaderReviewClause",
+      "name": "leaderRejectClause",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "sectionId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "string",
+          "name": "newDocCid",
+          "type": "string"
+        }
+      ],
+      "name": "legalApproveSection",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
@@ -932,22 +902,12 @@
           "type": "uint256"
         },
         {
-          "internalType": "bool",
-          "name": "approve",
-          "type": "bool"
-        },
-        {
-          "internalType": "string",
-          "name": "newDocCid",
-          "type": "string"
-        },
-        {
           "internalType": "string",
           "name": "rejectReason",
           "type": "string"
         }
       ],
-      "name": "legalReviewSection",
+      "name": "legalRejectSection",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
@@ -1094,32 +1054,6 @@
         }
       ],
       "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "clauseId",
-          "type": "uint256"
-        }
-      ],
-      "name": "reassignClause",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "sectionId",
-          "type": "uint256"
-        }
-      ],
-      "name": "reassignSection",
-      "outputs": [],
-      "stateMutability": "nonpayable",
       "type": "function"
     },
     {
@@ -1314,6 +1248,29 @@
         }
       ],
       "name": "transferOwnership",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        },
+        {
+          "internalType": "enum SolarDMS.MemberRole",
+          "name": "newRole",
+          "type": "uint8"
+        },
+        {
+          "internalType": "enum SolarDMS.DivisionCategory",
+          "name": "dCategory",
+          "type": "uint8"
+        }
+      ],
+      "name": "updateMemberRole",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"

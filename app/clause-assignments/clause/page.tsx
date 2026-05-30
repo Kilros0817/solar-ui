@@ -208,7 +208,7 @@ export default function ClauseAssignmentsClausePage() {
   };
 
   // Edit mode + Request Review: when from Clauses or Pending, and clause not yet submitted (no CID)
-  const isEditMode = selectedFromRoute === 'clauses' || selectedFromRoute === 'pending';
+  const isEditMode = (selectedFromRoute === 'clauses' || selectedFromRoute === 'pending' || selectedFromRoute === "rejected") && (clauseStatus == 0 || clauseStatus == 3);
   const backHref = selectedFromRoute === 'clauses' ? '/clause-assignments/clauses' : selectedFromRoute === 'pending' ? '/clause-assignments/pending' : selectedFromRoute === 'review' ? '/clause-assignments/review' : selectedFromRoute === 'approved' ? '/clause-assignments/approved' : selectedFromRoute === 'rejected' ? '/clause-assignments/rejected' : '/clause-assignments';
   const backLabel = selectedFromRoute === 'clauses' ? 'Back to Clauses' : selectedFromRoute === 'pending' ? 'Back to Pending' : selectedFromRoute === 'review' ? 'Back to Review' : selectedFromRoute === 'approved' ? 'Back to Approved' : selectedFromRoute === 'rejected' ? 'Back to Rejected' : 'Back to Clause Assignments';
 

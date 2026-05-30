@@ -11,9 +11,9 @@ import { RejectReasonDialog } from './RejectReasonDialog';
 import { createPortal } from 'react-dom';
 import { ArrowLeft, FileText, Calendar, DollarSign, Tag, ClipboardList, Building2, Send, Loader2, Check, X, RefreshCw, History } from 'lucide-react';
 import { getContractById, getContractHistories } from '@/utils/subgraph';
-import { legalReviewSection, reassignSection, submitDocToClient, clientReview, clientReassignDoc, legalEsign, clientEsign } from '@/utils/interact';
+import { legalApproveSection, legalRejectSection, submitDocToClient, clientReview, legalEsign, clientEsign } from '@/utils/interact';
 import { uploadContractToPinata, uploadSignatureToPinata } from '@/utils/utility';
-import type { Contract, ContractDocPayload, ContractDetailsProps } from '../data/interfaces';
+import type { Contract, ContractDocPayload, ContractDetailsProps, SectionStatus } from '../data/interfaces';
 import type { DivisionSection, Section } from '../data/interfaces';
 import { useUser } from '../contexts/UserContext';
 import { useSubgraphRefresh } from '../contexts/SubgraphRefreshContext';
@@ -41,10 +41,11 @@ const mapDocumentToContract = (doc: any, index: number): Contract => {
   };
 };
 
-const sectionStatusToReviewStatus = (status: number): 'pending' | 'approved' | 'rejected' => {
+const sectionStatusToReviewStatus = (status: number): SectionStatus => {
+  if (status === 1) return 'review';
   if (status === 2) return 'approved';
   if (status === 3) return 'rejected';
-  return 'pending'; // 0 = not submitted, 1 = in review
+  return 'pending';
 };
 
 export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps) {
@@ -62,7 +63,6 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
   const [reviewActionSectionId, setReviewActionSectionId] = useState<string | null>(null);
   const [submittingToClient, setSubmittingToClient] = useState(false);
   const [clientReviewAction, setClientReviewAction] = useState<'approve' | 'reject' | null>(null);
-  const [clientReassigning, setClientReassigning] = useState(false);
   const [esignSignatureDataUrl, setEsignSignatureDataUrl] = useState<string | null>(null);
   const [esignSubmitting, setEsignSubmitting] = useState(false);
   const [activeTab, setActiveTab] = useState<string>('overview');
@@ -240,7 +240,7 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
         sections: newSections,
       };
       const newDocCid = await uploadContractToPinata(newDocPayload);
-      const success = await legalReviewSection(config, address, sectionIdNum, true, newDocCid, '');
+      const success = await legalApproveSection(config, address, sectionIdNum, newDocCid);
       if (success) {
         toast.success('Section approved');
         setTimeout(async () => {
@@ -269,7 +269,7 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
     }
     setReviewActionSectionId(sectionId);
     try {
-      const success = await legalReviewSection(config, address, sectionIdNum, false, '', reason);
+      const success = await legalRejectSection(config, address, sectionIdNum, reason);
       if (success) {
         toast.success('Section rejected');
         setTimeout(async () => {
@@ -344,35 +344,6 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
       toast.error(e instanceof Error ? e.message : 'Failed to submit to client');
     } finally {
       setSubmittingToClient(false);
-    }
-  };
-
-  const handleReassignSection = async (sectionId: string) => {
-    if (!config || !address) {
-      toast.error('Wallet not connected');
-      return;
-    }
-    const sectionIdNum = Number(sectionId);
-    if (Number.isNaN(sectionIdNum)) {
-      toast.error('Invalid section');
-      return;
-    }
-    setReviewActionSectionId(sectionId);
-    try {
-      const success = await reassignSection(config, address, sectionIdNum);
-      if (success) {
-        toast.success('Section reassigned');
-        setTimeout(async () => {
-          refreshSubgraph();
-          await fetchContract();
-        }, 4000);
-      } else {
-        toast.error('Failed to reassign section');
-      }
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'Failed to reassign section');
-    } finally {
-      setReviewActionSectionId(null);
     }
   };
 
@@ -508,35 +479,6 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
       toast.error(e instanceof Error ? e.message : 'Failed to submit signature');
     } finally {
       setEsignSubmitting(false);
-    }
-  };
-
-  const handleClientReassign = async () => {
-    if (!config || !address) {
-      toast.error('Wallet not connected');
-      return;
-    }
-    const docIdNum = Number(contractId);
-    if (Number.isNaN(docIdNum)) {
-      toast.error('Invalid contract');
-      return;
-    }
-    setClientReassigning(true);
-    try {
-      const success = await clientReassignDoc(config, address, docIdNum);
-      if (success) {
-        toast.success('Contract reassigned');
-        setTimeout(async () => {
-          refreshSubgraph();
-          await fetchContract();
-        }, 4000);
-      } else {
-        toast.error('Failed to reassign contract');
-      }
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'Failed to reassign contract');
-    } finally {
-      setClientReassigning(false);
     }
   };
 
@@ -711,22 +653,6 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
                       </Button>
                     </div>
                   )}
-                  {contract.status === CONTRACT_STATUS.REJECTED && (
-                    <Button
-                      variant="reassign"
-                      size="sm"
-                      className="gap-2 shrink-0"
-                      disabled={clientReassigning}
-                      onClick={handleClientReassign}
-                    >
-                      {clientReassigning ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <RefreshCw className="h-4 w-4" />
-                      )}
-                      {clientReassigning ? 'Reassigning...' : 'Reassign'}
-                    </Button>
-                  )}
                 </CardHeader>
                 <CardContent>
                   {docLoading ? (
@@ -815,7 +741,7 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
               </Card>
             </div>
           </div>
-        ) : (userRole === USER_ROLE.LEGAL_TEAM || userRole === USER_ROLE.DIVISION_LEADER || userRole === USER_ROLE.ADMIN) ? (
+        ) : (userRole === USER_ROLE.LEGAL_TEAM || userRole === USER_ROLE.ADMIN) ? (
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-2 h-auto">
               <TabsTrigger value="overview">Overview</TabsTrigger>
@@ -1001,7 +927,6 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
                 sections={sectionsByDivision}
                 onApprove={handleApproveSection}
                 onReject={handleRejectSection}
-                onReassign={handleReassignSection}
                 userRole={userRole ?? 0}
                 processingSectionId={reviewActionSectionId}
                 contractStatus={contract.status}

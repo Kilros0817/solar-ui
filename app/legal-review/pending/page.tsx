@@ -90,7 +90,7 @@ export default function LegalReviewPendingPage() {
 
   // Ready to Submit: sections with status 0 and all clauses approved (total === approved)
   const pendingSections = sections.filter((sec) => {
-    if ((sec.status ?? 0) !== 0) return false;
+    if ((sec.status ?? 0) !== 0 && sec.status !== 3) return false;
     const counts = getClauseCounts(sec.clauses);
     const totalFromContent = getTotalClauses(sec.id);
     const total = totalFromContent ?? counts.fromSubgraph;

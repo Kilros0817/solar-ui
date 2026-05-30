@@ -35,7 +35,6 @@ export function SectionReviewTab({
   sections,
   onApprove,
   onReject,
-  onReassign,
   userRole,
   processingSectionId = null,
   contractStatus,
@@ -65,10 +64,10 @@ export function SectionReviewTab({
       const list = await getClauseHistories(onChainClauseId);
       const sorted = Array.isArray(list)
         ? [...list].sort((a, b) => {
-            const da = a.date != null ? Number(a.date) : 0;
-            const db = b.date != null ? Number(b.date) : 0;
-            return da - db;
-          })
+          const da = a.date != null ? Number(a.date) : 0;
+          const db = b.date != null ? Number(b.date) : 0;
+          return da - db;
+        })
         : [];
       setClauseHistories(sorted);
     } catch (e) {
@@ -105,10 +104,10 @@ export function SectionReviewTab({
       const list = await getSectionHistories(sectionId);
       const sorted = Array.isArray(list)
         ? [...list].sort((a, b) => {
-            const da = a.date != null ? Number(a.date) : 0;
-            const db = b.date != null ? Number(b.date) : 0;
-            return da - db;
-          })
+          const da = a.date != null ? Number(a.date) : 0;
+          const db = b.date != null ? Number(b.date) : 0;
+          return da - db;
+        })
         : [];
       setSectionHistories(sorted);
     } catch (e) {
@@ -119,6 +118,7 @@ export function SectionReviewTab({
       setLoadingSectionHistories(false);
     }
   }, []);
+
 
   const handleViewSectionHistoryCid = useCallback(async (cid: string) => {
     const sectionId = sectionHistorySectionId;
@@ -432,71 +432,40 @@ export function SectionReviewTab({
                         </div>
                       </div>
 
-                      {!isReadOnly && sectionIdViewingPast !== section.id && section.status === 'pending' && section.statusNum === 1 && (
-                        <div className="flex items-end gap-2 pt-2 border-t">
+                      <div className="flex items-end gap-2 pt-2 border-t">
+                        {!isReadOnly && sectionIdViewingPast !== section.id && (section.status === 'review' || section.status === 'approved') && (
                           <div className="flex gap-2">
-                            <Button
-                              size="sm"
-                              variant="approve"
-                              onClick={() => onApprove?.(section.id)}
-                              disabled={processingSectionId === section.id}
-                              className="cursor-pointer"
-                            >
-                              <CheckCircle2 className="h-4 w-4 mr-2" />
-                              {processingSectionId === section.id ? 'Processing...' : 'Approve'}
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="destructive"
-                              onClick={() => setRejectSectionId(section.id)}
-                              disabled={processingSectionId === section.id}
-                              className="cursor-pointer"
-                            >
-                              <XCircle className="h-4 w-4 mr-2" />
-                              Reject
-                            </Button>
-                          </div>
-                        </div>
-                      )}
-
-                      {!isReadOnly && sectionIdViewingPast !== section.id && section.status === 'approved' && contractStatus === CONTRACT_STATUS.PENDING && (
-                        <div className="flex items-end gap-2 pt-2 border-t">
-                          <Button
-                            variant="reassign"
-                            size="sm"
-                            onClick={() => onReassign?.(section.id)}
-                            disabled={processingSectionId === section.id}
-                            className="cursor-pointer"
-                          >
-                            {processingSectionId === section.id ? (
-                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                            ) : (
-                              <RefreshCw className="h-4 w-4 mr-2" />
+                            {section.status === 'review' && (
+                              <Button
+                                size="sm"
+                                variant="approve"
+                                onClick={() => onApprove?.(section.id)}
+                                disabled={processingSectionId === section.id}
+                                className="cursor-pointer"
+                              >
+                                <CheckCircle2 className="h-4 w-4 mr-2" />
+                                {processingSectionId === section.id ? 'Processing...' : 'Approve'}
+                              </Button>
                             )}
-                            {processingSectionId === section.id ? 'Reassigning...' : 'Reassign'}
-                          </Button>
-                        </div>
-                      )}
-
+                            {contractStatus === 0 || contractStatus === 3 && (
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => setRejectSectionId(section.id)}
+                                disabled={processingSectionId === section.id}
+                                className="cursor-pointer"
+                              >
+                                <XCircle className="h-4 w-4 mr-2" />
+                                Reject
+                              </Button>
+                            )}
+                          </div>
+                        )}
+                      </div>
                       {section.status === 'rejected' && section.comments && (
                         <div className="bg-red-50 border border-red-200 rounded p-3">
                           <p className="text-sm font-medium text-red-800 mb-1">Rejection Reason:</p>
                           <p className="text-sm text-red-700">{section.comments}</p>
-                        </div>
-                      )}
-
-                      {!isReadOnly && sectionIdViewingPast !== section.id && section.status === 'rejected' && (
-                        <div className="flex items-end gap-2 pt-2 border-t">
-                          <Button
-                            variant="reassign"
-                            size="sm"
-                            onClick={() => onReassign?.(section.id)}
-                            disabled={processingSectionId === section.id}
-                            className="cursor-pointer text-white border-0"
-                          >
-                            <UserPlus className="h-4 w-4 mr-2" />
-                            {processingSectionId === section.id ? 'Reassigning...' : 'Reassign'}
-                          </Button>
                         </div>
                       )}
                     </div>

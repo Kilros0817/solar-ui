@@ -132,7 +132,7 @@ export default function ClauseAssignmentsClausesPage() {
         <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fill, 400px)' }}>
           {clauses.map((clause) => {
             const status = typeof clause.status === 'number' ? clause.status : 0;
-            const isPending = status === 0;
+            const isWorkOn = status === 0 || status === 3;
             const assignedTs = typeof clause.assignedAt === 'number'
               ? clause.assignedAt
               : typeof clause.assignedAt === 'string'
@@ -152,7 +152,7 @@ export default function ClauseAssignmentsClausesPage() {
                     </p>
                   )}
                   <div className="flex justify-end mt-auto pt-2 border-t">
-                    {isPending ? (
+                    {isWorkOn ? (
                       <Button
                         variant="default"
                         size="sm"
