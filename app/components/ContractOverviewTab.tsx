@@ -69,7 +69,7 @@ export function ContractOverviewTab({
   onEsignSubmit,
 }: ContractOverviewTabProps) {
   const [showRejectReasonModal, setShowRejectReasonModal] = useState(false);
-  
+
   const getStatusColor = (status: number) => {
     switch (status) {
       case 0: return 'bg-orange-100 text-orange-800 border-orange-200';
@@ -179,8 +179,7 @@ export function ContractOverviewTab({
               )}
               {userRole === USER_ROLE.LEGAL_TEAM &&
                 allSectionsApproved &&
-                foundContract?.status === CONTRACT_STATUS.PENDING &&
-                foundContract?.cid?.trim() &&
+                (foundContract?.status === CONTRACT_STATUS.PENDING || foundContract?.status === CONTRACT_STATUS.REJECTED) &&
                 onSubmitToClient && (
                   <Button
                     variant="default"
@@ -240,15 +239,14 @@ export function ContractOverviewTab({
                 gatewayBaseUrl={gatewayBaseUrl}
                 disableHighlight={
                   userRole === USER_ROLE.CLIENT ||
-                  (userRole === USER_ROLE.LEGAL_TEAM &&
-                    (contract.status === CONTRACT_STATUS.APPROVED || contract.status === CONTRACT_STATUS.ESIGNED))
+                  (contract.status === CONTRACT_STATUS.APPROVED || contract.status === CONTRACT_STATUS.ESIGNED)
                 }
                 licensorSlot={
                   contract.status === CONTRACT_STATUS.APPROVED &&
-                  userRole === USER_ROLE.LEGAL_TEAM &&
-                  !rawDocument?.legalESign?.cid &&
-                  onEsignSignatureChange &&
-                  onEsignSubmit ? (
+                    userRole === USER_ROLE.LEGAL_TEAM &&
+                    !rawDocument?.legalESign?.cid &&
+                    onEsignSignatureChange &&
+                    onEsignSubmit ? (
                     <div className="space-y-2">
                       <SignaturePad onSignatureChange={onEsignSignatureChange} />
                       <Button
@@ -266,10 +264,10 @@ export function ContractOverviewTab({
                 }
                 licenseeSlot={
                   contract.status === CONTRACT_STATUS.APPROVED &&
-                  userRole === USER_ROLE.CLIENT &&
-                  !rawDocument?.clientESign?.cid &&
-                  onEsignSignatureChange &&
-                  onEsignSubmit ? (
+                    userRole === USER_ROLE.CLIENT &&
+                    !rawDocument?.clientESign?.cid &&
+                    onEsignSignatureChange &&
+                    onEsignSubmit ? (
                     <div className="space-y-2">
                       <SignaturePad onSignatureChange={onEsignSignatureChange} />
                       <Button
@@ -305,10 +303,10 @@ export function ContractOverviewTab({
                 }
                 licensorSlot={
                   contract.status === CONTRACT_STATUS.APPROVED &&
-                  userRole === USER_ROLE.LEGAL_TEAM &&
-                  !rawDocument?.legalESign?.cid &&
-                  onEsignSignatureChange &&
-                  onEsignSubmit ? (
+                    userRole === USER_ROLE.LEGAL_TEAM &&
+                    !rawDocument?.legalESign?.cid &&
+                    onEsignSignatureChange &&
+                    onEsignSubmit ? (
                     <div className="space-y-2">
                       <SignaturePad onSignatureChange={onEsignSignatureChange} />
                       <Button
@@ -326,10 +324,10 @@ export function ContractOverviewTab({
                 }
                 licenseeSlot={
                   contract.status === CONTRACT_STATUS.APPROVED &&
-                  userRole === USER_ROLE.CLIENT &&
-                  !rawDocument?.clientESign?.cid &&
-                  onEsignSignatureChange &&
-                  onEsignSubmit ? (
+                    userRole === USER_ROLE.CLIENT &&
+                    !rawDocument?.clientESign?.cid &&
+                    onEsignSignatureChange &&
+                    onEsignSubmit ? (
                     <div className="space-y-2">
                       <SignaturePad onSignatureChange={onEsignSignatureChange} />
                       <Button
