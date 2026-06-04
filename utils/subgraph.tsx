@@ -312,6 +312,12 @@ export const getContractById = async (id: string | number) => {
         }
         clauses {
           id
+          divisionMember {
+            id
+            firstName
+            lastName
+            email
+          }
         }
       }
       clientESign {

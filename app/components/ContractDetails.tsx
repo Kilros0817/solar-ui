@@ -173,13 +173,22 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
         ? [leader.firstName, leader.lastName].filter(Boolean).join(' ').trim() || undefined
         : undefined;
       const contentMap = sectionContentBySectionId[sec.id];
-      const subgraphClauses = (sec as { clauses?: Array<{ id?: string }> })?.clauses ?? [];
+      const subgraphClauses = (sec as { clauses?: Array<{ id?: string; divisionMember?: { id?: string; firstName?: string; lastName?: string; email?: string } }> })?.clauses ?? [];
       const sectionContent = contentMap?.sectionContent ?? [];
       const clauseBlocks = sectionContent.map(
-        (c: { clauseId: string; clauseContent: string }, i: number) => ({
-          onChainClauseId: subgraphClauses[i]?.id != null ? String(subgraphClauses[i].id) : undefined,
-          clauseContent: c.clauseContent ?? '',
-        })
+        (c: { clauseId: string; clauseContent: string }, i: number) => {
+          const clause = subgraphClauses[i];
+          const divisionMember = clause?.divisionMember;
+          return {
+            onChainClauseId: clause?.id != null ? String(clause.id) : undefined,
+            clauseContent: c.clauseContent ?? '',
+            assignedTo: divisionMember ? {
+              firstName: divisionMember.firstName,
+              lastName: divisionMember.lastName,
+              email: divisionMember.email,
+            } : undefined,
+          };
+        }
       );
       if (!byDivision[divisionLabel]) byDivision[divisionLabel] = [];
       const statusNum = typeof sec.status === 'number' ? sec.status : 0;
@@ -556,23 +565,7 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
             esignSubmitting={esignSubmitting}
             onEsignSubmit={handleEsignSubmit}
           />
-        ) : userRole === USER_ROLE.ADMIN ? (
-          <ContractOverviewTab
-            contract={contract}
-            userRole={userRole}
-            docLoading={docLoading}
-            docError={docError}
-            docContent={docContent}
-            foundContract={foundContract}
-            rawDocument={rawDocument}
-            gatewayBaseUrl={URLs.TBGateWay}
-            onOpenDocHistory={openDocHistoryModal}
-            esignSignatureDataUrl={esignSignatureDataUrl}
-            onEsignSignatureChange={setEsignSignatureDataUrl}
-            esignSubmitting={esignSubmitting}
-            onEsignSubmit={handleEsignSubmit}
-          />
-        ) : userRole === USER_ROLE.LEGAL_TEAM ? (
+        ) : userRole === USER_ROLE.ADMIN || userRole === USER_ROLE.LEGAL_TEAM ? (
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-2 h-auto">
               <TabsTrigger value="overview">Overview</TabsTrigger>
@@ -590,7 +583,7 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
                 gatewayBaseUrl={URLs.TBGateWay}
                 allSectionsApproved={allSectionsApproved}
                 submittingToClient={submittingToClient}
-                onSubmitToClient={handleSubmitToClient}
+                onSubmitToClient={userRole === USER_ROLE.LEGAL_TEAM ? handleSubmitToClient : undefined}
                 onOpenDocHistory={openDocHistoryModal}
                 esignSignatureDataUrl={esignSignatureDataUrl}
                 onEsignSignatureChange={setEsignSignatureDataUrl}

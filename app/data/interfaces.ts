@@ -144,6 +144,8 @@ export interface SectionClauseBlock {
   /** On-chain clause id when clause has been assigned; absent for unassigned. */
   onChainClauseId?: string;
   clauseContent: string;
+  /** Division member assigned to this clause (if any) */
+  assignedTo?: { firstName?: string; lastName?: string; email?: string };
 }
 
 export interface Section {

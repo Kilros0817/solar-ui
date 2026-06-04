@@ -352,7 +352,7 @@ export function SectionReviewTab({
                           </div>
                           {section.divisionLeaderName && (
                             <p className="text-sm text-muted-foreground mb-3">
-                              Division leader: {section.divisionLeaderName}
+                              {section.division} Leader: {section.divisionLeaderName}
                             </p>
                           )}
                           <div className="bg-white rounded p-3 border max-h-32 overflow-y-auto">
@@ -381,31 +381,42 @@ export function SectionReviewTab({
                               if (section.clauseBlocks && section.clauseBlocks.length > 0) {
                                 return (
                                   <div className="space-y-3">
-                                    {section.clauseBlocks.map((block, i) => (
-                                      <div key={i} className="text-sm leading-[1.7]">
-                                        {block.onChainClauseId && userRole === USER_ROLE.ADMIN && (
-                                          <div className="flex justify-end mb-1">
-                                            <Button
-                                              type="button"
-                                              variant="ghost"
-                                              size="sm"
-                                              className="gap-1.5 h-8 shrink-0"
-                                              onClick={() => openClauseHistoryModal(block.onChainClauseId!)}
-                                              title="View clause history"
-                                            >
-                                              <History className="h-3.5 w-3.5" />
-                                              Clause history
-                                            </Button>
+                                    {section.clauseBlocks.map((block, i) => {
+                                      const assignedName = block.assignedTo
+                                        ? [block.assignedTo.firstName, block.assignedTo.lastName].filter(Boolean).join(' ').trim()
+                                        : null;
+                                      const displayName = assignedName && assignedName.length > 0 ? assignedName : 'Unassigned';
+                                      return (
+                                        <div key={i} className="text-sm leading-[1.7]">
+                                          <div className='flex flex-row justify-between'>
+                                            <div className="bg-red-600 text-muted-foreground px-3 py-2 rounded mb-2 font-semibold text-xs">
+                                              {displayName}
+                                            </div>
+                                            {block.onChainClauseId && userRole === USER_ROLE.ADMIN && (
+                                              <div className="flex justify-end mb-1">
+                                                <Button
+                                                  type="button"
+                                                  variant="ghost"
+                                                  size="sm"
+                                                  className="gap-1.5 h-8 shrink-0"
+                                                  onClick={() => openClauseHistoryModal(block.onChainClauseId!)}
+                                                  title="View clause history"
+                                                >
+                                                  <History className="h-3.5 w-3.5" />
+                                                  Clause history
+                                                </Button>
+                                              </div>
+                                            )}
                                           </div>
-                                        )}
-                                        <ClauseLexicalEditor
-                                          key={`section-${section.id}-clause-${i}`}
-                                          initialContent={block.clauseContent}
-                                          readOnly
-                                          className="text-sm"
-                                        />
-                                      </div>
-                                    ))}
+                                          <ClauseLexicalEditor
+                                            key={`section-${section.id}-clause-${i}`}
+                                            initialContent={block.clauseContent}
+                                            readOnly
+                                            className="text-sm"
+                                          />
+                                        </div>
+                                      );
+                                    })}
                                   </div>
                                 );
                               }
