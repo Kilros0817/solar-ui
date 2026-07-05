@@ -10,11 +10,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/app/components/ui/label';
 import { Badge } from '@/app/components/ui/badge';
 import { ArrowLeft, FileText, Loader2, UserPlus, History, RotateCcw, AlertCircle, MessageCircle } from 'lucide-react';
-import { getDivisionMembersByDivisionId, getSectionHistories, getClauseHistories } from '@/utils/subgraph';
+import { getDivisionMembersByDivisionId, getSectionHistories, getClauseHistories } from '@/utils/postgres';
 import { assignClausesToMembers } from '@/utils/interact';
 import { useContractDoc } from '@/app/contexts/ContractDocContext';
 import { useContracts } from '@/app/contexts/ContractsContext';
-import { useSubgraphRefresh } from '@/app/contexts/SubgraphRefreshContext';
+import { usePostgresRefresh } from '@/app/contexts/PostgresRefreshContext';
 import { useAssignment } from '@/app/contexts/AssignmentContext';
 import { useSectionContent } from '@/app/contexts/SectionContentContext';
 import { DIVISION_LABELS, USER_ROLE, URLs } from '@/utils/constants';
@@ -32,8 +32,8 @@ const getMemberLabel = (m: DivisionMember) =>
 
 const getAssignedMemberLabel = (member: { firstName?: string; lastName?: string; email?: string } | null | undefined) =>
   member
-    ? [member.firstName, member.lastName].filter(Boolean).join(' ').trim() || member.email || '—'
-    : '—';
+    ? [member.firstName, member.lastName].filter(Boolean).join(' ').trim() || member.email || 'â€”'
+    : 'â€”';
 
 export default function SectionAssignmentsSectionPage() {
   const router = useRouter();
@@ -43,7 +43,7 @@ export default function SectionAssignmentsSectionPage() {
   const { selectedContractId, selectedSectionIndex } = useAssignment();
   const { profile, loadDoc, getDoc, loadingDocId, loadingProfile, error: contextError, refetchDoc } = useContractDoc();
   const { refetch: refetchContracts } = useContracts();
-  const { refresh: refreshSubgraph } = useSubgraphRefresh();
+  const { refresh: refreshpostgres } = usePostgresRefresh();
   const { loadSectionContent, getSectionContent } = useSectionContent();
   const contractId = selectedContractId ?? '';
   const sectionIndex = selectedSectionIndex ?? -1;
@@ -52,7 +52,7 @@ export default function SectionAssignmentsSectionPage() {
   const [members, setMembers] = useState<DivisionMember[]>([]);
   const [clauseAssignments, setClauseAssignments] = useState<Record<string, string>>({});
   const [assigning, setAssigning] = useState(false);
-  const [sectionIdFromSubgraph, setSectionIdFromSubgraph] = useState<number | null>(null);
+  const [sectionIdFromPostgres, setsectionIdFromPostgres] = useState<number | null>(null);
   const [sectionContentLoaded, setSectionContentLoaded] = useState(false);
   const [clauseContentOverrides, setClauseContentOverrides] = useState<Record<number, string>>({});
   const [showHistoryModal, setShowHistoryModal] = useState(false);
@@ -89,7 +89,7 @@ export default function SectionAssignmentsSectionPage() {
   }, [selectedContractId, selectedSectionIndex, loadDoc, router]);
 
   useEffect(() => {
-    setSectionIdFromSubgraph(null);
+    setsectionIdFromPostgres(null);
     setSectionContentLoaded(false);
     setClauseContentOverrides({});
     setSectionHistoryViewCid(null);
@@ -121,7 +121,7 @@ export default function SectionAssignmentsSectionPage() {
 
   const contractTitle = doc?.title ?? 'Untitled';
   const divisionLabel = profile ? (DIVISION_LABELS[profile.dcategory] ?? `Division #${profile.dcategory}`) : '';
-  const sectionClausesFromSubgraph = sectionAt?.clauses ?? [];
+  const sectionClausesFromPostgres = sectionAt?.clauses ?? [];
 
   useEffect(() => {
     if (!doc || profile == null || sectionIndex < 0 || !isDivisionLeader) return;
@@ -135,9 +135,9 @@ export default function SectionAssignmentsSectionPage() {
     if (!doc || sectionIndex < 0) return;
     const rawSections = doc.sections ?? [];
     const sec = rawSections[sectionIndex];
-    const subgraphSectionId = sec?.id != null ? Number(sec.id) : null;
-    if (subgraphSectionId != null && !Number.isNaN(subgraphSectionId)) {
-      setSectionIdFromSubgraph(subgraphSectionId);
+    const postgresSectionId = sec?.id != null ? Number(sec.id) : null;
+    if (postgresSectionId != null && !Number.isNaN(postgresSectionId)) {
+      setsectionIdFromPostgres(postgresSectionId);
     }
   }, [doc, sectionIndex]);
 
@@ -237,12 +237,12 @@ export default function SectionAssignmentsSectionPage() {
   }, [doc, sectionIndex, sectionContentLoaded, getSectionContent]);
 
   const openHistoryModal = async () => {
-    if (sectionIdFromSubgraph == null) return;
+    if (sectionIdFromPostgres == null) return;
     setShowHistoryModal(true);
     setLoadingHistories(true);
     setHistories([]);
     try {
-      const list = await getSectionHistories(String(sectionIdFromSubgraph));
+      const list = await getSectionHistories(String(sectionIdFromPostgres));
       const sorted = Array.isArray(list)
         ? [...list].sort((a, b) => {
           const da = a.date != null ? Number(a.date) : 0;
@@ -344,9 +344,9 @@ export default function SectionAssignmentsSectionPage() {
     if (!sectionContentLoaded || !doc || sectionIndex < 0) return;
     const rawSections = doc.sections ?? [];
     const sec = rawSections[sectionIndex];
-    const subgraphClauses = (sec?.clauses ?? []) as Array<{ id?: string; cid?: string | null; divisionMember?: unknown }>;
+    const postgresClauses = (sec?.clauses ?? []) as Array<{ id?: string; cid?: string | null; divisionMember?: unknown }>;
     const toFetch: { index: number; cid: string }[] = [];
-    subgraphClauses.forEach((c, i) => {
+    postgresClauses.forEach((c, i) => {
       if (c?.divisionMember != null && c?.cid) {
         toFetch.push({ index: i, cid: c.cid });
       }
@@ -369,7 +369,7 @@ export default function SectionAssignmentsSectionPage() {
   }, [doc, sectionIndex, sectionContentLoaded]);
 
   const handleAssign = async () => {
-    if (!config || !address || clauses.length === 0 || sectionIdFromSubgraph == null) return;
+    if (!config || !address || clauses.length === 0 || sectionIdFromPostgres == null) return;
     setAssigning(true);
     try {
       // Only assigned clauses: build (memberAddress, payload) for clauses that have a member selected
@@ -413,7 +413,7 @@ export default function SectionAssignmentsSectionPage() {
       }
 
       const divisionMembers = assigned.map((a) => a.memberAddress);
-      const sectionId = sectionIdFromSubgraph;
+      const sectionId = sectionIdFromPostgres;
       const success = await assignClausesToMembers(
         config,
         address,
@@ -424,7 +424,7 @@ export default function SectionAssignmentsSectionPage() {
       if (success) {
         toast.success('Assignments submitted successfully');
         setTimeout(async () => {
-          refreshSubgraph();
+          refreshpostgres();
           await refetchDoc(contractId);
           await refetchContracts();
         }, 4000);
@@ -483,7 +483,7 @@ export default function SectionAssignmentsSectionPage() {
         <CardHeader>
           <div className="flex flex-wrap items-center gap-2">
             <CardTitle className="text-xl">{sectionName}</CardTitle>
-            {sectionIdFromSubgraph != null && (
+            {sectionIdFromPostgres != null && (
               <>
                 <Button
                   type="button"
@@ -534,7 +534,7 @@ export default function SectionAssignmentsSectionPage() {
           ) : (
             <div className="space-y-4">
               {clauses.map((clause, i) => {
-                const clauseData = sectionClausesFromSubgraph[i];
+                const clauseData = sectionClausesFromPostgres[i];
                 const assignedMember = clauseData?.divisionMember;
                 const assignedLabel = getAssignedMemberLabel(assignedMember);
                 const clauseStatus = typeof clauseData?.status === 'number' ? clauseData.status : undefined;
@@ -660,14 +660,14 @@ export default function SectionAssignmentsSectionPage() {
         if (!isDivisionLeader) return null;
         const allClausesAssigned =
           clauses.length > 0 &&
-          clauses.every((_, i) => sectionClausesFromSubgraph[i]?.divisionMember != null);
+          clauses.every((_, i) => sectionClausesFromPostgres[i]?.divisionMember != null);
         const showAssignButton = !allClausesAssigned;
         if (!showAssignButton) return null;
         return (
           <div className="flex justify-end">
             <Button
               onClick={handleAssign}
-              disabled={assigning || clauses.length === 0 || sectionIdFromSubgraph == null}
+              disabled={assigning || clauses.length === 0 || sectionIdFromPostgres == null}
               className="bg-brand-secondary hover:bg-[var(--brand-secondary-hover)] text-white"
             >
               {assigning ? (

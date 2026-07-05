@@ -9,13 +9,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/ca
 import { ArrowLeft, FileText, Loader2, CheckCircle, XCircle, History, RotateCcw } from 'lucide-react';
 import { useContractDoc } from '@/app/contexts/ContractDocContext';
 import { useContracts } from '@/app/contexts/ContractsContext';
-import { useSubgraphRefresh } from '@/app/contexts/SubgraphRefreshContext';
+import { usePostgresRefresh } from '@/app/contexts/PostgresRefreshContext';
 import { useAssignment } from '@/app/contexts/AssignmentContext';
 import { DIVISION_LABELS, USER_ROLE, URLs } from '@/utils/constants';
 import { useUser } from '@/app/contexts/UserContext';
 import { approveClauseWithSectionUpdate } from '@/utils/utility';
 import { rejectClause } from '@/utils/interact';
-import { getClauseHistories } from '@/utils/subgraph';
+import { getClauseHistories } from '@/utils/postgres';
 import { formatClauseHistoryReadable } from '@/utils/utility';
 import { toast } from 'sonner';
 import type { DocSection } from '@/app/data/interfaces';
@@ -34,7 +34,7 @@ export default function SectionAssignmentsClausePage() {
   const { selectedContractId, selectedSectionIndex, selectedClauseIndex, selectedClauseCid, selectedFromRoute } = useAssignment();
   const { profile, loadDoc, getDoc, loadingDocId, loadingProfile, error: contextError, refetchDoc } = useContractDoc();
   const { refetch: refetchContracts } = useContracts();
-  const { refresh: refreshSubgraph } = useSubgraphRefresh();
+  const { refresh: refreshpostgres } = usePostgresRefresh();
   const contractId = selectedContractId ?? '';
   const sectionIndex = selectedSectionIndex ?? -1;
   const clauseIndex = selectedClauseIndex ?? -1;
@@ -156,15 +156,15 @@ export default function SectionAssignmentsClausePage() {
   const isClauseRejected = clauseStatus === 3;
   const clauseRejectReason = (clauseAt as { rejectReason?: string })?.rejectReason ?? '';
   const sectionStatus = typeof (sectionAt as { status?: number })?.status === 'number' ? (sectionAt as { status: number }).status : 0;
-  const subgraphClauseId = !Number.isNaN(clauseIdOnChain) ? clauseIdOnChain : null;
+  const postgresClauseId = !Number.isNaN(clauseIdOnChain) ? clauseIdOnChain : null;
 
   const openHistoryModal = async () => {
-    if (subgraphClauseId == null) return;
+    if (postgresClauseId == null) return;
     setShowHistoryModal(true);
     setLoadingHistories(true);
     setHistories([]);
     try {
-      const list = await getClauseHistories(String(subgraphClauseId));
+      const list = await getClauseHistories(String(postgresClauseId));
       const sorted = Array.isArray(list)
         ? [...list].sort((a, b) => {
           const da = a.date != null ? Number(a.date) : 0;
@@ -233,7 +233,7 @@ export default function SectionAssignmentsClausePage() {
         toast.success('Clause approved');
         router.back();
         setTimeout(async () => {
-          refreshSubgraph();
+          refreshpostgres();
           await refetchDoc(contractId);
           await refetchContracts();
         }, 4000);
@@ -261,7 +261,7 @@ export default function SectionAssignmentsClausePage() {
         setShowRejectClauseDialog(false);
         router.back();
         setTimeout(async () => {
-          refreshSubgraph();
+          refreshpostgres();
           await refetchDoc(contractId);
           await refetchContracts();
         }, 4000);
@@ -314,7 +314,7 @@ export default function SectionAssignmentsClausePage() {
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">{contractTitle}</h1>
           <p className="text-muted-foreground">{divisionLabel}</p>
-          <p className="text-sm text-muted-foreground mt-1">{sectionName} — Clause {clauseIndex + 1}</p>
+          <p className="text-sm text-muted-foreground mt-1">{sectionName} â€” Clause {clauseIndex + 1}</p>
         </div>
       </div>
 
@@ -322,7 +322,7 @@ export default function SectionAssignmentsClausePage() {
         <CardHeader>
           <div className="flex flex-wrap items-center gap-2">
             <CardTitle className="text-lg">View clause content</CardTitle>
-            {subgraphClauseId != null && (
+            {postgresClauseId != null && (
               <>
                 <Button
                   type="button"

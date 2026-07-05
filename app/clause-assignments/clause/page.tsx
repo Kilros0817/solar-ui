@@ -9,12 +9,12 @@ import { createPortal } from 'react-dom';
 import { ArrowLeft, FileText, Loader2, History, RotateCcw } from 'lucide-react';
 import { useContractDoc } from '@/app/contexts/ContractDocContext';
 import { useContracts } from '@/app/contexts/ContractsContext';
-import { useSubgraphRefresh } from '@/app/contexts/SubgraphRefreshContext';
+import { usePostgresRefresh } from '@/app/contexts/PostgresRefreshContext';
 import { useAssignment } from '@/app/contexts/AssignmentContext';
 import { DIVISION_LABELS, USER_ROLE, URLs } from '@/utils/constants';
 import { useUser } from '@/app/contexts/UserContext';
 import { submitClauseToLeader } from '@/utils/interact';
-import { getClauseById, getClauseHistories } from '@/utils/subgraph';
+import { getClauseById, getClauseHistories } from '@/utils/postgres';
 import { formatClauseHistoryReadable } from '@/utils/utility';
 import { toast } from 'sonner';
 import { RejectionReasonButton } from '@/app/components/RejectionReasonButton';
@@ -31,14 +31,14 @@ export default function ClauseAssignmentsClausePage() {
   const { selectedContractId, selectedSectionIndex, selectedClauseIndex, selectedFromRoute } = useAssignment();
   const { profile, loadDoc, getDoc, loadingDocId, loadingProfile, error: contextError, refetchDoc } = useContractDoc();
   const { refetch: refetchContracts } = useContracts();
-  const { refresh: refreshSubgraph } = useSubgraphRefresh();
+  const { refresh: refreshpostgres } = usePostgresRefresh();
   const contractId = selectedContractId ?? '';
   const sectionIndex = selectedSectionIndex ?? -1;
   const clauseIndex = selectedClauseIndex ?? -1;
   const [sectionName, setSectionName] = useState('');
   const [clauseContent, setClauseContent] = useState('');
   const [docClauseId, setDocClauseId] = useState<string>('');
-  const [subgraphClauseId, setSubgraphClauseId] = useState<number | null>(null);
+  const [postgresClauseId, setpostgresClauseId] = useState<number | null>(null);
   const [contentLoaded, setContentLoaded] = useState(false);
   const [contentVersion, setContentVersion] = useState(0);
   const [editorContentKey, setEditorContentKey] = useState('');
@@ -88,8 +88,8 @@ export default function ClauseAssignmentsClausePage() {
     const sections = (doc as { sections?: Array<{ clauses?: Array<{ id?: string }> }> }).sections ?? [];
     const clauseAt = sections[sectionIndex]?.clauses?.[clauseIndex];
     const sgId = clauseAt?.id != null ? String(clauseAt.id) : null;
-    if (sgId) setSubgraphClauseId(Number(sgId));
-    else setSubgraphClauseId(null);
+    if (sgId) setpostgresClauseId(Number(sgId));
+    else setpostgresClauseId(null);
 
     setSectionName(`Section ${sectionIndex + 1}`);
 
@@ -158,12 +158,12 @@ export default function ClauseAssignmentsClausePage() {
   const clauseRejectReason = (clauseAt as { rejectReason?: string })?.rejectReason ?? '';
 
   const openHistoryModal = async () => {
-    if (subgraphClauseId == null) return;
+    if (postgresClauseId == null) return;
     setShowHistoryModal(true);
     setLoadingHistories(true);
     setHistories([]);
     try {
-      const list = await getClauseHistories(String(subgraphClauseId));
+      const list = await getClauseHistories(String(postgresClauseId));
       const sorted = Array.isArray(list)
         ? [...list].sort((a, b) => {
             const da = a.date != null ? Number(a.date) : 0;
@@ -215,7 +215,7 @@ export default function ClauseAssignmentsClausePage() {
   const backLabel = selectedFromRoute === 'clauses' ? 'Back to Clauses' : selectedFromRoute === 'pending' ? 'Back to Pending' : selectedFromRoute === 'review' ? 'Back to Review' : selectedFromRoute === 'approved' ? 'Back to Approved' : selectedFromRoute === 'rejected' ? 'Back to Rejected' : 'Back to Clause Assignments';
 
   const handleRequestReview = async () => {
-    if (!config || !address || subgraphClauseId == null) {
+    if (!config || !address || postgresClauseId == null) {
       toast.error('Missing wallet or clause data');
       return;
     }
@@ -243,12 +243,12 @@ export default function ClauseAssignmentsClausePage() {
         toast.error('Invalid upload response');
         return;
       }
-      const success = await submitClauseToLeader(config, address, subgraphClauseId, clauseCids[0]);
+      const success = await submitClauseToLeader(config, address, postgresClauseId, clauseCids[0]);
       if (success) {
         toast.success('Clause submitted for review');
         router.push('/clause-assignments/clauses');
         setTimeout(async () => {
-          refreshSubgraph();
+          refreshpostgres();
           await refetchDoc(contractId);
           await refetchContracts();
         }, 4000);
@@ -301,7 +301,7 @@ export default function ClauseAssignmentsClausePage() {
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">{contractTitle}</h1>
           <p className="text-muted-foreground">{divisionLabel}</p>
-          <p className="text-sm text-muted-foreground mt-1">{sectionName} — Clause {clauseIndex + 1}</p>
+          <p className="text-sm text-muted-foreground mt-1">{sectionName} â€” Clause {clauseIndex + 1}</p>
         </div>
       </div>
 
@@ -309,7 +309,7 @@ export default function ClauseAssignmentsClausePage() {
         <CardHeader>
           <div className="flex flex-wrap items-center gap-2">
             <CardTitle className="text-lg">{isEditMode ? 'Edit clause content' : 'View clause content'}</CardTitle>
-            {subgraphClauseId != null && (
+            {postgresClauseId != null && (
               <>
                 <Button
                   type="button"

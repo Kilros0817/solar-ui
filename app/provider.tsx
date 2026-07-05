@@ -7,7 +7,7 @@ import { createConfig, WagmiProvider, fallback, http, Config } from "wagmi";
 import { UserProvider } from './contexts/UserContext'
 import { NewContractProvider } from './contexts/NewContractContext'
 import { ContractsProvider } from './contexts/ContractsContext'
-import { SubgraphRefreshProvider } from './contexts/SubgraphRefreshContext'
+import { PostgresRefreshProvider } from './contexts/PostgresRefreshContext'
 import { DivisionLeaderSectionsProvider } from './contexts/DivisionLeaderSectionsContext'
 import { DivisionMemberClausesProvider } from './contexts/DivisionMemberClausesContext'
 import { ClientContractsProvider } from './contexts/ClientContractsContext'
@@ -69,7 +69,7 @@ const TBProvider: React.FC<TBProviderProps> = ({ children }: TBProviderProps) =>
               <UserProvider>
                 <NewContractProvider>
                   <ContractsProvider>
-                    <SubgraphRefreshProvider>
+                    <PostgresRefreshProvider>
                       <ClientContractsProvider>
                         <DivisionLeaderSectionsProvider>
                           <DivisionMemberClausesProvider>
@@ -83,7 +83,7 @@ const TBProvider: React.FC<TBProviderProps> = ({ children }: TBProviderProps) =>
                           </DivisionMemberClausesProvider>
                         </DivisionLeaderSectionsProvider>
                       </ClientContractsProvider>
-                    </SubgraphRefreshProvider>
+                    </PostgresRefreshProvider>
                   </ContractsProvider>
                 </NewContractProvider>
               </UserProvider>

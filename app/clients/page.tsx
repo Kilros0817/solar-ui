@@ -8,7 +8,7 @@ import { Input } from '@/app/components/ui/input';
 import { Users, Loader2, Search } from 'lucide-react';
 import { useUser } from '@/app/contexts/UserContext';
 import { USER_ROLE } from '@/utils/constants';
-import { getAllClients } from '@/utils/subgraph';
+import { getAllClients } from '@/utils/postgres';
 import {
   Table,
   TableBody,
@@ -113,9 +113,9 @@ export default function ClientsPage() {
               {filteredClients.map((c) => (
                 <TableRow key={c.id}>
                   <TableCell className="py-4 font-medium">
-                    {[c.firstName, c.lastName].filter(Boolean).join(' ') || '—'}
+                    {[c.firstName, c.lastName].filter(Boolean).join(' ') || 'â€”'}
                   </TableCell>
-                  <TableCell className="py-4 text-muted-foreground">{c.email ?? '—'}</TableCell>
+                  <TableCell className="py-4 text-muted-foreground">{c.email ?? 'â€”'}</TableCell>
                   <TableCell className="py-4 text-muted-foreground font-mono text-xs">
                     {c.id}
                   </TableCell>

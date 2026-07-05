@@ -12,9 +12,8 @@ import { toast } from 'sonner';
 import { delegate, requestRegister } from '@/utils/interact';
 import { useUser } from '../contexts/UserContext';
 import { getWeb3AuthInstance } from '@/utils/Web3AuthStore';
-import { getUserInfo } from '@/utils/subgraph';
+import { getUserInfo } from '@/utils/postgres';
 import { checkEIP7702Delegation, copyAddressToClipboard, isValidEmail } from '@/utils/utility';
-
 
 
 export default function RegistrationPage() {
@@ -219,7 +218,7 @@ export default function RegistrationPage() {
     }
   }, [router]);
 
-  // Fetch user info from subgraph and email from Web3Auth when component mounts
+  // Fetch user info from postgres and email from Web3Auth when component mounts
   useEffect(() => {
     if (isConnected && !hasSignedIn.current) {
       hasSignedIn.current = true;

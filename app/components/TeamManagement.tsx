@@ -27,7 +27,7 @@ import {
   DropdownMenuTrigger,
 } from './ui/dropdown-menu';
 import { DIVISION_CATEGORY, DIVISION_LABELS, USER_ROLE } from '@/utils/constants';
-import { getAllDivisionLeadersAndMembers, getAllMemebers } from '@/utils/subgraph';
+import { getAllDivisionLeadersAndMembers, getAllMemebers } from '@/utils/postgres';
 import { copyAddressToClipboard } from '@/utils/utility';
 import type { DivisionUser, DivisionGroup, TeamManagementProps } from '../data/interfaces';
 
@@ -92,7 +92,7 @@ export function TeamManagement({ userRole }: TeamManagementProps) {
 
   const divisions = useMemo(() => {
     const keys = Object.keys(divisionGroups).map((k) => Number(k));
-    // fallback: show fixed divisions if subgraph returns empty, to keep UI predictable
+    // fallback: show fixed divisions if postgres returns empty, to keep UI predictable
     if (keys.length === 0) {
       return Object.entries(DIVISION_CATEGORY)
         .filter(([_, value]) => value !== DIVISION_CATEGORY.NO_DIVISION)

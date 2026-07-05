@@ -8,13 +8,13 @@ import { SectionReviewTab } from './SectionReviewTab';
 import { RejectReasonDialog } from './RejectReasonDialog';
 import { createPortal } from 'react-dom';
 import { ArrowLeft, Loader2 } from 'lucide-react';
-import { getContractById, getContractHistories } from '@/utils/subgraph';
+import { getContractById, getContractHistories } from '@/utils/postgres';
 import { legalApproveSection, legalRejectSection, submitDocToClient, clientReview, legalEsign, clientEsign } from '@/utils/interact';
 import { uploadContractToPinata, uploadSignatureToPinata } from '@/utils/utility';
 import type { Contract, ContractDocPayload, ContractDetailsProps, SectionStatus } from '../data/interfaces';
 import type { DivisionSection, Section } from '../data/interfaces';
 import { useUser } from '../contexts/UserContext';
-import { useSubgraphRefresh } from '../contexts/SubgraphRefreshContext';
+import { usePostgresRefresh } from '../contexts/PostgresRefreshContext';
 import { USER_ROLE, DIVISION_LABELS, URLs } from '@/utils/constants';
 import { formatRelativeDate, formatDocHistoryReadable } from '@/utils/utility';
 import { toast } from 'sonner';
@@ -71,7 +71,7 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
   const [viewHistoryDocContent, setViewHistoryDocContent] = useState<ContractDocPayload | null>(null);
   const [loadingViewHistoryCid, setLoadingViewHistoryCid] = useState<string | null>(null);
   const { userRole } = useUser();
-  const { refresh: refreshSubgraph } = useSubgraphRefresh();
+  const { refresh: refreshpostgres } = usePostgresRefresh();
 
   const fetchContract = useCallback(async () => {
     setLoading(true);
@@ -119,7 +119,7 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
     fetchDoc();
   }, [foundContract?.cid]);
 
-  // Load section content by section CID (for Section Review tab – subgraph sections)
+  // Load section content by section CID (for Section Review tab â€“ postgres sections)
   useEffect(() => {
     const sections = rawDocument?.sections ?? [];
     if (sections.length === 0) {
@@ -154,13 +154,13 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
     return () => { cancelled = true; };
   }, [rawDocument?.sections]);
 
-  // All sections approved by legal (status 2) → can submit to client
+  // All sections approved by legal (status 2) â†’ can submit to client
   const allSectionsApproved = useMemo(() => {
     const sections = rawDocument?.sections ?? [];
     return sections.length > 0 && sections.every((s: { status?: number }) => (s.status ?? 0) === 2);
   }, [rawDocument?.sections]);
 
-  // Section Review tab: build from subgraph sections, grouped by division
+  // Section Review tab: build from postgres sections, grouped by division
   const sectionsByDivision: DivisionSection[] = useMemo(() => {
     const sections = rawDocument?.sections ?? [];
     if (sections.length === 0) return [];
@@ -173,11 +173,11 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
         ? [leader.firstName, leader.lastName].filter(Boolean).join(' ').trim() || undefined
         : undefined;
       const contentMap = sectionContentBySectionId[sec.id];
-      const subgraphClauses = (sec as { clauses?: Array<{ id?: string; divisionMember?: { id?: string; firstName?: string; lastName?: string; email?: string } }> })?.clauses ?? [];
+      const postgresClauses = (sec as { clauses?: Array<{ id?: string; divisionMember?: { id?: string; firstName?: string; lastName?: string; email?: string } }> })?.clauses ?? [];
       const sectionContent = contentMap?.sectionContent ?? [];
       const clauseBlocks = sectionContent.map(
         (c: { clauseId: string; clauseContent: string }, i: number) => {
-          const clause = subgraphClauses[i];
+          const clause = postgresClauses[i];
           const divisionMember = clause?.divisionMember;
           return {
             onChainClauseId: clause?.id != null ? String(clause.id) : undefined,
@@ -199,8 +199,8 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
         content: contentMap?.content ?? '',
         status: sectionStatusToReviewStatus(statusNum),
         statusNum,
-        submittedBy: '—',
-        submittedDate: '—',
+        submittedBy: 'â€”',
+        submittedDate: 'â€”',
         division: divisionLabel,
         divisionLeaderName: divisionLeaderName || undefined,
         comments: rejectReason && rejectReason.trim() ? rejectReason : undefined,
@@ -251,7 +251,7 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
       if (success) {
         toast.success('Section approved');
         setTimeout(async () => {
-          refreshSubgraph();
+          refreshpostgres();
           await fetchContract();
         }, 4000);
       } else {
@@ -280,7 +280,7 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
       if (success) {
         toast.success('Section rejected');
         setTimeout(async () => {
-          refreshSubgraph();
+          refreshpostgres();
           await fetchContract();
         }, 4000);
       } else {
@@ -310,7 +310,7 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
     }
     setSubmittingToClient(true);
     try {
-      // Reconstruct doc from section contents (order from subgraph), then upload to get new CID
+      // Reconstruct doc from section contents (order from postgres), then upload to get new CID
       const reconstructedSections = sections.map((sec: { id: string }, idx: number) => {
         const contentMap = sectionContentBySectionId[sec.id];
         if (contentMap?.sectionContent?.length) {
@@ -341,7 +341,7 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
       if (success) {
         toast.success('Contract submitted to client');
         setTimeout(async () => {
-          refreshSubgraph();
+          refreshpostgres();
           await fetchContract();
         }, 4000);
       } else {
@@ -409,7 +409,7 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
       if (success) {
         toast.success('Contract approved');
         setTimeout(async () => {
-          refreshSubgraph();
+          refreshpostgres();
           await fetchContract();
         }, 4000);
       } else {
@@ -439,7 +439,7 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
         toast.success('Contract rejected');
         setShowRejectContractDialog(false);
         setTimeout(async () => {
-          refreshSubgraph();
+          refreshpostgres();
           await fetchContract();
         }, 4000);
       } else {
@@ -476,7 +476,7 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
         toast.success(asLicensor ? 'Licensor signature submitted' : 'Licensee signature submitted');
         setEsignSignatureDataUrl(null);
         setTimeout(async () => {
-          refreshSubgraph();
+          refreshpostgres();
           await fetchContract();
         }, 4000);
       } else {
@@ -501,9 +501,9 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
     client: docContent?.client ?? foundContract.client,
     status: foundContract.status,
     category: docContent?.category ?? foundContract.category,
-    createdDate: foundContract.createdAt ? formatRelativeDate(foundContract.createdAt) : '—',
+    createdDate: foundContract.createdAt ? formatRelativeDate(foundContract.createdAt) : 'â€”',
     description: docContent?.description ?? `Comprehensive agreement for ${foundContract.client} regarding ${foundContract.title.toLowerCase()}.`,
-    value: docContent?.price ?? '—',
+    value: docContent?.price ?? 'â€”',
     involvedDivisions: involvedDivisions.length > 0 ? involvedDivisions : (foundContract.category ? [foundContract.category] : []),
   } : null;
 

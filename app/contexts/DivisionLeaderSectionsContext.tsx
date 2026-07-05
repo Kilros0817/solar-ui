@@ -2,9 +2,9 @@
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { useConnection } from 'wagmi';
-import { getSectionsByDivisionLeader } from '@/utils/subgraph';
+import { getSectionsByDivisionLeader } from '@/utils/postgres';
 import { useUser } from './UserContext';
-import { useSubgraphRefresh } from './SubgraphRefreshContext';
+import { usePostgresRefresh } from './PostgresRefreshContext';
 import { USER_ROLE } from '@/utils/constants';
 
 export type SectionFromLeader = Awaited<ReturnType<typeof getSectionsByDivisionLeader>>[number];
@@ -35,7 +35,7 @@ const DivisionLeaderSectionsContext = createContext<DivisionLeaderSectionsContex
 export function DivisionLeaderSectionsProvider({ children }: { children: React.ReactNode }) {
   const { userRole } = useUser();
   const { address } = useConnection();
-  const { refreshCounter } = useSubgraphRefresh();
+  const { refreshCounter } = usePostgresRefresh();
   const [sections, setSections] = useState<SectionFromLeader[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

@@ -39,7 +39,7 @@ function getClauseCounts(clauses: SectionFromApi['clauses']) {
     else if (s === 2) approved++;
     else if (s === 3) rejected++;
   });
-  return { assigned, submitted, approved, rejected, fromSubgraph: list.length };
+  return { assigned, submitted, approved, rejected, fromPostgres: list.length };
 }
 
 function getClientLabel(doc: SectionFromApi['doc']) {
@@ -151,8 +151,8 @@ export default function SectionAssignmentsPage() {
           {filteredSections.map((section) => {
             const counts = getClauseCounts(section.clauses);
             const totalFromContent = getTotalClauses(section.id);
-            const total = totalFromContent ?? counts.fromSubgraph;
-            const unallocated = totalFromContent != null ? Math.max(0, totalFromContent - counts.fromSubgraph) : null;
+            const total = totalFromContent ?? counts.fromPostgres;
+            const unallocated = totalFromContent != null ? Math.max(0, totalFromContent - counts.fromPostgres) : null;
             const contractTitle = section.doc?.title ?? 'Untitled';
             const client = getClientLabel(section.doc);
             const isViewing = viewingId === section.id;

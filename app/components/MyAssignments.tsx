@@ -15,7 +15,7 @@ import {
   TableRow,
 } from './ui/table';
 import { FileText, Loader2, Eye, ClipboardList, AlertCircle } from 'lucide-react';
-import { getCurrentUserProfile, getClausesByDivisionMember } from '@/utils/subgraph';
+import { getCurrentUserProfile, getClausesByDivisionMember } from '@/utils/postgres';
 import { CONTRACT_STATUS_LABELS, DIVISION_LABELS, USER_ROLE } from '@/utils/constants';
 import { formatRelativeDate } from '@/utils/utility';
 import { useUser } from '@/app/contexts/UserContext';
@@ -68,8 +68,8 @@ export function MyAssignments() {
           const existing = byDocId.get(doc.id);
           const client = doc.client;
           const clientName = client
-            ? [client.firstName, client.lastName].filter(Boolean).join(' ').trim() || '—'
-            : '—';
+            ? [client.firstName, client.lastName].filter(Boolean).join(' ').trim() || 'â€”'
+            : 'â€”';
           const createdAt = typeof doc.createdAt === 'number' ? doc.createdAt : typeof doc.createdAt === 'string' ? (Number(doc.createdAt) || undefined) : undefined;
           const status = typeof doc.status === 'number' ? doc.status : undefined;
           const category = doc.category != null ? (DIVISION_LABELS[doc.category] ?? String(doc.category)) : undefined;
@@ -182,18 +182,18 @@ export function MyAssignments() {
               {contracts.map((c) => (
                 <TableRow key={c.id} className="hover:bg-muted/50">
                   <TableCell className="font-medium py-4">{c.title}</TableCell>
-                  <TableCell className="text-muted-foreground py-4">{c.client || '—'}</TableCell>
-                  <TableCell className="text-muted-foreground py-4">{c.category || '—'}</TableCell>
+                  <TableCell className="text-muted-foreground py-4">{c.client || 'â€”'}</TableCell>
+                  <TableCell className="text-muted-foreground py-4">{c.category || 'â€”'}</TableCell>
                   <TableCell className="py-4">
                     {c.status != null ? (
                       <Badge className={getStatusColor(c.status)}>
                         {CONTRACT_STATUS_LABELS[c.status] ?? 'Unknown'}
                       </Badge>
-                    ) : '—'}
+                    ) : 'â€”'}
                   </TableCell>
                   <TableCell className="py-4">{c.assignedClauseCount ?? 0}</TableCell>
                   <TableCell className="text-muted-foreground py-4">
-                    {c.createdAt != null ? formatRelativeDate(c.createdAt) : '—'}
+                    {c.createdAt != null ? formatRelativeDate(c.createdAt) : 'â€”'}
                   </TableCell>
                   <TableCell className="py-4">
                     <Button

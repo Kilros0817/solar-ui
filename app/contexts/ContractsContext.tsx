@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { useConnection } from 'wagmi';
-import { getAllContracts, getSectionsByDivisionLeader } from '@/utils/subgraph';
+import { getAllContracts, getSectionsByDivisionLeader } from '@/utils/postgres';
 import { useUser } from './UserContext';
 import { USER_ROLE } from '@/utils/constants';
 import { DIVISION_LABELS } from '@/utils/constants';
