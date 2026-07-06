@@ -301,7 +301,7 @@ export default function ClauseAssignmentsClausePage() {
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">{contractTitle}</h1>
           <p className="text-muted-foreground">{divisionLabel}</p>
-          <p className="text-sm text-muted-foreground mt-1">{sectionName} â€” Clause {clauseIndex + 1}</p>
+          <p className="text-sm text-muted-foreground mt-1">{sectionName} — Clause {clauseIndex + 1}</p>
         </div>
       </div>
 

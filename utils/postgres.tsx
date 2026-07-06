@@ -10,6 +10,7 @@ const fetchFromAPI = async (endpoint: string, queryParams?: Record<string, strin
     }
     const res = await fetch(url.toString());
     const json = await res.json();
+
     if (!res.ok || !json.isSuccess) {
       return { isSuccess: false, data: null };
     }

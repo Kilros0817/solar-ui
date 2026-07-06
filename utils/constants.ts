@@ -5,7 +5,7 @@ export const URLs = {
 	ContractAPI: "http://localhost:8085/contract",
 	UploadAPI: "http://localhost:8085/upload",
 	AnalysisAPI: "http://localhost:8085/analysis",
-	PostgresAPI: "http://localhost:4000/postgres",
+	PostgresAPI: "http://localhost:8085/postgres",
 	TBGateWay: "https://jade-wonderful-hawk-382.mypinata.cloud/ipfs/",
 };
 

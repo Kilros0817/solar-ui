@@ -8,7 +8,7 @@ export interface Contract {
   title: string;
   client: string;
   status: number;
-  createdAt: number;
+  created_at: number;
   category: string;
   cid?: string;
 }

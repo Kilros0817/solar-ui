@@ -113,9 +113,9 @@ export default function ClientsPage() {
               {filteredClients.map((c) => (
                 <TableRow key={c.id}>
                   <TableCell className="py-4 font-medium">
-                    {[c.firstName, c.lastName].filter(Boolean).join(' ') || 'â€”'}
+                    {[c.firstName, c.lastName].filter(Boolean).join(' ') || '—'}
                   </TableCell>
-                  <TableCell className="py-4 text-muted-foreground">{c.email ?? 'â€”'}</TableCell>
+                  <TableCell className="py-4 text-muted-foreground">{c.email ?? '—'}</TableCell>
                   <TableCell className="py-4 text-muted-foreground font-mono text-xs">
                     {c.id}
                   </TableCell>

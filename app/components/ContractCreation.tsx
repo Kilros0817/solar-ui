@@ -479,7 +479,7 @@ export function ContractCreation({ onBack, selectedTemplate }: ContractCreationP
                             </HoverCardTrigger>
                             <HoverCardContent side="right" align="start" className="w-96 max-h-80 overflow-y-auto">
                               <div className="space-y-2">
-                                <h4 className="font-medium text-sm">{section.name} â€“ {section.versionName}</h4>
+                                <h4 className="font-medium text-sm">{section.name} – {section.versionName}</h4>
                                 <div className="space-y-4">
                                   {blocks.length > 0 ? (
                                     blocks.map((block, i) => (

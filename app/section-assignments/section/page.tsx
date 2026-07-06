@@ -32,8 +32,8 @@ const getMemberLabel = (m: DivisionMember) =>
 
 const getAssignedMemberLabel = (member: { firstName?: string; lastName?: string; email?: string } | null | undefined) =>
   member
-    ? [member.firstName, member.lastName].filter(Boolean).join(' ').trim() || member.email || 'â€”'
-    : 'â€”';
+    ? [member.firstName, member.lastName].filter(Boolean).join(' ').trim() || member.email || '—'
+    : '—';
 
 export default function SectionAssignmentsSectionPage() {
   const router = useRouter();

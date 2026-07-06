@@ -34,7 +34,7 @@ const mapDocumentToContract = (doc: any, index: number): Contract => {
     client: clientName,
     category,
     status,
-    createdAt: doc.createdAt ?? '',
+    created_at: doc.created_at ?? '',
     cid: doc.cid ?? undefined,
   };
 };
@@ -119,7 +119,7 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
     fetchDoc();
   }, [foundContract?.cid]);
 
-  // Load section content by section CID (for Section Review tab â€“ postgres sections)
+  // Load section content by section CID (for Section Review tab – postgres sections)
   useEffect(() => {
     const sections = rawDocument?.sections ?? [];
     if (sections.length === 0) {
@@ -199,8 +199,8 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
         content: contentMap?.content ?? '',
         status: sectionStatusToReviewStatus(statusNum),
         statusNum,
-        submittedBy: 'â€”',
-        submittedDate: 'â€”',
+        submittedBy: '—',
+        submittedDate: '—',
         division: divisionLabel,
         divisionLeaderName: divisionLeaderName || undefined,
         comments: rejectReason && rejectReason.trim() ? rejectReason : undefined,
@@ -233,10 +233,10 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
       const newSections =
         sectionIndex >= 0 && approvedSectionData?.sectionContent?.length
           ? currentSections.map((sec, i) =>
-              i === sectionIndex
-                ? { sectionName: approvedSectionData.sectionName, sectionContent: approvedSectionData.sectionContent }
-                : sec
-            )
+            i === sectionIndex
+              ? { sectionName: approvedSectionData.sectionName, sectionContent: approvedSectionData.sectionContent }
+              : sec
+          )
           : currentSections;
       const newDocPayload = {
         contractTitle: docContent.contractTitle,
@@ -363,10 +363,10 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
       const list = await getContractHistories(String(contractId));
       const sorted = Array.isArray(list)
         ? [...list].sort((a, b) => {
-            const da = a.date != null ? Number(a.date) : 0;
-            const db = b.date != null ? Number(b.date) : 0;
-            return da - db;
-          })
+          const da = a.date != null ? Number(a.date) : 0;
+          const db = b.date != null ? Number(b.date) : 0;
+          return da - db;
+        })
         : [];
       setDocHistories(sorted);
     } catch (e) {
@@ -501,9 +501,9 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
     client: docContent?.client ?? foundContract.client,
     status: foundContract.status,
     category: docContent?.category ?? foundContract.category,
-    createdDate: foundContract.createdAt ? formatRelativeDate(foundContract.createdAt) : 'â€”',
+    createdDate: foundContract.created_at ? formatRelativeDate(foundContract.created_at) : '—',
     description: docContent?.description ?? `Comprehensive agreement for ${foundContract.client} regarding ${foundContract.title.toLowerCase()}.`,
-    value: docContent?.price ?? 'â€”',
+    value: docContent?.price ?? '—',
     involvedDivisions: involvedDivisions.length > 0 ? involvedDivisions : (foundContract.category ? [foundContract.category] : []),
   } : null;
 

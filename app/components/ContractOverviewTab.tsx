@@ -234,8 +234,8 @@ export function ContractOverviewTab({
                 createdDate={contract.createdDate}
                 docContent={docContent}
                 showSignatureSection={contract.status === CONTRACT_STATUS.APPROVED || contract.status === CONTRACT_STATUS.ESIGNED}
-                licensorSignature={rawDocument?.legalESign ?? null}
-                licenseeSignature={rawDocument?.clientESign ?? null}
+                licensorSignature={rawDocument?.legal_e_sign ?? null}
+                licenseeSignature={rawDocument?.client_e_sign ?? null}
                 gatewayBaseUrl={gatewayBaseUrl}
                 disableHighlight={
                   userRole === USER_ROLE.CLIENT ||
@@ -244,7 +244,7 @@ export function ContractOverviewTab({
                 licensorSlot={
                   contract.status === CONTRACT_STATUS.APPROVED &&
                     userRole === USER_ROLE.LEGAL_TEAM &&
-                    !rawDocument?.legalESign?.cid &&
+                    !rawDocument?.legal_e_sign?.cid &&
                     onEsignSignatureChange &&
                     onEsignSubmit ? (
                     <div className="space-y-2">
@@ -265,7 +265,7 @@ export function ContractOverviewTab({
                 licenseeSlot={
                   contract.status === CONTRACT_STATUS.APPROVED &&
                     userRole === USER_ROLE.CLIENT &&
-                    !rawDocument?.clientESign?.cid &&
+                    !rawDocument?.client_e_sign?.cid &&
                     onEsignSignatureChange &&
                     onEsignSubmit ? (
                     <div className="space-y-2">
@@ -293,8 +293,8 @@ export function ContractOverviewTab({
                 value={contract.value}
                 createdDate={contract.createdDate}
                 showSignatureSection={contract.status === CONTRACT_STATUS.APPROVED || contract.status === CONTRACT_STATUS.ESIGNED}
-                licensorSignature={rawDocument?.legalESign ?? null}
-                licenseeSignature={rawDocument?.clientESign ?? null}
+                licensorSignature={rawDocument?.legal_e_sign ?? null}
+                licenseeSignature={rawDocument?.client_e_sign ?? null}
                 gatewayBaseUrl={gatewayBaseUrl}
                 disableHighlight={
                   userRole === USER_ROLE.CLIENT ||
@@ -304,7 +304,7 @@ export function ContractOverviewTab({
                 licensorSlot={
                   contract.status === CONTRACT_STATUS.APPROVED &&
                     userRole === USER_ROLE.LEGAL_TEAM &&
-                    !rawDocument?.legalESign?.cid &&
+                    !rawDocument?.legal_e_sign?.cid &&
                     onEsignSignatureChange &&
                     onEsignSubmit ? (
                     <div className="space-y-2">
@@ -325,7 +325,7 @@ export function ContractOverviewTab({
                 licenseeSlot={
                   contract.status === CONTRACT_STATUS.APPROVED &&
                     userRole === USER_ROLE.CLIENT &&
-                    !rawDocument?.clientESign?.cid &&
+                    !rawDocument?.client_e_sign?.cid &&
                     onEsignSignatureChange &&
                     onEsignSubmit ? (
                     <div className="space-y-2">

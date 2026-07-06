@@ -18,8 +18,8 @@ function mapDocToContract(doc: Record<string, unknown>, index: number, sectionCo
   const cat = doc.category;
   const category =
     typeof cat === 'number' ? (DIVISION_LABELS[cat] ?? String(cat)) : (cat ?? '');
-  const rawCreated = doc.createdAt;
-  const createdAt =
+  const rawCreated = doc.created_at;
+  const created_at =
     typeof rawCreated === 'number'
       ? rawCreated
       : typeof rawCreated === 'string'
@@ -34,7 +34,7 @@ function mapDocToContract(doc: Record<string, unknown>, index: number, sectionCo
     client: clientName,
     category: typeof category === 'string' ? category : String(category),
     status,
-    createdAt,
+    created_at
   };
   if (sectionCount != null) c.sectionCount = sectionCount;
   return c;
@@ -90,7 +90,7 @@ export function ContractsProvider({ children }: { children: React.ReactNode }) {
         const list = Array.isArray(docs) ? docs : [];
         setContracts(
           list.map((d: Record<string, unknown>, i: number) =>
-            mapDocToContract(d, i, (d.sections as unknown[])?.length)
+            mapDocToContract(d, i, d.section_count as number)
           )
         );
       }
