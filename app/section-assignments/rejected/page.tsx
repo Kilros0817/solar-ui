@@ -19,7 +19,7 @@ type RejectedClauseLeader = {
   divisionMember?: { id: string; firstName?: string; lastName?: string; email?: string } | null;
 };
 
-type ClauseWithStatus = { id: string; status: number; cid?: string | null; divisionMember?: RejectedClauseLeader['divisionMember'] };
+type ClauseWithStatus = { id: string; status: number; cid?: string | null; division_member?: RejectedClauseLeader['divisionMember'] };
 
 function getMemberLabel(m: RejectedClauseLeader['divisionMember']): string {
   if (!m) return '—';
@@ -48,7 +48,7 @@ export default function SectionAssignmentsRejectedPage() {
             status: 3,
             sectionId,
             section: { id: sectionId, doc: doc ?? { id: '', title: '' } },
-            divisionMember: c.divisionMember ?? null,
+            divisionMember: c.division_member ?? null,
           });
         }
       });

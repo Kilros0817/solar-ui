@@ -154,7 +154,7 @@ export default function SectionAssignmentsClausePage() {
   const clauseIdOnChain = clauseAt?.id != null ? Number(clauseAt.id) : NaN;
   const clauseStatus = typeof (clauseAt as { status?: number })?.status === 'number' ? (clauseAt as { status: number }).status : 0;
   const isClauseRejected = clauseStatus === 3;
-  const clauseRejectReason = (clauseAt as { rejectReason?: string })?.rejectReason ?? '';
+  const clauseRejectReason = (clauseAt as { reject_reason?: string })?.reject_reason ?? '';
   const sectionStatus = typeof (sectionAt as { status?: number })?.status === 'number' ? (sectionAt as { status: number }).status : 0;
   const postgresClauseId = !Number.isNaN(clauseIdOnChain) ? clauseIdOnChain : null;
 

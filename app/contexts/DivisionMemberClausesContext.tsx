@@ -60,7 +60,7 @@ export function DivisionMemberClausesProvider({ children }: { children: React.Re
 
   const getDocFromClauses = useCallback(
     (contractId: string): DocLike | null => {
-      const forContract = clauses.filter((c) => String(c.section?.doc?.id) === String(contractId));
+      const forContract = clauses.filter((c) => String(c.doc?.id) === String(contractId));
       if (forContract.length === 0) return null;
       const bySection = new Map<string, ClauseFromMember[]>();
       forContract.forEach((c) => {
@@ -75,7 +75,7 @@ export function DivisionMemberClausesProvider({ children }: { children: React.Re
         const section = first?.section;
         return { ...section, clauses: sectionClauses } as SectionLike;
       });
-      const doc = forContract[0]?.section?.doc;
+      const doc = forContract[0]?.doc;
       if (!doc) return null;
       return { ...doc, sections };
     },

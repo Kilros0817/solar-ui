@@ -23,7 +23,7 @@ type SectionClause = {
   id: string;
   status: number;
   cid?: string | null;
-  divisionMember?: ApprovedClauseLeader['divisionMember'];
+  division_member?: ApprovedClauseLeader['divisionMember'];
 };
 
 function getMemberLabel(m: ApprovedClauseLeader['divisionMember']): string {
@@ -53,7 +53,7 @@ export default function SectionAssignmentsApprovedPage() {
             status: 2,
             sectionId,
             section: { id: sectionId, doc: doc ?? { id: '', title: '' } },
-            divisionMember: c.divisionMember ?? null,
+            divisionMember: c.division_member ?? null,
           });
         }
       });

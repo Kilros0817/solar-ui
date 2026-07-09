@@ -15,11 +15,12 @@ type ReviewClauseLeader = {
   cid?: string | null;
   status: number;
   sectionId: string;
-  section: { id: string; doc: { id: string; title?: string } };
+  doc: { id: string; title?: string };
+  section: { id: string; };
   divisionMember?: { id: string; firstName?: string; lastName?: string; email?: string } | null;
 };
 
-type ClauseWithStatus = { id: string; status: number; cid?: string | null; divisionMember?: ReviewClauseLeader['divisionMember'] };
+type ClauseWithStatus = { id: string; status: number; cid?: string | null; division_member?: ReviewClauseLeader['divisionMember'] };
 
 function getMemberLabel(m: ReviewClauseLeader['divisionMember']): string {
   if (!m) return '—';
@@ -47,8 +48,9 @@ export default function SectionAssignmentsReviewPage() {
             cid: c.cid ?? null,
             status: 1,
             sectionId,
-            section: { id: sectionId, doc: doc ?? { id: '', title: '' } },
-            divisionMember: c.divisionMember ?? null,
+            doc: doc ?? { id: '', title: '' },
+            section: { id: sectionId,  },
+            divisionMember: c.division_member ?? null,
           });
         }
       });
@@ -75,7 +77,7 @@ export default function SectionAssignmentsReviewPage() {
   }, [userRole, router]);
 
   const handleViewClause = (item: ReviewClauseLeader) => {
-    const contractId = item.section?.doc?.id;
+    const contractId = item.doc?.id;
     const sectionId = item.section?.id;
     const clauseId = item.id;
     if (!contractId || !sectionId || !clauseId) return;
@@ -137,8 +139,8 @@ export default function SectionAssignmentsReviewPage() {
                   <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     Document
                   </p>
-                  <p className="font-medium text-sm truncate" title={item.section?.doc?.title ?? 'Untitled'}>
-                    {item.section?.doc?.title ?? 'Untitled'}
+                  <p className="font-medium text-sm truncate" title={item.doc?.title ?? 'Untitled'}>
+                    {item.doc?.title ?? 'Untitled'}
                   </p>
                 </div>
                 <div className="space-y-1">

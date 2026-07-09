@@ -536,7 +536,7 @@ export default function SectionAssignmentsSectionPage() {
             <div className="space-y-4">
               {clauses.map((clause, i) => {
                 const clauseData = sectionClausesFromPostgres[i];
-                const assignedMember = clauseData?.divisionMember;
+                const assignedMember = clauseData?.division_member;
                 const assignedLabel = getAssignedMemberLabel(assignedMember);
                 const clauseStatus = typeof clauseData?.status === 'number' ? clauseData.status : undefined;
                 const clauseIdOnChain = clauseData?.id != null ? Number(clauseData.id) : NaN;

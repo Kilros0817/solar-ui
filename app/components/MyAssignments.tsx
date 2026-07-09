@@ -60,17 +60,16 @@ export function MyAssignments() {
 
         const clauses = await getClausesByDivisionMember(address);
         const list = Array.isArray(clauses) ? clauses : [];
-        type DocFromClause = { id: string; title?: string; client?: { firstName?: string; lastName?: string }; category?: number; createdAt?: number | string; status?: number };
         const byDocId = new Map<string, { title: string; client: string; category?: string; assignedClauseCount: number; createdAt?: number; status?: number }>();
-        list.forEach((c: { section?: { doc?: DocFromClause } }) => {
-          const doc = c.section?.doc;
+        list.forEach((c) => {
+          const doc = c.doc;
           if (!doc?.id) return;
           const existing = byDocId.get(doc.id);
           const client = doc.client;
           const clientName = client
             ? [client.firstName, client.lastName].filter(Boolean).join(' ').trim() || '—'
             : '—';
-          const createdAt = typeof doc.createdAt === 'number' ? doc.createdAt : typeof doc.createdAt === 'string' ? (Number(doc.createdAt) || undefined) : undefined;
+          const createdAt = typeof doc.created_at === 'number' ? doc.created_at : typeof doc.created_at === 'string' ? (Number(doc.created_at) || undefined) : undefined;
           const status = typeof doc.status === 'number' ? doc.status : undefined;
           const category = doc.category != null ? (DIVISION_LABELS[doc.category] ?? String(doc.category)) : undefined;
           if (existing) {

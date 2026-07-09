@@ -13,7 +13,8 @@ import { FileText, Loader2, Pencil } from 'lucide-react';
 type PendingClauseMember = {
   id: string;
   status: number;
-  section: { id: string; doc: { id: string; title?: string } };
+  doc: { id: string; title?: string; }
+  section: { id: string; };
 };
 
 export default function ClauseAssignmentsPendingPage() {
@@ -41,7 +42,7 @@ export default function ClauseAssignmentsPendingPage() {
   }, [userRole, router]);
 
   const handleWorkOnMember = (item: PendingClauseMember) => {
-    const contractId = item.section?.doc?.id;
+    const contractId = item.doc?.id;
     const clauseId = item.id;
     if (!contractId || !clauseId) return;
     setWorkingId(item.id);
@@ -92,7 +93,7 @@ export default function ClauseAssignmentsPendingPage() {
             <Card key={item.id} className="flex flex-col w-full">
               <CardContent className="p-4 flex flex-col gap-3 flex-1">
                 <span className="font-medium text-sm truncate">
-                  {item.section?.doc?.title ?? 'Untitled'}
+                  {item.doc?.title ?? 'Untitled'}
                 </span>
                 <p className="text-xs text-muted-foreground">Section ID: {item.section?.id ?? '—'} / Clause ID: {item.id ?? '—'}</p>
                 <div className="flex justify-end mt-auto pt-2 border-t">

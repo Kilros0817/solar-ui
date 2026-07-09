@@ -16,9 +16,9 @@ type ClauseWithSection = {
   cid?: string;
   status?: number;
   assignedAt?: string;
+  doc?: { id: string; title?: string; client?: { firstName?: string; lastName?: string } };
   section?: {
     id: string;
-    doc?: { id: string; title?: string; client?: { firstName?: string; lastName?: string } };
   };
 };
 
@@ -26,12 +26,17 @@ export default function ClauseAssignmentsClausesPage() {
   const router = useRouter();
   const { userRole } = useUser();
   const { selectedContractId, setSelection } = useAssignment();
-  const { clauses: allClauses, loading, getDocFromClauses, getIndicesForClause } = useDivisionMemberClauses();
+  const { clauses: allClauses, loading, getDocFromClauses, getIndicesForClause }: {
+    clauses: ClauseWithSection[];
+    loading: boolean;
+    getDocFromClauses: (id: string) => any;
+    getIndicesForClause: (contractId: string, clauseId: string) => { sectionIndex: number; clauseIndex: number } | null;
+  } = useDivisionMemberClauses();
 
   const clauses = useMemo(
     () =>
       selectedContractId
-        ? allClauses.filter((c) => String(c.section?.doc?.id) === String(selectedContractId))
+        ? allClauses.filter((c) => String(c.doc?.id) === String(selectedContractId))
         : [],
     [allClauses, selectedContractId]
   );

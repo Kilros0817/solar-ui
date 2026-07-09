@@ -16,15 +16,15 @@ type ClauseWithSection = {
   cid?: string;
   status?: number;
   assignedAt?: string;
+  doc?: {
+    id: string;
+    title?: string;
+    status?: number;
+    client?: { firstName?: string; lastName?: string };
+  };
   section?: {
     id: string;
     status?: number;
-    doc?: {
-      id: string;
-      title?: string;
-      status?: number;
-      client?: { firstName?: string; lastName?: string };
-    };
   };
 };
 
@@ -77,7 +77,7 @@ export default function ClauseAssignmentsRejectedPage() {
   }, [clauses]);
 
   const handleViewClause = (clause: ClauseWithSection) => {
-    const docId = clause.section?.doc?.id;
+    const docId = clause.doc?.id;
     if (!docId || !clause.id) return;
     setNavigatingClauseId(clause.id);
     const idx = getIndicesForClause(docId, clause.id);
@@ -117,9 +117,9 @@ export default function ClauseAssignmentsRejectedPage() {
   }
 
   const contractTitle = (c: ClauseWithSection) =>
-    c.section?.doc?.title ?? 'Untitled';
+    c.doc?.title ?? 'Untitled';
   const clientName = (c: ClauseWithSection) => {
-    const client = c.section?.doc?.client;
+    const client = c.doc?.client;
     return client
       ? [client.firstName, client.lastName].filter(Boolean).join(' ').trim() || '—'
       : '—';
@@ -173,9 +173,9 @@ export default function ClauseAssignmentsRejectedPage() {
                     >
                       {clauseContents[clause.id] != null
                         ? (() => {
-                            const plain = getPlainTextPreview(clauseContents[clause.id]);
-                            return plain.length > 60 ? `${plain.slice(0, 60)}...` : plain;
-                          })()
+                          const plain = getPlainTextPreview(clauseContents[clause.id]);
+                          return plain.length > 60 ? `${plain.slice(0, 60)}...` : plain;
+                        })()
                         : 'Loading...'}
                     </p>
                   </div>
