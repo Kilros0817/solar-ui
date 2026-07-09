@@ -155,7 +155,7 @@ export default function ClauseAssignmentsClausePage() {
   const clauseAt = sectionAtForClause?.clauses?.[clauseIndex];
   const clauseStatus = typeof (clauseAt as { status?: number })?.status === 'number' ? (clauseAt as { status: number }).status : 0;
   const isClauseRejected = clauseStatus === 3;
-  const clauseRejectReason = (clauseAt as { rejectReason?: string })?.rejectReason ?? '';
+  const clauseRejectReason = (clauseAt as { reject_reason?: string })?.reject_reason ?? '';
 
   const openHistoryModal = async () => {
     if (postgresClauseId == null) return;

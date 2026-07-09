@@ -10,17 +10,8 @@ import { useAssignment } from '@/app/contexts/AssignmentContext';
 import { useDivisionMemberClauses } from '@/app/contexts/DivisionMemberClausesContext';
 import { USER_ROLE } from '@/utils/constants';
 import { formatRelativeDate } from '@/utils/utility';
+import { ClauseWithSection } from '@/utils/types';
 
-type ClauseWithSection = {
-  id: string;
-  cid?: string;
-  status?: number;
-  assignedAt?: string;
-  doc?: { id: string; title?: string; client?: { firstName?: string; lastName?: string } };
-  section?: {
-    id: string;
-  };
-};
 
 export default function ClauseAssignmentsClausesPage() {
   const router = useRouter();

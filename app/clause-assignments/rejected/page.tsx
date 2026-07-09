@@ -10,23 +10,8 @@ import { getPlainTextPreview } from '@/app/components/editor/ClauseLexicalEditor
 import { useUser } from '@/app/contexts/UserContext';
 import { useAssignment } from '@/app/contexts/AssignmentContext';
 import { useDivisionMemberClauses } from '@/app/contexts/DivisionMemberClausesContext';
+import { ClauseWithSection } from '@/utils/types';
 
-type ClauseWithSection = {
-  id: string;
-  cid?: string;
-  status?: number;
-  assignedAt?: string;
-  doc?: {
-    id: string;
-    title?: string;
-    status?: number;
-    client?: { firstName?: string; lastName?: string };
-  };
-  section?: {
-    id: string;
-    status?: number;
-  };
-};
 
 export default function ClauseAssignmentsRejectedPage() {
   const router = useRouter();

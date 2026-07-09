@@ -9,20 +9,9 @@ import { useUser } from '@/app/contexts/UserContext';
 import { useAssignment } from '@/app/contexts/AssignmentContext';
 import { useDivisionLeaderSections } from '@/app/contexts/DivisionLeaderSectionsContext';
 import { FileText, Loader2, Eye } from 'lucide-react';
+import { ReviewClauseLeader, ClauseWithStatus, DivisionMember } from '@/utils/types';
 
-type ReviewClauseLeader = {
-  id: string;
-  cid?: string | null;
-  status: number;
-  sectionId: string;
-  doc: { id: string; title?: string };
-  section: { id: string; };
-  divisionMember?: { id: string; firstName?: string; lastName?: string; email?: string } | null;
-};
-
-type ClauseWithStatus = { id: string; status: number; cid?: string | null; division_member?: ReviewClauseLeader['divisionMember'] };
-
-function getMemberLabel(m: ReviewClauseLeader['divisionMember']): string {
+function getMemberLabel(m: DivisionMember | null | undefined): string {
   if (!m) return '—';
   const name = [m.firstName, m.lastName].filter(Boolean).join(' ').trim();
   return name || m.email || m.id || '—';

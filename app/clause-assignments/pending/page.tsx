@@ -5,17 +5,11 @@ import { useRouter } from 'next/navigation';
 import { Card, CardContent } from '@/app/components/ui/card';
 import { Button } from '@/app/components/ui/button';
 import { USER_ROLE } from '@/utils/constants';
+import { PendingClauseMember } from '@/utils/types';
 import { useUser } from '@/app/contexts/UserContext';
 import { useAssignment } from '@/app/contexts/AssignmentContext';
 import { useDivisionMemberClauses } from '@/app/contexts/DivisionMemberClausesContext';
 import { FileText, Loader2, Pencil } from 'lucide-react';
-
-type PendingClauseMember = {
-  id: string;
-  status: number;
-  doc: { id: string; title?: string; }
-  section: { id: string; };
-};
 
 export default function ClauseAssignmentsPendingPage() {
   const router = useRouter();

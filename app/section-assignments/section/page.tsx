@@ -70,6 +70,8 @@ export default function SectionAssignmentsSectionPage() {
   const [showSectionRejectModal, setShowSectionRejectModal] = useState(false);
   const currentSectionNameRef = useRef('');
   const currentClausesRef = useRef<Clause[]>([]);
+  const fetchedClauseCidsRef = useRef<Set<string>>(new Set());
+  const loadedDocSectionRef = useRef<string>('');
 
   const canAccessSection = userRole === USER_ROLE.DIVISION_LEADER || userRole === USER_ROLE.LEGAL_TEAM;
   const isDivisionLeader = userRole === USER_ROLE.DIVISION_LEADER;
@@ -86,14 +88,7 @@ export default function SectionAssignmentsSectionPage() {
       return;
     }
     loadDoc(selectedContractId);
-  }, [selectedContractId, selectedSectionIndex, loadDoc, router]);
-
-  useEffect(() => {
-    setsectionIdFromPostgres(null);
-    setSectionContentLoaded(false);
-    setClauseContentOverrides({});
-    setSectionHistoryViewCid(null);
-  }, [contractId, sectionIndex]);
+  }, [selectedContractId, selectedSectionIndex, router]);
 
   const doc = contractId ? getDoc(contractId) : undefined;
   const loading =
@@ -140,20 +135,22 @@ export default function SectionAssignmentsSectionPage() {
     if (postgresSectionId != null && !Number.isNaN(postgresSectionId)) {
       setsectionIdFromPostgres(postgresSectionId);
     }
+    fetchedClauseCidsRef.current.clear();
   }, [doc, sectionIndex]);
 
   useEffect(() => {
     if (!doc || sectionContentLoaded) return;
+    
     const sectionId = doc.sections?.[sectionIndex]?.id != null ? String(doc.sections[sectionIndex].id) : null;
-    if (sectionId && contractId) loadSectionContent(sectionId, contractId);
-  }, [doc, sectionIndex, contractId, loadSectionContent]);
-
-  useEffect(() => {
-    if (!doc || sectionContentLoaded) return;
-    const sectionId = doc.sections?.[sectionIndex]?.id != null ? String(doc.sections[sectionIndex].id) : null;
+    const docSectionKey = `${contractId}-${sectionIndex}-${sectionId}`;
+    if (loadedDocSectionRef.current === docSectionKey) return;
+    
+    loadedDocSectionRef.current = docSectionKey;
+    
     const sectionAt = doc.sections?.[sectionIndex] as { cid?: string } | undefined;
     const sectionCid = sectionAt?.cid;
     const cached = sectionId ? getSectionContent(sectionId) : undefined;
+    
     if (cached) {
       const name = cached.sectionName;
       const clauseList = cached.sectionContent?.map((c) => ({ clauseId: c.clauseId, clauseContent: c.clauseContent ?? '' })) ?? [];
@@ -165,6 +162,24 @@ export default function SectionAssignmentsSectionPage() {
       setSectionContentLoaded(true);
       return;
     }
+    
+    if (sectionId && contractId) {
+      loadSectionContent(sectionId, contractId).then(() => {
+        const cachedAfterLoad = getSectionContent(sectionId);
+        if (cachedAfterLoad) {
+          const name = cachedAfterLoad.sectionName;
+          const clauseList = cachedAfterLoad.sectionContent?.map((c) => ({ clauseId: c.clauseId, clauseContent: c.clauseContent ?? '' })) ?? [];
+          setSectionName(name);
+          setClauses(clauseList);
+          currentSectionNameRef.current = name;
+          currentClausesRef.current = clauseList;
+          setIsViewingPastVersion(false);
+          setSectionContentLoaded(true);
+        }
+      });
+      return;
+    }
+    
     if (sectionCid) {
       fetch(`${URLs.TBGateWay}${sectionCid}`)
         .then((res) => (res.ok ? res.json() : null))
@@ -235,7 +250,7 @@ export default function SectionAssignmentsSectionPage() {
         setIsViewingPastVersion(false);
       })
       .finally(() => setSectionContentLoaded(true));
-  }, [doc, sectionIndex, sectionContentLoaded, getSectionContent]);
+  }, [doc, sectionIndex, contractId, sectionContentLoaded]);
 
   const openHistoryModal = async () => {
     if (sectionIdFromPostgres == null) return;
@@ -348,8 +363,9 @@ export default function SectionAssignmentsSectionPage() {
     const postgresClauses = (sec?.clauses ?? []) as Array<{ id?: string; cid?: string | null; divisionMember?: unknown }>;
     const toFetch: { index: number; cid: string }[] = [];
     postgresClauses.forEach((c, i) => {
-      if (c?.divisionMember != null && c?.cid) {
+      if (c?.divisionMember != null && c?.cid && !fetchedClauseCidsRef.current.has(c.cid)) {
         toFetch.push({ index: i, cid: c.cid });
+        fetchedClauseCidsRef.current.add(c.cid);
       }
     });
     if (toFetch.length === 0) return;
