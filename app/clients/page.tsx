@@ -8,7 +8,7 @@ import { Input } from '@/app/components/ui/input';
 import { Users, Loader2, Search } from 'lucide-react';
 import { useUser } from '@/app/contexts/UserContext';
 import { USER_ROLE } from '@/utils/constants';
-import { getAllClients } from '@/utils/postgres';
+import { getAllClients } from '@/utils/subgraph';
 import {
   Table,
   TableBody,

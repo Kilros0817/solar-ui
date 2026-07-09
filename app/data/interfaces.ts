@@ -8,7 +8,7 @@ export interface Contract {
   title: string;
   client: string;
   status: number;
-  created_at: number;
+  createdAt: number;
   category: string;
   cid?: string;
 }
@@ -153,12 +153,12 @@ export interface Section {
   name: string;
   content: string;
   status: SectionStatus;
-  /** Raw section status from postgres: 0 = Pending, 1 = Review, 2 = Approved, 3 = Rejected */
+  /** Raw section status from subgraph: 0 = Pending, 1 = Review, 2 = Approved, 3 = Rejected */
   statusNum?: number;
   submittedBy: string;
   submittedDate: string;
   division: string;
-  /** Division leader display name (from postgres) */
+  /** Division leader display name (from subgraph) */
   divisionLeaderName?: string;
   comments?: string;
   /** Per-clause blocks with on-chain id when available (for clause history in Section Review). */

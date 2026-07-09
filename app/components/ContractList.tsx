@@ -137,7 +137,7 @@ export function ContractList({ title, filterStatus, onCreateContract, onViewCont
                     {contract.sectionCount != null ? contract.sectionCount : '—'}
                   </TableCell>
                   <TableCell className="text-muted-foreground py-4">
-                    {contract.created_at ? formatRelativeDate(contract.created_at) : '—'}
+                    {contract.createdAt ? formatRelativeDate(contract.createdAt) : '—'}
                   </TableCell>
                   <TableCell className="py-4" onClick={(e) => e.stopPropagation()}>
                     <div className="flex items-center gap-1">

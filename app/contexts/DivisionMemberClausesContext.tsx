@@ -2,9 +2,9 @@
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { useConnection } from 'wagmi';
-import { getClausesByDivisionMember } from '@/utils/postgres';
+import { getClausesByDivisionMember } from '@/utils/subgraph';
 import { useUser } from './UserContext';
-import { usePostgresRefresh } from './PostgresRefreshContext';
+import { useSubgraphRefresh } from './SubgraphRefreshContext';
 import { USER_ROLE } from '@/utils/constants';
 
 export type ClauseFromMember = Awaited<ReturnType<typeof getClausesByDivisionMember>>[number];
@@ -28,7 +28,7 @@ const DivisionMemberClausesContext = createContext<DivisionMemberClausesContextT
 export function DivisionMemberClausesProvider({ children }: { children: React.ReactNode }) {
   const { userRole } = useUser();
   const { address } = useConnection();
-  const { refreshCounter } = usePostgresRefresh();
+  const { refreshCounter } = useSubgraphRefresh();
   const [clauses, setClauses] = useState<ClauseFromMember[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

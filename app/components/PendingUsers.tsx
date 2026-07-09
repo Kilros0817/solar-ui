@@ -35,9 +35,9 @@ import {
 import { useConnection, useConfig } from 'wagmi';
 import { toast } from 'sonner';
 import { acceptRegisterRequest, declineRegisterRequest } from '@/utils/interact';
-import { usePostgresRefresh } from '@/app/contexts/PostgresRefreshContext';
+import { useSubgraphRefresh } from '@/app/contexts/SubgraphRefreshContext';
 import { USER_ROLE, DIVISION_CATEGORY, ROLE_LABELS, DIVISION_LABELS } from '@/utils/constants';
-import { getPendingUsers, getAllDivisionLeaders } from '@/utils/postgres';
+import { getPendingUsers, getAllDivisionLeaders } from '@/utils/subgraph';
 import { copyAddressToClipboard } from '@/utils/utility';
 import type { PendingUser } from '../data/interfaces';
 
@@ -54,7 +54,7 @@ const formatAddress = (addr: string): string => {
 export function PendingUsers() {
   const { address, isConnected } = useConnection();
   const config = useConfig();
-  const { refresh: refreshpostgres } = usePostgresRefresh();
+  const { refresh: refreshSubgraph } = useSubgraphRefresh();
   const [searchQuery, setSearchQuery] = useState('');
   const [pendingUsers, setPendingUsers] = useState<PendingUser[]>([]);
   const [loading, setLoading] = useState(true);
@@ -192,7 +192,7 @@ export function PendingUsers() {
           return newDivisions;
         });
         setTimeout(async () => {
-          refreshpostgres();
+          refreshSubgraph();
           await fetchPendingUsers(true);
         }, 4000);
       } else {
@@ -234,7 +234,7 @@ export function PendingUsers() {
           return newDivisions;
         });
         setTimeout(async () => {
-          refreshpostgres();
+          refreshSubgraph();
           await fetchPendingUsers(true);
         }, 4000);
       } else {

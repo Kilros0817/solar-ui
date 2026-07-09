@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { useConnection } from 'wagmi';
-import { getAllContracts, getSectionsByDivisionLeader } from '@/utils/postgres';
+import { getAllContracts, getSectionsByDivisionLeader } from '@/utils/subgraph';
 import { useUser } from './UserContext';
 import { USER_ROLE } from '@/utils/constants';
 import { DIVISION_LABELS } from '@/utils/constants';
@@ -18,8 +18,8 @@ function mapDocToContract(doc: Record<string, unknown>, index: number, sectionCo
   const cat = doc.category;
   const category =
     typeof cat === 'number' ? (DIVISION_LABELS[cat] ?? String(cat)) : (cat ?? '');
-  const rawCreated = doc.created_at;
-  const created_at =
+  const rawCreated = doc.createdAt;
+  const createdAt =
     typeof rawCreated === 'number'
       ? rawCreated
       : typeof rawCreated === 'string'
@@ -34,7 +34,7 @@ function mapDocToContract(doc: Record<string, unknown>, index: number, sectionCo
     client: clientName,
     category: typeof category === 'string' ? category : String(category),
     status,
-    created_at
+    createdAt,
   };
   if (sectionCount != null) c.sectionCount = sectionCount;
   return c;
@@ -90,7 +90,7 @@ export function ContractsProvider({ children }: { children: React.ReactNode }) {
         const list = Array.isArray(docs) ? docs : [];
         setContracts(
           list.map((d: Record<string, unknown>, i: number) =>
-            mapDocToContract(d, i, d.section_count as number)
+            mapDocToContract(d, i, (d.sections as unknown[])?.length)
           )
         );
       }

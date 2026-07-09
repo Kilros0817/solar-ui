@@ -10,7 +10,7 @@ import { Loader2, FileText, ClipboardList, Eye, Search, Send } from 'lucide-reac
 import { useAssignment } from '@/app/contexts/AssignmentContext';
 import { useSectionContent } from '@/app/contexts/SectionContentContext';
 import { useDivisionLeaderSections } from '@/app/contexts/DivisionLeaderSectionsContext';
-import { usePostgresRefresh } from '@/app/contexts/PostgresRefreshContext';
+import { useSubgraphRefresh } from '@/app/contexts/SubgraphRefreshContext';
 import { USER_ROLE } from '@/utils/constants';
 import { useUser } from '@/app/contexts/UserContext';
 import { submitSectionToLegal } from '@/utils/interact';
@@ -44,7 +44,7 @@ function getClauseCounts(clauses: SectionFromApi['clauses']) {
     else if (s === 2) approved++;
     else if (s === 3) rejected++;
   });
-  return { assigned, submitted, approved, rejected, fromPostgres: list.length };
+  return { assigned, submitted, approved, rejected, fromSubgraph: list.length };
 }
 
 function getClientLabel(doc: SectionFromApi['doc']) {
@@ -60,7 +60,7 @@ export default function LegalReviewPendingPage() {
   const { setSelection } = useAssignment();
   const { loadSectionContent, getTotalClauses } = useSectionContent();
   const { sections, loading, getSectionIndex, refetch } = useDivisionLeaderSections();
-  const { refresh: refreshpostgres } = usePostgresRefresh();
+  const { refresh: refreshSubgraph } = useSubgraphRefresh();
   const config = useConfig();
   const { address } = useConnection();
   const [searchTerm, setSearchTerm] = useState('');
@@ -93,7 +93,7 @@ export default function LegalReviewPendingPage() {
     if ((sec.status ?? 0) !== 0 && sec.status !== 3) return false;
     const counts = getClauseCounts(sec.clauses);
     const totalFromContent = getTotalClauses(sec.id);
-    const total = totalFromContent ?? counts.fromPostgres;
+    const total = totalFromContent ?? counts.fromSubgraph;
     return total > 0 && counts.approved === total;
   });
 
@@ -135,7 +135,7 @@ export default function LegalReviewPendingPage() {
       if (success) {
         toast.success('Section submitted to Legal Review');
         setTimeout(async () => {
-          refreshpostgres();
+          refreshSubgraph();
           await refetch();
         }, 4000);
       } else {
@@ -198,8 +198,8 @@ export default function LegalReviewPendingPage() {
           {filteredSections.map((section) => {
             const counts = getClauseCounts(section.clauses);
             const totalFromContent = getTotalClauses(section.id);
-            const total = totalFromContent ?? counts.fromPostgres;
-            const unallocated = totalFromContent != null ? Math.max(0, totalFromContent - counts.fromPostgres) : null;
+            const total = totalFromContent ?? counts.fromSubgraph;
+            const unallocated = totalFromContent != null ? Math.max(0, totalFromContent - counts.fromSubgraph) : null;
             const contractTitle = section.doc?.title ?? 'Untitled';
             const client = getClientLabel(section.doc);
             const isViewing = viewingId === section.id;

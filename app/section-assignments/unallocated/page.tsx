@@ -59,7 +59,7 @@ export default function SectionAssignmentsUnallocatedPage() {
     });
   }, [sections, loadSectionContent]);
 
-  // Same definition as main page: unallocated = total from section content (IPFS) minus clauses in postgres
+  // Same definition as main page: unallocated = total from section content (IPFS) minus clauses in subgraph
   const sectionsWithUnallocated: Array<{ section: SectionFromApi; unallocatedCount: number }> = [];
   let sectionContentPending = false;
   sections.forEach((section) => {
@@ -69,8 +69,8 @@ export default function SectionAssignmentsUnallocatedPage() {
       sectionContentPending = true;
       return;
     }
-    const fromPostgres = section.clauses?.length ?? 0;
-    const unallocatedCount = Math.max(0, totalFromContent - fromPostgres);
+    const fromSubgraph = section.clauses?.length ?? 0;
+    const unallocatedCount = Math.max(0, totalFromContent - fromSubgraph);
     if (unallocatedCount > 0) {
       sectionsWithUnallocated.push({ section, unallocatedCount });
     }
@@ -147,7 +147,7 @@ export default function SectionAssignmentsUnallocatedPage() {
             <p className="text-sm text-muted-foreground max-w-sm">
               {searchTerm
                 ? 'No sections with unallocated clause slots match your search.'
-                : 'All section clause slots are allocated (total from content matches postgres).'}
+                : 'All section clause slots are allocated (total from content matches subgraph).'}
             </p>
           </CardContent>
         </Card>
