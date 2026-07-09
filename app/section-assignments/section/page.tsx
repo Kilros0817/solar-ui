@@ -108,7 +108,8 @@ export default function SectionAssignmentsSectionPage() {
   const sectionRejectReason = (sectionAt as { rejectReason?: string } | undefined)?.rejectReason ?? '';
   const leaderDcategory = profile?.dcategory ?? 0;
   const sectionDcategory =
-    sectionAt?.divisionLeader?.dcategory != null ? Number(sectionAt.divisionLeader.dcategory) : null;
+    sectionAt?.division_leader?.dcategory != null ? Number(sectionAt.division_leader.dcategory) : null;
+
   const sectionNotForDivision =
     isDivisionLeader && doc && profile != null && sectionDcategory !== leaderDcategory;
 
