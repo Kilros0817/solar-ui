@@ -20,7 +20,7 @@ import {
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collapsible';
 import { useState, useCallback } from 'react';
 import { USER_ROLE, CONTRACT_STATUS, URLs } from '@/utils/constants';
-import { getSectionHistories, getClauseHistories } from '@/utils/subgraph';
+import { getSectionHistories, getClauseHistories } from '@/utils/postgres';
 import { formatSectionHistoryReadable, formatClauseHistoryReadable } from '@/utils/utility';
 import { toast } from 'sonner';
 import type { DocSection } from '@/app/data/interfaces';

@@ -1,11 +1,11 @@
 export const URLs = {
-	SDMSAPI: "https://api.tomeblock.com/api",
-	ClauseAPI: "https://api.tomeblock.com/clause",
-	SectionAPI: "https://api.tomeblock.com/section",
-	ContractAPI: "https://api.tomeblock.com/contract",
-	UploadAPI: "https://api.tomeblock.com/upload",
-	SubgraphAPI: "https://api.tomeblock.com/subgraph",
-	AnalysisAPI: "https://api.tomeblock.com/analysis",
+	SDMSAPI: "http://localhost:8085/api",
+	ClauseAPI: "http://localhost:8085/clause",
+	SectionAPI: "http://localhost:8085/section",
+	ContractAPI: "http://localhost:8085/contract",
+	UploadAPI: "http://localhost:8085/upload",
+	AnalysisAPI: "http://localhost:8085/analysis",
+	PostgresAPI: "http://localhost:8085/postgres",
 	TBGateWay: "https://jade-wonderful-hawk-382.mypinata.cloud/ipfs/",
 };
 

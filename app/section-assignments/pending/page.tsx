@@ -19,7 +19,7 @@ type PendingClauseLeader = {
   divisionMember?: { id: string; firstName?: string; lastName?: string; email?: string } | null;
 };
 
-type ClauseWithStatus = { id: string; status: number; cid?: string | null; divisionMember?: PendingClauseLeader['divisionMember'] };
+type ClauseWithStatus = { id: string; status: number; cid?: string | null; division_member?: PendingClauseLeader['divisionMember'] };
 
 function getMemberLabel(m: PendingClauseLeader['divisionMember']): string {
   if (!m) return '—';
@@ -59,7 +59,7 @@ export default function SectionAssignmentsPendingPage() {
             status: 0,
             sectionId,
             section: { id: sectionId, doc: doc ?? { id: '', title: '' } },
-            divisionMember: c.divisionMember ?? null,
+            divisionMember: c.division_member ?? null,
           });
         }
       });
@@ -69,7 +69,6 @@ export default function SectionAssignmentsPendingPage() {
 
   useEffect(() => {
     if (userRole === USER_ROLE.DIVISION_LEADER && sections.length > 0 && !divisionLabel) {
-      const firstDoc = sections[0]?.doc as { id?: string } | undefined;
       const dcat = (sections[0] as { divisionLeader?: { dcategory?: number } })?.divisionLeader?.dcategory;
       if (dcat != null) setDivisionLabel(DIVISION_LABELS[dcat] ?? `Division #${dcat}`);
     }

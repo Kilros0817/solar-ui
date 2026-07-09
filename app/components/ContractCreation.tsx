@@ -25,17 +25,17 @@ import { HoverCard, HoverCardContent, HoverCardTrigger } from './ui/hover-card';
 import { ClauseLexicalEditor } from './editor/ClauseLexicalEditor';
 import { useConnection, useConfig } from 'wagmi';
 import { DIVISION_LABELS, URLs } from '@/utils/constants';
-import { getAllDivisionLeaders, getAllClients } from '@/utils/subgraph';
+import { getAllDivisionLeaders, getAllClients } from '@/utils/postgres';
 import { createContract } from '@/utils/interact';
 import { toast } from 'sonner';
 import { useContracts } from '../contexts/ContractsContext';
-import { useSubgraphRefresh } from '../contexts/SubgraphRefreshContext';
+import { usePostgresRefresh } from '../contexts/PostgresRefreshContext';
 import type { ContractCreationProps } from '../data/interfaces';
 
 export function ContractCreation({ onBack, selectedTemplate }: ContractCreationProps) {
   const { address } = useConnection();
   const { refetch } = useContracts();
-  const { refresh: refreshSubgraph } = useSubgraphRefresh();
+  const { refresh: refreshpostgres } = usePostgresRefresh();
   const config = useConfig();
   const baseCategories = ['Services', 'Legal', 'HR', 'Technology', 'Procurement', 'Business', 'Real Estate', 'General', 'Custom'];
   const templateCategory = selectedTemplate.category || 'Custom';
@@ -313,7 +313,7 @@ export function ContractCreation({ onBack, selectedTemplate }: ContractCreationP
       if (success) {
         toast.success('Contract created successfully');
         setTimeout(async () => {
-          refreshSubgraph();
+          refreshpostgres();
           await refetch();
         }, 4000);
       } else {

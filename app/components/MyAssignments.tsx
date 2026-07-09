@@ -15,7 +15,7 @@ import {
   TableRow,
 } from './ui/table';
 import { FileText, Loader2, Eye, ClipboardList, AlertCircle } from 'lucide-react';
-import { getCurrentUserProfile, getClausesByDivisionMember } from '@/utils/subgraph';
+import { getCurrentUserProfile, getClausesByDivisionMember } from '@/utils/postgres';
 import { CONTRACT_STATUS_LABELS, DIVISION_LABELS, USER_ROLE } from '@/utils/constants';
 import { formatRelativeDate } from '@/utils/utility';
 import { useUser } from '@/app/contexts/UserContext';
