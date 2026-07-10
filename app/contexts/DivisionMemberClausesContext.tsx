@@ -39,6 +39,7 @@ export function DivisionMemberClausesProvider({ children }: { children: React.Re
     setError(null);
     try {
       const list = await getClausesByDivisionMember(address);
+
       setClauses(Array.isArray(list) ? list : []);
     } catch (e) {
       console.error('Failed to load clauses:', e);

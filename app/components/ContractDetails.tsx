@@ -166,19 +166,19 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
     if (sections.length === 0) return [];
     const byDivision: Record<string, Section[]> = {};
     for (const sec of sections) {
-      const dcat = sec?.divisionLeader?.dcategory;
+      const dcat = sec?.division_leader?.dcategory;
       const divisionLabel = dcat != null && Number(dcat) > 0 ? (DIVISION_LABELS[Number(dcat)] ?? `Division ${dcat}`) : 'Contract';
-      const leader = sec?.divisionLeader as { firstName?: string; lastName?: string } | undefined;
+      const leader = sec?.division_leader as { firstName?: string; lastName?: string } | undefined;
       const divisionLeaderName = leader
         ? [leader.firstName, leader.lastName].filter(Boolean).join(' ').trim() || undefined
         : undefined;
       const contentMap = sectionContentBySectionId[sec.id];
-      const postgresClauses = (sec as { clauses?: Array<{ id?: string; divisionMember?: { id?: string; firstName?: string; lastName?: string; email?: string } }> })?.clauses ?? [];
+      const postgresClauses = (sec as { clauses?: Array<{ id?: string; division_member?: { id?: string; firstName?: string; lastName?: string; email?: string } }> })?.clauses ?? [];
       const sectionContent = contentMap?.sectionContent ?? [];
       const clauseBlocks = sectionContent.map(
         (c: { clauseId: string; clauseContent: string }, i: number) => {
           const clause = postgresClauses[i];
-          const divisionMember = clause?.divisionMember;
+          const divisionMember = clause?.division_member;
           return {
             onChainClauseId: clause?.id != null ? String(clause.id) : undefined,
             clauseContent: c.clauseContent ?? '',
@@ -199,8 +199,6 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
         content: contentMap?.content ?? '',
         status: sectionStatusToReviewStatus(statusNum),
         statusNum,
-        submittedBy: '—',
-        submittedDate: '—',
         division: divisionLabel,
         divisionLeaderName: divisionLeaderName || undefined,
         comments: rejectReason && rejectReason.trim() ? rejectReason : undefined,

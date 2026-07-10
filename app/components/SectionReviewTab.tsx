@@ -39,6 +39,7 @@ export function SectionReviewTab({
   processingSectionId = null,
   contractStatus,
 }: SectionReviewTabProps) {
+
   const [expandedDivisions, setExpandedDivisions] = useState<Record<string, boolean>>({});
   const [rejectSectionId, setRejectSectionId] = useState<string | null>(null);
   const [sectionHistorySectionId, setSectionHistorySectionId] = useState<string | null>(null);
@@ -458,7 +459,7 @@ export function SectionReviewTab({
                                 {processingSectionId === section.id ? 'Processing...' : 'Approve'}
                               </Button>
                             )}
-                            {contractStatus === 0 || contractStatus === 3 && (
+                            {(contractStatus === 0 || contractStatus === 3) && (
                               <Button
                                 size="sm"
                                 variant="destructive"

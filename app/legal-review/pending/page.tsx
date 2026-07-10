@@ -125,6 +125,7 @@ export default function LegalReviewPendingPage() {
       toast.error('Section ID or CID missing');
       return;
     }
+
     if (!config || !address) {
       toast.error('Wallet not connected');
       return;

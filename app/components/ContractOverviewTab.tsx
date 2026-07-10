@@ -94,7 +94,7 @@ export function ContractOverviewTab({
             <Badge className={getStatusColor(contract.status)}>
               {CONTRACT_STATUS_LABELS[contract.status] ?? 'Unknown'}
             </Badge>
-            {contract.status === CONTRACT_STATUS.REJECTED && rawDocument?.rejectReason && (
+            {contract.status === CONTRACT_STATUS.REJECTED && rawDocument?.reject_reason && (
               <RejectionReasonButton onClick={() => setShowRejectReasonModal(true)} />
             )}
           </div>
@@ -353,7 +353,7 @@ export function ContractOverviewTab({
       <RejectionReasonModal
         isOpen={showRejectReasonModal}
         onClose={() => setShowRejectReasonModal(false)}
-        reason={rawDocument?.rejectReason}
+        reason={rawDocument?.reject_reason}
       />
     </div>
   );

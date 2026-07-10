@@ -174,6 +174,7 @@ export const getClausesByDivisionMember = async (divisionMemberId: string) => {
   try {
     const res = await fetchFromAPI("/clauses-full", { divisionMember: divisionMemberId.toLowerCase() });
     return res.data || [];
+
   } catch (e) {
     console.log(e, "============error in get clauses by division member from postgres============");
     return [];

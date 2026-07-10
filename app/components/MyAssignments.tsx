@@ -61,6 +61,7 @@ export function MyAssignments() {
         const clauses = await getClausesByDivisionMember(address);
         const list = Array.isArray(clauses) ? clauses : [];
         const byDocId = new Map<string, { title: string; client: string; category?: string; assignedClauseCount: number; createdAt?: number; status?: number }>();
+
         list.forEach((c) => {
           const doc = c.doc;
           if (!doc?.id) return;
@@ -94,7 +95,7 @@ export function MyAssignments() {
           category: v.category,
           createdAt: v.createdAt,
           status: v.status,
-        }));
+        })).sort((a, b) => (Number(a.id) || 0) - (Number(b.id) || 0));
         setContracts(withSectionsForDivision);
       } catch (e) {
         console.error('Failed to load assignments:', e);

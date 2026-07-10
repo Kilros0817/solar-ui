@@ -155,8 +155,6 @@ export interface Section {
   status: SectionStatus;
   /** Raw section status from postgres: 0 = Pending, 1 = Review, 2 = Approved, 3 = Rejected */
   statusNum?: number;
-  submittedBy: string;
-  submittedDate: string;
   division: string;
   /** Division leader display name (from postgres) */
   divisionLeaderName?: string;

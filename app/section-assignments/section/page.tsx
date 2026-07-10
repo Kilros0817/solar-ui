@@ -100,7 +100,7 @@ export default function SectionAssignmentsSectionPage() {
   const docNotFound = contractId && doc === null;
   const rawSections = doc?.sections ?? [];
   const sectionAt = rawSections[sectionIndex];
-  const sectionRejectReason = (sectionAt as { rejectReason?: string } | undefined)?.rejectReason ?? '';
+  const sectionRejectReason = (sectionAt as { reject_reason?: string } | undefined)?.reject_reason ?? '';
   const leaderDcategory = profile?.dcategory ?? 0;
   const sectionDcategory =
     sectionAt?.division_leader?.dcategory != null ? Number(sectionAt.division_leader.dcategory) : null;
@@ -360,10 +360,10 @@ export default function SectionAssignmentsSectionPage() {
     if (!sectionContentLoaded || !doc || sectionIndex < 0) return;
     const rawSections = doc.sections ?? [];
     const sec = rawSections[sectionIndex];
-    const postgresClauses = (sec?.clauses ?? []) as Array<{ id?: string; cid?: string | null; divisionMember?: unknown }>;
+    const postgresClauses = (sec?.clauses ?? []) as Array<{ id?: string; cid?: string | null; division_member?: unknown }>;
     const toFetch: { index: number; cid: string }[] = [];
     postgresClauses.forEach((c, i) => {
-      if (c?.divisionMember != null && c?.cid && !fetchedClauseCidsRef.current.has(c.cid)) {
+      if (c?.division_member != null && c?.cid && !fetchedClauseCidsRef.current.has(c.cid)) {
         toFetch.push({ index: i, cid: c.cid });
         fetchedClauseCidsRef.current.add(c.cid);
       }
@@ -677,7 +677,7 @@ export default function SectionAssignmentsSectionPage() {
         if (!isDivisionLeader) return null;
         const allClausesAssigned =
           clauses.length > 0 &&
-          clauses.every((_, i) => sectionClausesFromPostgres[i]?.divisionMember != null);
+          clauses.every((_, i) => sectionClausesFromPostgres[i]?.division_member != null);
         const showAssignButton = !allClausesAssigned;
         if (!showAssignButton) return null;
         return (

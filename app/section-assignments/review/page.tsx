@@ -69,6 +69,7 @@ export default function SectionAssignmentsReviewPage() {
     const contractId = item.doc?.id;
     const sectionId = item.section?.id;
     const clauseId = item.id;
+
     if (!contractId || !sectionId || !clauseId) return;
     setWorkingId(item.id);
     const doc = getDocFromSections(contractId);
