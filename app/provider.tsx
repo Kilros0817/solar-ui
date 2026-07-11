@@ -14,6 +14,7 @@ import { ClientContractsProvider } from './contexts/ClientContractsContext'
 import { ContractDocProvider } from './contexts/ContractDocContext'
 import { AssignmentProvider } from './contexts/AssignmentContext'
 import { SectionContentProvider } from './contexts/SectionContentContext'
+import { WebSocketProvider } from './contexts/WebSocketContext'
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import Web3AuthConnectorInstance from "@/utils/Web3AuthConnectorInstance";
@@ -67,25 +68,27 @@ const TBProvider: React.FC<TBProviderProps> = ({ children }: TBProviderProps) =>
           <QueryClientProvider client={queryClient}>
             <div className="flex flex-col">
               <UserProvider>
-                <NewContractProvider>
-                  <ContractsProvider>
-                    <PostgresRefreshProvider>
-                      <ClientContractsProvider>
-                        <DivisionLeaderSectionsProvider>
-                          <DivisionMemberClausesProvider>
-                            <ContractDocProvider>
-                              <SectionContentProvider>
-                                <AssignmentProvider>
-                                  {children}
-                                </AssignmentProvider>
-                              </SectionContentProvider>
-                            </ContractDocProvider>
-                          </DivisionMemberClausesProvider>
-                        </DivisionLeaderSectionsProvider>
-                      </ClientContractsProvider>
-                    </PostgresRefreshProvider>
-                  </ContractsProvider>
-                </NewContractProvider>
+                <WebSocketProvider>
+                  <NewContractProvider>
+                    <ContractsProvider>
+                      <PostgresRefreshProvider>
+                        <ClientContractsProvider>
+                          <DivisionLeaderSectionsProvider>
+                            <DivisionMemberClausesProvider>
+                              <ContractDocProvider>
+                                <SectionContentProvider>
+                                  <AssignmentProvider>
+                                    {children}
+                                  </AssignmentProvider>
+                                </SectionContentProvider>
+                              </ContractDocProvider>
+                            </DivisionMemberClausesProvider>
+                          </DivisionLeaderSectionsProvider>
+                        </ClientContractsProvider>
+                      </PostgresRefreshProvider>
+                    </ContractsProvider>
+                  </NewContractProvider>
+                </WebSocketProvider>
               </UserProvider>
             </div>
           </QueryClientProvider>

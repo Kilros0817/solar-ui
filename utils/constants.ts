@@ -1,4 +1,5 @@
 export const URLs = {
+	SDMS: "http://localhost:8085/",
 	SDMSAPI: "http://localhost:8085/api",
 	ClauseAPI: "http://localhost:8085/clause",
 	SectionAPI: "http://localhost:8085/section",
