@@ -7,13 +7,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../co
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { toast } from 'sonner';
 import { delegate, requestRegister } from '@/utils/interact';
 import { useUser } from '../contexts/UserContext';
 import { getWeb3AuthInstance } from '@/utils/Web3AuthStore';
 import { getUserInfo } from '@/utils/postgres';
 import { checkEIP7702Delegation, copyAddressToClipboard, isValidEmail } from '@/utils/utility';
+import { connectWebSocket, joinUserRoom, onWebSocketEvent, offWebSocketEvent } from '@/utils/websocket';
 
 
 export default function RegistrationPage() {
@@ -24,7 +25,7 @@ export default function RegistrationPage() {
   const hasSignedIn = useRef(false);
 
   const config = useConfig();
-  const { logout } = useUser();
+  const { logout, setUserRole } = useUser();
   const [isChecking, setIsChecking] = useState(false);
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -100,7 +101,7 @@ export default function RegistrationPage() {
     }
   };
 
-  const fetchUserData = async () => {
+  const fetchUserData = useCallback(async () => {
     if (!address) return;
 
     try {
@@ -129,7 +130,7 @@ export default function RegistrationPage() {
       setIsPending(false);
       await fetchWeb3AuthEmail();
     }
-  };
+  }, [address]);
 
   const handleBlur = (field: 'firstName' | 'lastName' | 'email') => {
     const value = field === 'firstName' ? firstName : field === 'lastName' ? lastName : email;
@@ -225,6 +226,42 @@ export default function RegistrationPage() {
       fetchUserData();
     }
   }, [isConnected]);
+
+  // WebSocket setup for registration status updates
+  useEffect(() => {
+    if (!address) return;
+
+    // Connect to WebSocket and join user room
+    const socket = connectWebSocket();
+    joinUserRoom(address);
+
+    // Set up event listener for registration status changes
+    const handleWebSocketEvent = (data: any) => {
+      console.log('Received WebSocket event:', data);
+
+      if (data.type === 'registration_status_change' &&
+        data.data?.address?.toLowerCase() === address.toLowerCase()) {
+
+        if (data.data.status === 'approved') {
+          toast.success('Your registration has been approved! Redirecting to dashboard...');
+          setTimeout(() => {
+            window.location.reload();
+          }, 1000);
+        } else if (data.data.status === 'rejected') {
+          toast.error('Your registration has been rejected. Please contact support.');
+          // Refresh user data to update UI
+          fetchUserData();
+        }
+      }
+    };
+
+    onWebSocketEvent(handleWebSocketEvent);
+
+    // Cleanup on unmount
+    return () => {
+      offWebSocketEvent(handleWebSocketEvent);
+    };
+  }, [address, router, fetchUserData]);
 
   if (!isConnected || !address) {
     return (

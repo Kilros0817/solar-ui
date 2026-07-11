@@ -127,6 +127,14 @@ export function leaveUserRoom(address: string): void {
   }
 }
 
+export function joinAdminRoom(address: string): void {
+  const sock = getSocket();
+  if (sock?.connected) {
+    sock.emit('join:admin', address.toLowerCase());
+    console.log(`Joined admin room for address: ${address}`);
+  }
+}
+
 // Event listener registration
 export function onWebSocketEvent(callback: (data: WebSocketEvent) => void): void {
   const sock = getSocket();
