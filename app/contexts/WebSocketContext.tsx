@@ -1,5 +1,5 @@
 "use client"
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useState, ReactNode, useRef } from 'react';
 import { connectWebSocket, disconnectWebSocket, joinDocRoom, leaveDocRoom, joinSectionRoom, leaveSectionRoom, joinClauseRoom, leaveClauseRoom, joinUserRoom, leaveUserRoom, onWebSocketEvent, offWebSocketEvent, joinAdminRoom, WebSocketEvent } from '@/utils/websocket';
 import { useUser } from './UserContext';
 import { USER_ROLE } from '@/utils/constants';
@@ -34,6 +34,7 @@ interface WebSocketProviderProps {
   refetchContracts?: () => Promise<void>;
   refetchClientContracts?: () => Promise<void>;
   refetchDivisionLeaderSections?: () => Promise<void>;
+  refetchDivisionMemberClauses?: () => Promise<void>;
 }
 
 export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
@@ -42,9 +43,24 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
   refetchContracts,
   refetchClientContracts,
   refetchDivisionLeaderSections,
+  refetchDivisionMemberClauses,
 }) => {
   const [isConnected, setIsConnected] = useState(false);
   const { userRole } = useUser();
+
+  // Use refs to store refetch functions to prevent frequent re-registrations
+  const refetchContractsRef = useRef(refetchContracts);
+  const refetchClientContractsRef = useRef(refetchClientContracts);
+  const refetchDivisionLeaderSectionsRef = useRef(refetchDivisionLeaderSections);
+  const refetchDivisionMemberClausesRef = useRef(refetchDivisionMemberClauses);
+
+  // Update refs when functions change
+  useEffect(() => {
+    refetchContractsRef.current = refetchContracts;
+    refetchClientContractsRef.current = refetchClientContracts;
+    refetchDivisionLeaderSectionsRef.current = refetchDivisionLeaderSections;
+    refetchDivisionMemberClausesRef.current = refetchDivisionMemberClauses;
+  }, [refetchContracts, refetchClientContracts, refetchDivisionLeaderSections, refetchDivisionMemberClauses]);
 
   // Initialize WebSocket connection once
   useEffect(() => {
@@ -78,18 +94,18 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
     }
   }, [userAddress, userRole]);
 
-  // Update event handler when refetch functions change
+  // Register event handler once (only depends on userRole and userAddress)
   useEffect(() => {
     const handleWebSocketEvent = (data: WebSocketEvent) => {
       // Handle contract creation events
       if (data.type === 'DocCreated') {
         // Refetch contracts for admin/legal team
         if (userRole === USER_ROLE.LEGAL_TEAM || userRole === USER_ROLE.ADMIN) {
-          refetchContracts?.();
+          refetchContractsRef.current?.();
         }
         // Refetch client contracts for clients
         if (userRole === USER_ROLE.CLIENT) {
-          refetchClientContracts?.();
+          refetchClientContractsRef.current?.();
         }
       }
 
@@ -97,7 +113,23 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
       if (data.type === 'SectionAssigned' && userRole === USER_ROLE.DIVISION_LEADER) {
         // Refetch if the division leader in the event matches the connected user
         if (data.data?.divisionLeader?.toLowerCase() === userAddress?.toLowerCase()) {
-          refetchDivisionLeaderSections?.();
+          refetchDivisionLeaderSectionsRef.current?.();
+        }
+      }
+
+      // Handle clause assignment events for division members
+      if (data.type === 'ClauseAssigned' && userRole === USER_ROLE.DIVISION_MEMBER) {
+        // Refetch if the division member in the event matches the connected user
+        if (data.data?.member?.toLowerCase() === userAddress?.toLowerCase()) {
+          refetchDivisionMemberClausesRef.current?.();
+        }
+      }
+
+      // Handle clause assignment events for division leaders (when they assign clauses to members)
+      if (data.type === 'ClauseAssigned' && userRole === USER_ROLE.DIVISION_LEADER) {
+        // Refetch if the division leader in the event matches the connected user
+        if (data.data?.divisionLeader?.toLowerCase() === userAddress?.toLowerCase()) {
+          refetchDivisionLeaderSectionsRef.current?.();
         }
       }
     };
@@ -107,7 +139,7 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
     return () => {
       offWebSocketEvent(handleWebSocketEvent);
     };
-  }, [userRole, userAddress, refetchContracts, refetchClientContracts, refetchDivisionLeaderSections]);
+  }, [userRole, userAddress]); // Only re-register when userRole or userAddress changes
 
   const joinDoc = (docId: string) => {
     joinDocRoom(docId);

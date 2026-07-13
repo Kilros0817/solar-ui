@@ -19,6 +19,7 @@ import { useConnection } from 'wagmi';
 import { useContracts } from './contexts/ContractsContext';
 import { useClientContracts } from './contexts/ClientContractsContext';
 import { useDivisionLeaderSections } from './contexts/DivisionLeaderSectionsContext';
+import { useDivisionMemberClauses } from './contexts/DivisionMemberClausesContext';
 import { useUser } from './contexts/UserContext';
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -37,6 +38,7 @@ function WebSocketProviderWrapper({ children }: { children: React.ReactNode }) {
   const { refetch: refetchContracts } = useContracts();
   const { refetch: refetchClientContracts } = useClientContracts();
   const { refetch: refetchDivisionLeaderSections } = useDivisionLeaderSections();
+  const { refetch: refetchDivisionMemberClauses } = useDivisionMemberClauses();
 
   return (
     <WebSocketProvider
@@ -44,6 +46,7 @@ function WebSocketProviderWrapper({ children }: { children: React.ReactNode }) {
       refetchContracts={refetchContracts}
       refetchClientContracts={refetchClientContracts}
       refetchDivisionLeaderSections={refetchDivisionLeaderSections}
+      refetchDivisionMemberClauses={refetchDivisionMemberClauses}
     >
       {children}
     </WebSocketProvider>
