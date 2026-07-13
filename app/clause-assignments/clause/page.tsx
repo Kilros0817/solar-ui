@@ -247,11 +247,6 @@ export default function ClauseAssignmentsClausePage() {
       if (success) {
         toast.success('Clause submitted for review');
         router.push('/clause-assignments/clauses');
-        setTimeout(async () => {
-          refreshpostgres();
-          await refetchDoc(contractId);
-          await refetchContracts();
-        }, 4000);
       } else {
         toast.error('Failed to submit clause');
       }

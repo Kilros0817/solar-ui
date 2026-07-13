@@ -132,6 +132,54 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
           refetchDivisionLeaderSectionsRef.current?.();
         }
       }
+
+      // Handle clause submitted events for division members
+      if (data.type === 'ClauseSubmitted' && userRole === USER_ROLE.DIVISION_MEMBER) {
+        // Refetch if the division member in the event matches the connected user
+        if (data.data?.member?.toLowerCase() === userAddress?.toLowerCase()) {
+          refetchDivisionMemberClausesRef.current?.();
+        }
+      }
+
+      // Handle clause submitted events for division leaders (when members submit clauses)
+      if (data.type === 'ClauseSubmitted' && userRole === USER_ROLE.DIVISION_LEADER) {
+        // Refetch if the division leader in the event matches the connected user
+        if (data.data?.divisionLeader?.toLowerCase() === userAddress?.toLowerCase()) {
+          refetchDivisionLeaderSectionsRef.current?.();
+        }
+      }
+
+      // Handle clause approved events for division members
+      if (data.type === 'LeaderApprovedClause' && userRole === USER_ROLE.DIVISION_MEMBER) {
+        // Refetch if the division member in the event matches the connected user
+        if (data.data?.member?.toLowerCase() === userAddress?.toLowerCase()) {
+          refetchDivisionMemberClausesRef.current?.();
+        }
+      }
+
+      // Handle clause approved events for division leaders
+      if (data.type === 'LeaderApprovedClause' && userRole === USER_ROLE.DIVISION_LEADER) {
+        // Refetch if the division leader in the event matches the connected user
+        if (data.data?.divisionLeader?.toLowerCase() === userAddress?.toLowerCase()) {
+          refetchDivisionLeaderSectionsRef.current?.();
+        }
+      }
+
+      // Handle clause rejected events for division members
+      if (data.type === 'LeaderRejectedClause' && userRole === USER_ROLE.DIVISION_MEMBER) {
+        // Refetch if the division member in the event matches the connected user
+        if (data.data?.member?.toLowerCase() === userAddress?.toLowerCase()) {
+          refetchDivisionMemberClausesRef.current?.();
+        }
+      }
+
+      // Handle clause rejected events for division leaders
+      if (data.type === 'LeaderRejectedClause' && userRole === USER_ROLE.DIVISION_LEADER) {
+        // Refetch if the division leader in the event matches the connected user
+        if (data.data?.divisionLeader?.toLowerCase() === userAddress?.toLowerCase()) {
+          refetchDivisionLeaderSectionsRef.current?.();
+        }
+      }
     };
 
     onWebSocketEvent(handleWebSocketEvent);
