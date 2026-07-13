@@ -1,6 +1,8 @@
 "use client"
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { connectWebSocket, disconnectWebSocket, joinDocRoom, leaveDocRoom, joinSectionRoom, leaveSectionRoom, joinClauseRoom, leaveClauseRoom, joinUserRoom, leaveUserRoom, onWebSocketEvent, offWebSocketEvent, WebSocketEvent } from '@/utils/websocket';
+import { connectWebSocket, disconnectWebSocket, joinDocRoom, leaveDocRoom, joinSectionRoom, leaveSectionRoom, joinClauseRoom, leaveClauseRoom, joinUserRoom, leaveUserRoom, onWebSocketEvent, offWebSocketEvent, joinAdminRoom, WebSocketEvent } from '@/utils/websocket';
+import { useUser } from './UserContext';
+import { USER_ROLE } from '@/utils/constants';
 
 interface WebSocketContextType {
   isConnected: boolean;
@@ -29,36 +31,83 @@ export const useWebSocket = () => {
 interface WebSocketProviderProps {
   children: ReactNode;
   userAddress?: string;
+  refetchContracts?: () => Promise<void>;
+  refetchClientContracts?: () => Promise<void>;
+  refetchDivisionLeaderSections?: () => Promise<void>;
 }
 
-export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({ children, userAddress }) => {
+export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
+  children,
+  userAddress,
+  refetchContracts,
+  refetchClientContracts,
+  refetchDivisionLeaderSections,
+}) => {
   const [isConnected, setIsConnected] = useState(false);
+  const { userRole } = useUser();
 
+  // Initialize WebSocket connection once
   useEffect(() => {
-    // Initialize WebSocket connection
     const socket = connectWebSocket();
-    
+
     socket.on('connect', () => {
+      console.log('WebSocket connected in provider');
       setIsConnected(true);
     });
 
     socket.on('disconnect', () => {
+      console.log('WebSocket disconnected in provider');
       setIsConnected(false);
     });
 
-    // Join user room if address is provided
-    if (userAddress) {
-      joinUserRoom(userAddress);
-    }
-
     // Cleanup on unmount
     return () => {
-      if (userAddress) {
-        leaveUserRoom(userAddress);
-      }
-      disconnectWebSocket();
+      // Don't disconnect here - let the socket stay connected for the app lifetime
     };
-  }, [userAddress]);
+  }, []); // Empty dependency array - run once on mount
+
+  // Handle room joining when user address or role changes
+  useEffect(() => {
+    if (userAddress) {
+      joinUserRoom(userAddress);
+
+      // Join admin room for legal team and admin
+      if (userRole === USER_ROLE.LEGAL_TEAM || userRole === USER_ROLE.ADMIN) {
+        joinAdminRoom(userAddress);
+      }
+    }
+  }, [userAddress, userRole]);
+
+  // Update event handler when refetch functions change
+  useEffect(() => {
+    const handleWebSocketEvent = (data: WebSocketEvent) => {
+      // Handle contract creation events
+      if (data.type === 'DocCreated') {
+        // Refetch contracts for admin/legal team
+        if (userRole === USER_ROLE.LEGAL_TEAM || userRole === USER_ROLE.ADMIN) {
+          refetchContracts?.();
+        }
+        // Refetch client contracts for clients
+        if (userRole === USER_ROLE.CLIENT) {
+          refetchClientContracts?.();
+        }
+      }
+
+      // Handle section assignment events for division leaders
+      if (data.type === 'SectionAssigned' && userRole === USER_ROLE.DIVISION_LEADER) {
+        // Refetch if the division leader in the event matches the connected user
+        if (data.data?.divisionLeader?.toLowerCase() === userAddress?.toLowerCase()) {
+          refetchDivisionLeaderSections?.();
+        }
+      }
+    };
+
+    onWebSocketEvent(handleWebSocketEvent);
+
+    return () => {
+      offWebSocketEvent(handleWebSocketEvent);
+    };
+  }, [userRole, userAddress, refetchContracts, refetchClientContracts, refetchDivisionLeaderSections]);
 
   const joinDoc = (docId: string) => {
     joinDocRoom(docId);

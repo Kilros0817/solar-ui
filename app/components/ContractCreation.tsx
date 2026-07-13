@@ -8,7 +8,7 @@ import { Label } from './ui/label';
 import { Textarea } from './ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Badge } from './ui/badge';
-import { 
+import {
   ArrowLeft,
   Building,
   X,
@@ -20,7 +20,6 @@ import {
   Eye,
   Loader2
 } from 'lucide-react';
-import { ContractTemplate } from '../data/templates';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from './ui/hover-card';
 import { ClauseLexicalEditor } from './editor/ClauseLexicalEditor';
 import { useConnection, useConfig } from 'wagmi';
@@ -28,14 +27,10 @@ import { DIVISION_LABELS, URLs } from '@/utils/constants';
 import { getAllDivisionLeaders, getAllClients } from '@/utils/postgres';
 import { createContract } from '@/utils/interact';
 import { toast } from 'sonner';
-import { useContracts } from '../contexts/ContractsContext';
-import { usePostgresRefresh } from '../contexts/PostgresRefreshContext';
 import type { ContractCreationProps } from '../data/interfaces';
 
 export function ContractCreation({ onBack, selectedTemplate }: ContractCreationProps) {
   const { address } = useConnection();
-  const { refetch } = useContracts();
-  const { refresh: refreshpostgres } = usePostgresRefresh();
   const config = useConfig();
   const baseCategories = ['Services', 'Legal', 'HR', 'Technology', 'Procurement', 'Business', 'Real Estate', 'General', 'Custom'];
   const templateCategory = selectedTemplate.category || 'Custom';
@@ -312,10 +307,7 @@ export function ContractCreation({ onBack, selectedTemplate }: ContractCreationP
 
       if (success) {
         toast.success('Contract created successfully');
-        setTimeout(async () => {
-          refreshpostgres();
-          await refetch();
-        }, 4000);
+        // WebSocket listener in ContractList will handle the refresh automatically
       } else {
         throw new Error('Failed to create contract on-chain');
       }
@@ -582,7 +574,7 @@ export function ContractCreation({ onBack, selectedTemplate }: ContractCreationP
                           .map((sectionName) => {
                             const isOpen = openSectionType === sectionName;
                             const versions = sectionLibrary[sectionName] || [];
-                            
+
                             return (
                               <div key={sectionName} className={`border rounded-lg overflow-hidden transition-all ${isOpen ? 'shadow-md bg-accent/50' : 'bg-card shadow-sm'}`}>
                                 <button

@@ -15,6 +15,11 @@ import { ContractDocProvider } from './contexts/ContractDocContext'
 import { AssignmentProvider } from './contexts/AssignmentContext'
 import { SectionContentProvider } from './contexts/SectionContentContext'
 import { WebSocketProvider } from './contexts/WebSocketContext'
+import { useConnection } from 'wagmi';
+import { useContracts } from './contexts/ContractsContext';
+import { useClientContracts } from './contexts/ClientContractsContext';
+import { useDivisionLeaderSections } from './contexts/DivisionLeaderSectionsContext';
+import { useUser } from './contexts/UserContext';
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import Web3AuthConnectorInstance from "@/utils/Web3AuthConnectorInstance";
@@ -25,6 +30,25 @@ import { BaseRPC1, BaseRPC2 } from "@/utils/constants";
 import type { TBProviderProps } from './data/interfaces';
 
 const queryClient = new QueryClient();
+
+// Wrapper component to provide refetch functions to WebSocketProvider
+function WebSocketProviderWrapper({ children }: { children: React.ReactNode }) {
+  const { address } = useConnection();
+  const { refetch: refetchContracts } = useContracts();
+  const { refetch: refetchClientContracts } = useClientContracts();
+  const { refetch: refetchDivisionLeaderSections } = useDivisionLeaderSections();
+
+  return (
+    <WebSocketProvider
+      userAddress={address}
+      refetchContracts={refetchContracts}
+      refetchClientContracts={refetchClientContracts}
+      refetchDivisionLeaderSections={refetchDivisionLeaderSections}
+    >
+      {children}
+    </WebSocketProvider>
+  );
+}
 
 const TBProvider: React.FC<TBProviderProps> = ({ children }: TBProviderProps) => {
 
@@ -68,27 +92,27 @@ const TBProvider: React.FC<TBProviderProps> = ({ children }: TBProviderProps) =>
           <QueryClientProvider client={queryClient}>
             <div className="flex flex-col">
               <UserProvider>
-                <WebSocketProvider>
-                  <NewContractProvider>
-                    <ContractsProvider>
-                      <PostgresRefreshProvider>
-                        <ClientContractsProvider>
-                          <DivisionLeaderSectionsProvider>
-                            <DivisionMemberClausesProvider>
-                              <ContractDocProvider>
-                                <SectionContentProvider>
-                                  <AssignmentProvider>
+                <NewContractProvider>
+                  <ContractsProvider>
+                    <PostgresRefreshProvider>
+                      <ClientContractsProvider>
+                        <DivisionLeaderSectionsProvider>
+                          <DivisionMemberClausesProvider>
+                            <ContractDocProvider>
+                              <SectionContentProvider>
+                                <AssignmentProvider>
+                                  <WebSocketProviderWrapper>
                                     {children}
-                                  </AssignmentProvider>
-                                </SectionContentProvider>
-                              </ContractDocProvider>
-                            </DivisionMemberClausesProvider>
-                          </DivisionLeaderSectionsProvider>
-                        </ClientContractsProvider>
-                      </PostgresRefreshProvider>
-                    </ContractsProvider>
-                  </NewContractProvider>
-                </WebSocketProvider>
+                                  </WebSocketProviderWrapper>
+                                </AssignmentProvider>
+                              </SectionContentProvider>
+                            </ContractDocProvider>
+                          </DivisionMemberClausesProvider>
+                        </DivisionLeaderSectionsProvider>
+                      </ClientContractsProvider>
+                    </PostgresRefreshProvider>
+                  </ContractsProvider>
+                </NewContractProvider>
               </UserProvider>
             </div>
           </QueryClientProvider>
