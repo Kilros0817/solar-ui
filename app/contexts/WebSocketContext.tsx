@@ -109,8 +109,64 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
         }
       }
 
+      // Handle document submitted to client events for legal team
+      if (data.type === 'DocSubmittedToClient' && (userRole === USER_ROLE.LEGAL_TEAM || userRole === USER_ROLE.ADMIN)) {
+        // Refetch contracts for legal team/admin to see updated document status
+        refetchContractsRef.current?.();
+      }
+
+      // Handle document submitted to client events for clients
+      if (data.type === 'DocSubmittedToClient' && userRole === USER_ROLE.CLIENT) {
+        // Refetch if the client in the event matches the connected user
+        if (data.data?.client?.toLowerCase() === userAddress?.toLowerCase()) {
+          refetchClientContractsRef.current?.();
+        }
+      }
+
       // Handle section assignment events for division leaders
       if (data.type === 'SectionAssigned' && userRole === USER_ROLE.DIVISION_LEADER) {
+        // Refetch if the division leader in the event matches the connected user
+        if (data.data?.divisionLeader?.toLowerCase() === userAddress?.toLowerCase()) {
+          refetchDivisionLeaderSectionsRef.current?.();
+        }
+      }
+
+      // Handle section submitted events for division leaders
+      if (data.type === 'SectionSubmitted' && userRole === USER_ROLE.DIVISION_LEADER) {
+        // Refetch if the division leader in the event matches the connected user
+        if (data.data?.divisionLeader?.toLowerCase() === userAddress?.toLowerCase()) {
+          refetchDivisionLeaderSectionsRef.current?.();
+        }
+      }
+
+      // Handle section submitted events for legal team
+      if (data.type === 'SectionSubmitted' && (userRole === USER_ROLE.LEGAL_TEAM || userRole === USER_ROLE.ADMIN)) {
+        // Refetch contracts for legal team/admin to see updated sections
+        refetchContractsRef.current?.();
+      }
+
+      // Handle section approved events for legal team
+      if (data.type === 'LegalApprovedSection' && (userRole === USER_ROLE.LEGAL_TEAM || userRole === USER_ROLE.ADMIN)) {
+        // Refetch contracts for legal team/admin to see updated sections
+        refetchContractsRef.current?.();
+      }
+
+      // Handle section approved events for division leaders
+      if (data.type === 'LegalApprovedSection' && userRole === USER_ROLE.DIVISION_LEADER) {
+        // Refetch if the division leader in the event matches the connected user
+        if (data.data?.divisionLeader?.toLowerCase() === userAddress?.toLowerCase()) {
+          refetchDivisionLeaderSectionsRef.current?.();
+        }
+      }
+
+      // Handle section rejected events for legal team
+      if (data.type === 'LegalRejectedSection' && (userRole === USER_ROLE.LEGAL_TEAM || userRole === USER_ROLE.ADMIN)) {
+        // Refetch contracts for legal team/admin to see updated sections
+        refetchContractsRef.current?.();
+      }
+
+      // Handle section rejected events for division leaders
+      if (data.type === 'LegalRejectedSection' && userRole === USER_ROLE.DIVISION_LEADER) {
         // Refetch if the division leader in the event matches the connected user
         if (data.data?.divisionLeader?.toLowerCase() === userAddress?.toLowerCase()) {
           refetchDivisionLeaderSectionsRef.current?.();
