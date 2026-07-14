@@ -97,6 +97,8 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
   // Register event handler once (only depends on userRole and userAddress)
   useEffect(() => {
     const handleWebSocketEvent = (data: WebSocketEvent) => {
+      console.log('WebSocket event received:', data.type, 'User role:', userRole, 'User address:', userAddress);
+
       // Handle contract creation events
       if (data.type === 'DocCreated') {
         // Refetch contracts for admin/legal team
@@ -131,6 +133,34 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
 
       // Handle client reviewed events for clients
       if (data.type === 'ClientReviewed' && userRole === USER_ROLE.CLIENT) {
+        // Refetch if the client in the event matches the connected user
+        if (data.data?.client?.toLowerCase() === userAddress?.toLowerCase()) {
+          refetchClientContractsRef.current?.();
+        }
+      }
+
+      // Handle client esigned events for legal team
+      if (data.type === 'ClientEsigned' && (userRole === USER_ROLE.LEGAL_TEAM || userRole === USER_ROLE.ADMIN)) {
+        // Refetch contracts for legal team/admin to see updated document status
+        refetchContractsRef.current?.();
+      }
+
+      // Handle client esigned events for clients
+      if (data.type === 'ClientEsigned' && userRole === USER_ROLE.CLIENT) {
+        // Refetch if the client in the event matches the connected user
+        if (data.data?.client?.toLowerCase() === userAddress?.toLowerCase()) {
+          refetchClientContractsRef.current?.();
+        }
+      }
+
+      // Handle legal esigned events for legal team
+      if (data.type === 'LegalEsigned' && (userRole === USER_ROLE.LEGAL_TEAM || userRole === USER_ROLE.ADMIN)) {
+        // Refetch contracts for legal team/admin to see updated document status
+        refetchContractsRef.current?.();
+      }
+
+      // Handle legal esigned events for clients
+      if (data.type === 'LegalEsigned' && userRole === USER_ROLE.CLIENT) {
         // Refetch if the client in the event matches the connected user
         if (data.data?.client?.toLowerCase() === userAddress?.toLowerCase()) {
           refetchClientContractsRef.current?.();
