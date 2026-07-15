@@ -171,10 +171,8 @@ export default function RegistrationPage() {
         const result = await requestRegister(config, address, firstName, lastName, email);
         if (result) {
           toast.success('Registration request sent successfully');
-          // Wait 3 seconds and fetch user data again to update fields
-          setTimeout(async () => {
-            await fetchUserData();
-          }, 3000);
+          // Set pending state immediately - WebSocket will handle status updates
+          setIsPending(true);
         } else {
           toast.error('Failed to request registration. Please try again.');
         }
