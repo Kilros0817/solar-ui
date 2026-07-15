@@ -2,9 +2,9 @@
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { useConnection } from 'wagmi';
-import { getClausesByDivisionMember } from '@/utils/subgraph';
+import { getClausesByDivisionMember } from '@/utils/postgres';
 import { useUser } from './UserContext';
-import { useSubgraphRefresh } from './SubgraphRefreshContext';
+import { usePostgresRefresh } from './PostgresRefreshContext';
 import { USER_ROLE } from '@/utils/constants';
 
 export type ClauseFromMember = Awaited<ReturnType<typeof getClausesByDivisionMember>>[number];
@@ -28,7 +28,7 @@ const DivisionMemberClausesContext = createContext<DivisionMemberClausesContextT
 export function DivisionMemberClausesProvider({ children }: { children: React.ReactNode }) {
   const { userRole } = useUser();
   const { address } = useConnection();
-  const { refreshCounter } = useSubgraphRefresh();
+  const { refreshCounter } = usePostgresRefresh();
   const [clauses, setClauses] = useState<ClauseFromMember[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -39,6 +39,7 @@ export function DivisionMemberClausesProvider({ children }: { children: React.Re
     setError(null);
     try {
       const list = await getClausesByDivisionMember(address);
+
       setClauses(Array.isArray(list) ? list : []);
     } catch (e) {
       console.error('Failed to load clauses:', e);
@@ -60,7 +61,7 @@ export function DivisionMemberClausesProvider({ children }: { children: React.Re
 
   const getDocFromClauses = useCallback(
     (contractId: string): DocLike | null => {
-      const forContract = clauses.filter((c) => String(c.section?.doc?.id) === String(contractId));
+      const forContract = clauses.filter((c) => String(c.doc?.id) === String(contractId));
       if (forContract.length === 0) return null;
       const bySection = new Map<string, ClauseFromMember[]>();
       forContract.forEach((c) => {
@@ -75,7 +76,7 @@ export function DivisionMemberClausesProvider({ children }: { children: React.Re
         const section = first?.section;
         return { ...section, clauses: sectionClauses } as SectionLike;
       });
-      const doc = forContract[0]?.section?.doc;
+      const doc = forContract[0]?.doc;
       if (!doc) return null;
       return { ...doc, sections };
     },

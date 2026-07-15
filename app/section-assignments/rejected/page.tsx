@@ -9,19 +9,9 @@ import { useUser } from '@/app/contexts/UserContext';
 import { useAssignment } from '@/app/contexts/AssignmentContext';
 import { useDivisionLeaderSections } from '@/app/contexts/DivisionLeaderSectionsContext';
 import { FileText, Loader2, Eye } from 'lucide-react';
+import { RejectedClauseLeader, ClauseWithStatus, DivisionMember } from '@/utils/types';
 
-type RejectedClauseLeader = {
-  id: string;
-  cid?: string | null;
-  status: number;
-  sectionId: string;
-  section: { id: string; doc: { id: string; title?: string } };
-  divisionMember?: { id: string; firstName?: string; lastName?: string; email?: string } | null;
-};
-
-type ClauseWithStatus = { id: string; status: number; cid?: string | null; divisionMember?: RejectedClauseLeader['divisionMember'] };
-
-function getMemberLabel(m: RejectedClauseLeader['divisionMember']): string {
+function getMemberLabel(m: DivisionMember | null | undefined): string {
   if (!m) return '—';
   const name = [m.firstName, m.lastName].filter(Boolean).join(' ').trim();
   return name || m.email || m.id || '—';
@@ -48,7 +38,7 @@ export default function SectionAssignmentsRejectedPage() {
             status: 3,
             sectionId,
             section: { id: sectionId, doc: doc ?? { id: '', title: '' } },
-            divisionMember: c.divisionMember ?? null,
+            divisionMember: c.division_member ?? null,
           });
         }
       });
@@ -153,7 +143,7 @@ export default function SectionAssignmentsRejectedPage() {
                   <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     Division member
                   </p>
-                  <p className="text-sm text-muted-foreground">{getMemberLabel(item.divisionMember)}</p>
+                  <p className="text-sm text-muted-foreground">{getMemberLabel(item.divisionMember ?? null)}</p>
                 </div>
                 <div className="flex justify-end gap-2 mt-auto pt-2 border-t">
                   <Button

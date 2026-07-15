@@ -9,19 +9,9 @@ import { useUser } from '@/app/contexts/UserContext';
 import { useAssignment } from '@/app/contexts/AssignmentContext';
 import { useDivisionLeaderSections } from '@/app/contexts/DivisionLeaderSectionsContext';
 import { FileText, Loader2, Eye } from 'lucide-react';
+import { PendingClauseLeader, ClauseWithStatus, DivisionMember } from '@/utils/types';
 
-type PendingClauseLeader = {
-  id: string;
-  cid?: string | null;
-  status: number;
-  sectionId: string;
-  section: { id: string; doc: { id: string; title?: string } };
-  divisionMember?: { id: string; firstName?: string; lastName?: string; email?: string } | null;
-};
-
-type ClauseWithStatus = { id: string; status: number; cid?: string | null; divisionMember?: PendingClauseLeader['divisionMember'] };
-
-function getMemberLabel(m: PendingClauseLeader['divisionMember']): string {
+function getMemberLabel(m: DivisionMember | null | undefined): string {
   if (!m) return '—';
   const name = [m.firstName, m.lastName].filter(Boolean).join(' ').trim();
   return name || m.email || m.id || '—';
@@ -59,7 +49,7 @@ export default function SectionAssignmentsPendingPage() {
             status: 0,
             sectionId,
             section: { id: sectionId, doc: doc ?? { id: '', title: '' } },
-            divisionMember: c.divisionMember ?? null,
+            divisionMember: c.division_member ?? null,
           });
         }
       });
@@ -69,7 +59,6 @@ export default function SectionAssignmentsPendingPage() {
 
   useEffect(() => {
     if (userRole === USER_ROLE.DIVISION_LEADER && sections.length > 0 && !divisionLabel) {
-      const firstDoc = sections[0]?.doc as { id?: string } | undefined;
       const dcat = (sections[0] as { divisionLeader?: { dcategory?: number } })?.divisionLeader?.dcategory;
       if (dcat != null) setDivisionLabel(DIVISION_LABELS[dcat] ?? `Division #${dcat}`);
     }
@@ -154,7 +143,7 @@ export default function SectionAssignmentsPendingPage() {
                   <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     Division member
                   </p>
-                  <p className="text-sm text-muted-foreground">{getMemberLabel(item.divisionMember)}</p>
+                  <p className="text-sm text-muted-foreground">{getMemberLabel(item.divisionMember ?? null)}</p>
                 </div>
                 <div className="flex justify-end mt-auto pt-2 border-t">
                   <Button

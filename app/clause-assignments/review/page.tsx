@@ -9,23 +9,8 @@ import { useUser } from '@/app/contexts/UserContext';
 import { useAssignment } from '@/app/contexts/AssignmentContext';
 import { useDivisionMemberClauses } from '@/app/contexts/DivisionMemberClausesContext';
 import { USER_ROLE } from '@/utils/constants';
+import { ClauseWithSection } from '@/utils/types';
 
-type ClauseWithSection = {
-  id: string;
-  cid?: string;
-  status?: number;
-  assignedAt?: string;
-  section?: {
-    id: string;
-    status?: number;
-    doc?: {
-      id: string;
-      title?: string;
-      status?: number;
-      client?: { firstName?: string; lastName?: string };
-    };
-  };
-};
 
 export default function ClauseAssignmentsReviewPage() {
   const router = useRouter();
@@ -47,7 +32,7 @@ export default function ClauseAssignmentsReviewPage() {
   }, [userRole, router]);
 
   const handleViewClause = (clause: ClauseWithSection) => {
-    const docId = clause.section?.doc?.id;
+    const docId = clause.doc?.id;
     if (!docId || !clause.id) return;
     setNavigatingClauseId(clause.id);
     const idx = getIndicesForClause(docId, clause.id);
@@ -73,7 +58,7 @@ export default function ClauseAssignmentsReviewPage() {
   }
 
   const contractTitle = (c: ClauseWithSection) =>
-    c.section?.doc?.title ?? 'Untitled';
+    c.doc?.title ?? 'Untitled';
 
   return (
     <div className="p-6 space-y-6">

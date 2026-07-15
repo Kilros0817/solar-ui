@@ -22,7 +22,7 @@ export function Dashboard({ onCreateContract }: DashboardProps) {
   const { userRole, userName } = useUser();
   const { contracts } = useContracts();
 
-  // Division-specific stats (from subgraph data)
+  // Division-specific stats (from postgres data)
   const pendingCount = contracts.filter(c => c.status === 0).length;
   const approvedCount = contracts.filter(c => c.status === 2).length;
   const divisionRequestCount = contracts.filter(c => c.status === 1).length;

@@ -7,7 +7,7 @@ import { Button } from './ui/button';
 import { Avatar, AvatarFallback } from './ui/avatar';
 import { Users, Building2, Loader2, RefreshCw, Copy, Check, AlertCircle } from 'lucide-react';
 import { DIVISION_LABELS } from '@/utils/constants';
-import { getCurrentUserProfile, getDivisionMembersByDivisionId } from '@/utils/subgraph';
+import { getCurrentUserProfile, getDivisionMembersByDivisionId } from '@/utils/postgres';
 import { copyAddressToClipboard } from '@/utils/utility';
 import type { Member } from '../data/interfaces';
 

@@ -8,24 +8,9 @@ import { FileText, Loader2, Eye, ClipboardList } from 'lucide-react';
 import { useUser } from '@/app/contexts/UserContext';
 import { useAssignment } from '@/app/contexts/AssignmentContext';
 import { useDivisionMemberClauses } from '@/app/contexts/DivisionMemberClausesContext';
-import { USER_ROLE, URLs } from '@/utils/constants';
+import { USER_ROLE } from '@/utils/constants';
+import { ClauseWithSection } from '@/utils/types';
 
-type ClauseWithSection = {
-  id: string;
-  cid?: string;
-  status?: number;
-  assignedAt?: string;
-  section?: {
-    id: string;
-    status?: number;
-    doc?: {
-      id: string;
-      title?: string;
-      status?: number;
-      client?: { firstName?: string; lastName?: string };
-    };
-  };
-};
 
 export default function ClauseAssignmentsApprovedPage() {
   const router = useRouter();
@@ -47,7 +32,7 @@ export default function ClauseAssignmentsApprovedPage() {
   }, [userRole, router]);
 
   const handleViewClause = (clause: ClauseWithSection) => {
-    const docId = clause.section?.doc?.id;
+    const docId = clause.doc?.id;
     if (!docId || !clause.id) return;
     setNavigatingClauseId(clause.id);
     const idx = getIndicesForClause(docId, clause.id);
@@ -73,9 +58,9 @@ export default function ClauseAssignmentsApprovedPage() {
   }
 
   const contractTitle = (c: ClauseWithSection) =>
-    c.section?.doc?.title ?? 'Untitled';
+    c.doc?.title ?? 'Untitled';
   const clientName = (c: ClauseWithSection) => {
-    const client = c.section?.doc?.client;
+    const client = c.doc?.client;
     return client
       ? [client.firstName, client.lastName].filter(Boolean).join(' ').trim() || '—'
       : '—';

@@ -7,13 +7,20 @@ import { createConfig, WagmiProvider, fallback, http, Config } from "wagmi";
 import { UserProvider } from './contexts/UserContext'
 import { NewContractProvider } from './contexts/NewContractContext'
 import { ContractsProvider } from './contexts/ContractsContext'
-import { SubgraphRefreshProvider } from './contexts/SubgraphRefreshContext'
+import { PostgresRefreshProvider } from './contexts/PostgresRefreshContext'
 import { DivisionLeaderSectionsProvider } from './contexts/DivisionLeaderSectionsContext'
 import { DivisionMemberClausesProvider } from './contexts/DivisionMemberClausesContext'
 import { ClientContractsProvider } from './contexts/ClientContractsContext'
 import { ContractDocProvider } from './contexts/ContractDocContext'
 import { AssignmentProvider } from './contexts/AssignmentContext'
 import { SectionContentProvider } from './contexts/SectionContentContext'
+import { WebSocketProvider } from './contexts/WebSocketContext'
+import { useConnection } from 'wagmi';
+import { useContracts } from './contexts/ContractsContext';
+import { useClientContracts } from './contexts/ClientContractsContext';
+import { useDivisionLeaderSections } from './contexts/DivisionLeaderSectionsContext';
+import { useDivisionMemberClauses } from './contexts/DivisionMemberClausesContext';
+import { useUser } from './contexts/UserContext';
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import Web3AuthConnectorInstance from "@/utils/Web3AuthConnectorInstance";
@@ -24,6 +31,27 @@ import { BaseRPC1, BaseRPC2 } from "@/utils/constants";
 import type { TBProviderProps } from './data/interfaces';
 
 const queryClient = new QueryClient();
+
+// Wrapper component to provide refetch functions to WebSocketProvider
+function WebSocketProviderWrapper({ children }: { children: React.ReactNode }) {
+  const { address } = useConnection();
+  const { refetch: refetchContracts } = useContracts();
+  const { refetch: refetchClientContracts } = useClientContracts();
+  const { refetch: refetchDivisionLeaderSections } = useDivisionLeaderSections();
+  const { refetch: refetchDivisionMemberClauses } = useDivisionMemberClauses();
+
+  return (
+    <WebSocketProvider
+      userAddress={address}
+      refetchContracts={refetchContracts}
+      refetchClientContracts={refetchClientContracts}
+      refetchDivisionLeaderSections={refetchDivisionLeaderSections}
+      refetchDivisionMemberClauses={refetchDivisionMemberClauses}
+    >
+      {children}
+    </WebSocketProvider>
+  );
+}
 
 const TBProvider: React.FC<TBProviderProps> = ({ children }: TBProviderProps) => {
 
@@ -69,21 +97,23 @@ const TBProvider: React.FC<TBProviderProps> = ({ children }: TBProviderProps) =>
               <UserProvider>
                 <NewContractProvider>
                   <ContractsProvider>
-                    <SubgraphRefreshProvider>
+                    <PostgresRefreshProvider>
                       <ClientContractsProvider>
                         <DivisionLeaderSectionsProvider>
                           <DivisionMemberClausesProvider>
                             <ContractDocProvider>
                               <SectionContentProvider>
                                 <AssignmentProvider>
-                                  {children}
+                                  <WebSocketProviderWrapper>
+                                    {children}
+                                  </WebSocketProviderWrapper>
                                 </AssignmentProvider>
                               </SectionContentProvider>
                             </ContractDocProvider>
                           </DivisionMemberClausesProvider>
                         </DivisionLeaderSectionsProvider>
                       </ClientContractsProvider>
-                    </SubgraphRefreshProvider>
+                    </PostgresRefreshProvider>
                   </ContractsProvider>
                 </NewContractProvider>
               </UserProvider>

@@ -142,7 +142,7 @@ export function ClientContractsList({
                     </Badge>
                   </TableCell>
                   <TableCell className="text-muted-foreground py-4">
-                    {contract.createdAt ? formatRelativeDate(contract.createdAt) : '—'}
+                    {contract.created_at ? formatRelativeDate(contract.created_at) : '—'}
                   </TableCell>
                   <TableCell className="py-4" onClick={(e) => e.stopPropagation()}>
                     <Button

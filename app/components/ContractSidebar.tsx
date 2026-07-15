@@ -30,7 +30,7 @@ import { useDivisionMemberClauses } from '@/app/contexts/DivisionMemberClausesCo
 import { useClientContracts, getClientContractCounts } from '@/app/contexts/ClientContractsContext';
 import { useSectionContent } from '@/app/contexts/SectionContentContext';
 import { useAssignment } from '@/app/contexts/AssignmentContext';
-import { useSubgraphRefresh } from '@/app/contexts/SubgraphRefreshContext';
+import { usePostgresRefresh } from '@/app/contexts/PostgresRefreshContext';
 
 export function ContractSidebar({ activeTab }: { activeTab: string }) {
   const router = useRouter();
@@ -42,7 +42,7 @@ export function ContractSidebar({ activeTab }: { activeTab: string }) {
   const memberClauses = useDivisionMemberClauses();
   const clientContracts = useClientContracts();
   const { loadSectionContent, getTotalClauses } = useSectionContent();
-  const { refresh: refreshSubgraph } = useSubgraphRefresh();
+  const { refresh: refreshpostgres } = usePostgresRefresh();
   const [refreshing, setRefreshing] = useState(false);
 
   const divisionMemberCounts =
@@ -115,7 +115,7 @@ export function ContractSidebar({ activeTab }: { activeTab: string }) {
         })()
       : null;
 
-  // Load section content (IPFS) so we can compute unallocated = totalFromContent - subgraph count
+  // Load section content (IPFS) so we can compute unallocated = totalFromContent - postgres count
   useEffect(() => {
     if (userRole !== USER_ROLE.DIVISION_LEADER || !divisionLeaderSections.length) return;
     divisionLeaderSections.forEach((sec) => {
@@ -221,7 +221,7 @@ export function ContractSidebar({ activeTab }: { activeTab: string }) {
         ? fromRouteToTabClient[selectedFromRoute]
         : routeToTabMap[pathname] || activeTab;
 
-  // Define menu items based on user role (contract counts from subgraph)
+  // Define menu items based on user role (contract counts from postgres)
   const counts = getContractCounts(contracts);
   const getMenuItems = () => {
     // Legal Division - Full access (current UI)
@@ -250,8 +250,8 @@ export function ContractSidebar({ activeTab }: { activeTab: string }) {
           ? divisionLeaderSections.reduce<number>((sum, sec) => {
               const totalFromContent = getTotalClauses(sec.id);
               if (totalFromContent === undefined) return sum;
-              const fromSubgraph = (sec.clauses ?? []).length;
-              return sum + Math.max(0, totalFromContent - fromSubgraph);
+              const fromPostgres = (sec.clauses ?? []).length;
+              return sum + Math.max(0, totalFromContent - fromPostgres);
             }, 0)
           : null;
       return [
@@ -364,7 +364,7 @@ export function ContractSidebar({ activeTab }: { activeTab: string }) {
     if (refreshing) return;
     setRefreshing(true);
     try {
-      refreshSubgraph();
+      refreshpostgres();
       await Promise.all([
         refetchContracts(),
         (userRole === USER_ROLE.DIVISION_LEADER || userRole === USER_ROLE.LEGAL_TEAM)

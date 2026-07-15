@@ -5,16 +5,11 @@ import { useRouter } from 'next/navigation';
 import { Card, CardContent } from '@/app/components/ui/card';
 import { Button } from '@/app/components/ui/button';
 import { USER_ROLE } from '@/utils/constants';
+import { PendingClauseMember } from '@/utils/types';
 import { useUser } from '@/app/contexts/UserContext';
 import { useAssignment } from '@/app/contexts/AssignmentContext';
 import { useDivisionMemberClauses } from '@/app/contexts/DivisionMemberClausesContext';
 import { FileText, Loader2, Pencil } from 'lucide-react';
-
-type PendingClauseMember = {
-  id: string;
-  status: number;
-  section: { id: string; doc: { id: string; title?: string } };
-};
 
 export default function ClauseAssignmentsPendingPage() {
   const router = useRouter();
@@ -41,7 +36,7 @@ export default function ClauseAssignmentsPendingPage() {
   }, [userRole, router]);
 
   const handleWorkOnMember = (item: PendingClauseMember) => {
-    const contractId = item.section?.doc?.id;
+    const contractId = item.doc?.id;
     const clauseId = item.id;
     if (!contractId || !clauseId) return;
     setWorkingId(item.id);
@@ -92,7 +87,7 @@ export default function ClauseAssignmentsPendingPage() {
             <Card key={item.id} className="flex flex-col w-full">
               <CardContent className="p-4 flex flex-col gap-3 flex-1">
                 <span className="font-medium text-sm truncate">
-                  {item.section?.doc?.title ?? 'Untitled'}
+                  {item.doc?.title ?? 'Untitled'}
                 </span>
                 <p className="text-xs text-muted-foreground">Section ID: {item.section?.id ?? '—'} / Clause ID: {item.id ?? '—'}</p>
                 <div className="flex justify-end mt-auto pt-2 border-t">

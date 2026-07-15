@@ -20,7 +20,7 @@ import {
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collapsible';
 import { useState, useCallback } from 'react';
 import { USER_ROLE, CONTRACT_STATUS, URLs } from '@/utils/constants';
-import { getSectionHistories, getClauseHistories } from '@/utils/subgraph';
+import { getSectionHistories, getClauseHistories } from '@/utils/postgres';
 import { formatSectionHistoryReadable, formatClauseHistoryReadable } from '@/utils/utility';
 import { toast } from 'sonner';
 import type { DocSection } from '@/app/data/interfaces';
@@ -39,6 +39,7 @@ export function SectionReviewTab({
   processingSectionId = null,
   contractStatus,
 }: SectionReviewTabProps) {
+
   const [expandedDivisions, setExpandedDivisions] = useState<Record<string, boolean>>({});
   const [rejectSectionId, setRejectSectionId] = useState<string | null>(null);
   const [sectionHistorySectionId, setSectionHistorySectionId] = useState<string | null>(null);
@@ -458,7 +459,7 @@ export function SectionReviewTab({
                                 {processingSectionId === section.id ? 'Processing...' : 'Approve'}
                               </Button>
                             )}
-                            {contractStatus === 0 || contractStatus === 3 && (
+                            {(contractStatus === 0 || contractStatus === 3) && (
                               <Button
                                 size="sm"
                                 variant="destructive"

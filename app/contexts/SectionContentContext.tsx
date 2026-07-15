@@ -1,7 +1,7 @@
 'use client'
 
 import React, { createContext, useContext, useCallback, useState, useRef } from 'react';
-import { getContractById } from '@/utils/subgraph';
+import { getContractById } from '@/utils/postgres';
 import { URLs } from '@/utils/constants';
 import { useUser } from './UserContext';
 import { useDivisionLeaderSections } from './DivisionLeaderSectionsContext';
@@ -86,9 +86,9 @@ export function SectionContentProvider({ children }: { children: React.ReactNode
           inFlightRef.current[sectionId] = promise;
           return promise;
         }
-        const fromSubgraph = (section as { clauses?: unknown[] })?.clauses?.length ?? 0;
-        setTotalBySectionId((prev) => ({ ...prev, [sectionId]: fromSubgraph }));
-        return fromSubgraph;
+        const fromPostgres = (section as { clauses?: unknown[] })?.clauses?.length ?? 0;
+        setTotalBySectionId((prev) => ({ ...prev, [sectionId]: fromPostgres }));
+        return fromPostgres;
       }
 
       const promise = (async () => {
@@ -107,9 +107,9 @@ export function SectionContentProvider({ children }: { children: React.ReactNode
         }
         const cid = (doc as { cid?: string }).cid;
         if (!cid) {
-          const fromSubgraph = (doc.sections[sectionIndex] as { clauses?: unknown[] })?.clauses?.length ?? 0;
-          setTotalBySectionId((prev) => ({ ...prev, [sectionId]: fromSubgraph }));
-          return fromSubgraph;
+          const fromPostgres = (doc.sections[sectionIndex] as { clauses?: unknown[] })?.clauses?.length ?? 0;
+          setTotalBySectionId((prev) => ({ ...prev, [sectionId]: fromPostgres }));
+          return fromPostgres;
         }
         const res = await fetch(`${URLs.TBGateWay}${cid}`);
         const data = res.ok ? await res.json() : null;

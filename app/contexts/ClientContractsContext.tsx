@@ -2,9 +2,9 @@
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { useConnection } from 'wagmi';
-import { getContractsByClient } from '@/utils/subgraph';
+import { getContractsByClient } from '@/utils/postgres';
 import { useUser } from './UserContext';
-import { useSubgraphRefresh } from './SubgraphRefreshContext';
+import { usePostgresRefresh } from './PostgresRefreshContext';
 import { USER_ROLE } from '@/utils/constants';
 import type { Contract } from '../data/interfaces';
 
@@ -13,8 +13,8 @@ function mapDocToContract(doc: Record<string, unknown>, index: number): Contract
   const status = typeof doc.status === 'number' ? doc.status : 0;
   const cat = doc.category;
   const category = typeof cat === 'string' ? cat : typeof cat === 'number' ? String(cat) : '';
-  const rawCreated = doc.createdAt;
-  const createdAt =
+  const rawCreated = doc.created_at;
+  const created_at =
     typeof rawCreated === 'number'
       ? rawCreated
       : typeof rawCreated === 'string'
@@ -28,7 +28,7 @@ function mapDocToContract(doc: Record<string, unknown>, index: number): Contract
     client: '',
     category,
     status,
-    createdAt,
+    created_at,
     cid: typeof doc.cid === 'string' ? doc.cid : undefined,
   };
 }
@@ -56,7 +56,7 @@ const ClientContractsContext = createContext<ClientContractsContextType | undefi
 export function ClientContractsProvider({ children }: { children: React.ReactNode }) {
   const { userRole } = useUser();
   const { address } = useConnection();
-  const { refreshCounter } = useSubgraphRefresh();
+  const { refreshCounter } = usePostgresRefresh();
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
