@@ -440,11 +440,7 @@ export default function SectionAssignmentsSectionPage() {
       );
       if (success) {
         toast.success('Assignments submitted successfully');
-        setTimeout(async () => {
-          refreshpostgres();
-          await refetchDoc(contractId);
-          await refetchContracts();
-        }, 4000);
+        // WebSocket will handle refresh automatically via ClauseAssigned events
       } else {
         toast.error('Failed to submit assignments');
       }

@@ -232,11 +232,7 @@ export default function SectionAssignmentsClausePage() {
       if (ok) {
         toast.success('Clause approved');
         router.back();
-        setTimeout(async () => {
-          refreshpostgres();
-          await refetchDoc(contractId);
-          await refetchContracts();
-        }, 4000);
+        // WebSocket will handle refresh automatically via LeaderApprovedClause event
       } else {
         toast.error('Failed to approve clause');
       }
@@ -260,11 +256,7 @@ export default function SectionAssignmentsClausePage() {
         toast.success('Clause rejected');
         setShowRejectClauseDialog(false);
         router.back();
-        setTimeout(async () => {
-          refreshpostgres();
-          await refetchDoc(contractId);
-          await refetchContracts();
-        }, 4000);
+        // WebSocket will handle refresh automatically via LeaderRejectedClause event
       } else {
         toast.error('Failed to reject clause');
       }

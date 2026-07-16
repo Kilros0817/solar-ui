@@ -219,10 +219,7 @@ export function PendingUsers() {
           delete newDivisions[userAddress];
           return newDivisions;
         });
-        setTimeout(async () => {
-          refreshpostgres();
-          await fetchPendingUsers(true);
-        }, 4000);
+        // WebSocket will handle refresh automatically via registration_status_change event
       } else {
         toast.error('Failed to approve user');
       }
@@ -261,10 +258,7 @@ export function PendingUsers() {
           delete newDivisions[userAddress];
           return newDivisions;
         });
-        setTimeout(async () => {
-          refreshpostgres();
-          await fetchPendingUsers(true);
-        }, 4000);
+        // WebSocket will handle refresh automatically via registration_status_change event
       } else {
         toast.error('Failed to decline user');
       }

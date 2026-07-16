@@ -248,10 +248,7 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
       const success = await legalApproveSection(config, address, sectionIdNum, newDocCid);
       if (success) {
         toast.success('Section approved');
-        setTimeout(async () => {
-          refreshpostgres();
-          await fetchContract();
-        }, 4000);
+        // WebSocket will handle refresh automatically via LegalApprovedSection event
       } else {
         toast.error('Failed to approve section');
       }
@@ -277,10 +274,7 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
       const success = await legalRejectSection(config, address, sectionIdNum, reason);
       if (success) {
         toast.success('Section rejected');
-        setTimeout(async () => {
-          refreshpostgres();
-          await fetchContract();
-        }, 4000);
+        // WebSocket will handle refresh automatically via LegalRejectedSection event
       } else {
         toast.error('Failed to reject section');
       }
@@ -338,10 +332,7 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
       const success = await submitDocToClient(config, address, docIdNum, newCid);
       if (success) {
         toast.success('Contract submitted to client');
-        setTimeout(async () => {
-          refreshpostgres();
-          await fetchContract();
-        }, 4000);
+        // WebSocket will handle refresh automatically via DocSubmittedToClient event
       } else {
         toast.error('Failed to submit to client');
       }
@@ -406,10 +397,7 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
       const success = await clientReview(config, address, docIdNum, true, '');
       if (success) {
         toast.success('Contract approved');
-        setTimeout(async () => {
-          refreshpostgres();
-          await fetchContract();
-        }, 4000);
+        // WebSocket will handle refresh automatically via ClientReviewed event
       } else {
         toast.error('Failed to approve contract');
       }
@@ -436,10 +424,7 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
       if (success) {
         toast.success('Contract rejected');
         setShowRejectContractDialog(false);
-        setTimeout(async () => {
-          refreshpostgres();
-          await fetchContract();
-        }, 4000);
+        // WebSocket will handle refresh automatically via ClientReviewed event
       } else {
         toast.error('Failed to reject contract');
       }
@@ -473,10 +458,7 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
       if (success) {
         toast.success(asLicensor ? 'Licensor signature submitted' : 'Licensee signature submitted');
         setEsignSignatureDataUrl(null);
-        setTimeout(async () => {
-          refreshpostgres();
-          await fetchContract();
-        }, 4000);
+        // WebSocket will handle refresh automatically via ClientEsigned or LegalEsigned event
       } else {
         toast.error('Failed to submit signature');
       }

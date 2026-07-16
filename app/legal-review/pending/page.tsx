@@ -135,10 +135,7 @@ export default function LegalReviewPendingPage() {
       const success = await submitSectionToLegal(config, address, sectionIdNum, section.cid.trim());
       if (success) {
         toast.success('Section submitted to Legal Review');
-        setTimeout(async () => {
-          refreshpostgres();
-          await refetch();
-        }, 4000);
+        // WebSocket will handle refresh automatically via SectionSubmitted event
       } else {
         toast.error('Failed to submit section');
       }
