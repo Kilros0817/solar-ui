@@ -18,51 +18,32 @@ interface RealTimeDocumentProps {
 }
 
 export const RealTimeDocument: React.FC<RealTimeDocumentProps> = ({ docId, onDataChange }) => {
-  const { isConnected, joinDoc, leaveDoc, onEvent, offEvent } = useWebSocket();
+  const { isConnected, joinDoc, leaveDoc } = useWebSocket();
   const [lastUpdate, setLastUpdate] = useState<WebSocketEvent | null>(null);
 
   useEffect(() => {
     // Join the document room to receive updates for this specific document
     joinDoc(docId);
 
-    // Set up event listener
-    const handleEvent = (data: WebSocketEvent) => {
-      console.log('Received real-time update:', data);
+    // Set up event listener via custom event
+    const handleEvent = (event: CustomEvent) => {
+      const data = event.detail as WebSocketEvent;
       setLastUpdate(data);
       
       // Call the callback if provided
       if (onDataChange) {
         onDataChange(data);
       }
-
-      // Handle specific event types
-      switch (data.type) {
-        case 'DocCreated':
-          console.log('Document created:', data.data);
-          break;
-        case 'DocSubmittedToClient':
-          console.log('Document submitted to client:', data.data);
-          break;
-        case 'ClientReviewed':
-          console.log('Client reviewed document:', data.data);
-          break;
-        case 'ClientEsigned':
-        case 'LegalEsigned':
-          console.log('Document esigned:', data.data);
-          break;
-        default:
-          console.log('Other event:', data.type, data.data);
-      }
     };
 
-    onEvent(handleEvent);
+    window.addEventListener('docEvent', handleEvent as EventListener);
 
     // Cleanup: leave room and remove event listener
     return () => {
       leaveDoc(docId);
-      offEvent(handleEvent);
+      window.removeEventListener('docEvent', handleEvent as EventListener);
     };
-  }, [docId, joinDoc, leaveDoc, onEvent, offEvent, onDataChange]);
+  }, [docId, joinDoc, leaveDoc, onDataChange]);
 
   return (
     <div className="p-4 bg-gray-800 rounded-lg">
@@ -96,12 +77,13 @@ interface RealTimeSectionProps {
 }
 
 export const RealTimeSection: React.FC<RealTimeSectionProps> = ({ sectionId, onSectionUpdate }) => {
-  const { isConnected, joinSection, leaveSection, onEvent, offEvent } = useWebSocket();
+  const { isConnected, joinSection, leaveSection } = useWebSocket();
 
   useEffect(() => {
     joinSection(sectionId);
 
-    const handleEvent = (data: WebSocketEvent) => {
+    const handleEvent = (event: CustomEvent) => {
+      const data = event.detail as WebSocketEvent;
       if (data.type === 'SectionAssigned' || 
           data.type === 'SectionSubmitted' ||
           data.type === 'LegalApprovedSection' ||
@@ -112,13 +94,13 @@ export const RealTimeSection: React.FC<RealTimeSectionProps> = ({ sectionId, onS
       }
     };
 
-    onEvent(handleEvent);
+    window.addEventListener('sectionEvent', handleEvent as EventListener);
 
     return () => {
       leaveSection(sectionId);
-      offEvent(handleEvent);
+      window.removeEventListener('sectionEvent', handleEvent as EventListener);
     };
-  }, [sectionId, joinSection, leaveSection, onEvent, offEvent, onSectionUpdate]);
+  }, [sectionId, joinSection, leaveSection, onSectionUpdate]);
 
   return (
     <div className="flex items-center gap-2">
@@ -139,12 +121,13 @@ interface RealTimeClauseProps {
 }
 
 export const RealTimeClause: React.FC<RealTimeClauseProps> = ({ clauseId, onClauseUpdate }) => {
-  const { isConnected, joinClause, leaveClause, onEvent, offEvent } = useWebSocket();
+  const { isConnected, joinClause, leaveClause } = useWebSocket();
 
   useEffect(() => {
     joinClause(clauseId);
 
-    const handleEvent = (data: WebSocketEvent) => {
+    const handleEvent = (event: CustomEvent) => {
+      const data = event.detail as WebSocketEvent;
       if (data.type === 'ClauseAssigned' || 
           data.type === 'ClauseSubmitted' ||
           data.type === 'LeaderApprovedClause' ||
@@ -155,13 +138,13 @@ export const RealTimeClause: React.FC<RealTimeClauseProps> = ({ clauseId, onClau
       }
     };
 
-    onEvent(handleEvent);
+    window.addEventListener('clauseEvent', handleEvent as EventListener);
 
     return () => {
       leaveClause(clauseId);
-      offEvent(handleEvent);
+      window.removeEventListener('clauseEvent', handleEvent as EventListener);
     };
-  }, [clauseId, joinClause, leaveClause, onEvent, offEvent, onClauseUpdate]);
+  }, [clauseId, joinClause, leaveClause, onClauseUpdate]);
 
   return (
     <div className="flex items-center gap-2">
@@ -185,13 +168,14 @@ export const RealTimeUserNotifications: React.FC<RealTimeUserNotificationsProps>
   userAddress, 
   onNotification 
 }) => {
-  const { isConnected, joinUser, leaveUser, onEvent, offEvent } = useWebSocket();
+  const { isConnected, joinUser, leaveUser } = useWebSocket();
   const [notifications, setNotifications] = useState<WebSocketEvent[]>([]);
 
   useEffect(() => {
     joinUser(userAddress);
 
-    const handleEvent = (data: WebSocketEvent) => {
+    const handleEvent = (event: CustomEvent) => {
+      const data = event.detail as WebSocketEvent;
       // All user-specific events come through user:{address}:notification channel
       setNotifications(prev => [data, ...prev].slice(0, 10)); // Keep last 10
       
@@ -200,13 +184,13 @@ export const RealTimeUserNotifications: React.FC<RealTimeUserNotificationsProps>
       }
     };
 
-    onEvent(handleEvent);
+    window.addEventListener('userEvent', handleEvent as EventListener);
 
     return () => {
       leaveUser(userAddress);
-      offEvent(handleEvent);
+      window.removeEventListener('userEvent', handleEvent as EventListener);
     };
-  }, [userAddress, joinUser, leaveUser, onEvent, offEvent, onNotification]);
+  }, [userAddress, joinUser, leaveUser, onNotification]);
 
   return (
     <div className="p-4 bg-gray-800 rounded-lg">

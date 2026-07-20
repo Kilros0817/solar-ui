@@ -93,6 +93,36 @@ export function ContractDetails({ contractId = 1, onBack }: ContractDetailsProps
     fetchContract();
   }, [fetchContract]);
 
+  // Listen for LegalApprovedSection events to refresh contract data
+  useEffect(() => {
+    const handleLegalApprovedSection = (event: CustomEvent) => {
+      const data = event.detail;
+      // Refresh contract data when a section is approved
+      fetchContract();
+    };
+
+    window.addEventListener('LegalApprovedSection', handleLegalApprovedSection as EventListener);
+
+    return () => {
+      window.removeEventListener('LegalApprovedSection', handleLegalApprovedSection as EventListener);
+    };
+  }, [fetchContract]);
+
+  // Listen for LegalRejectedSection events to refresh contract data
+  useEffect(() => {
+    const handleLegalRejectedSection = (event: CustomEvent) => {
+      const data = event.detail;
+      // Refresh contract data when a section is rejected
+      fetchContract();
+    };
+
+    window.addEventListener('LegalRejectedSection', handleLegalRejectedSection as EventListener);
+
+    return () => {
+      window.removeEventListener('LegalRejectedSection', handleLegalRejectedSection as EventListener);
+    };
+  }, [fetchContract]);
+
   useEffect(() => {
     if (!foundContract?.cid) {
       setDocContent(null);

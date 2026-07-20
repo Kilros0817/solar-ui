@@ -440,7 +440,10 @@ export default function SectionAssignmentsSectionPage() {
       );
       if (success) {
         toast.success('Assignments submitted successfully');
-        // WebSocket will handle refresh automatically via ClauseAssigned events
+        // Redirect to pending page to see newly assigned clauses
+        setTimeout(() => {
+          router.push('/section-assignments/pending');
+        }, 1000);
       } else {
         toast.error('Failed to submit assignments');
       }

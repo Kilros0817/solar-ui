@@ -40,7 +40,7 @@ import { USER_ROLE, DIVISION_CATEGORY, ROLE_LABELS, DIVISION_LABELS } from '@/ut
 import { getPendingUsers, getAllDivisionLeaders } from '@/utils/postgres';
 import { copyAddressToClipboard } from '@/utils/utility';
 import type { PendingUser } from '../data/interfaces';
-import { connectWebSocket, joinAdminRoom, onWebSocketEvent, offWebSocketEvent } from '@/utils/websocket';
+import { connectWebSocket, joinAdminRoom } from '@/utils/websocket';
 
 const getInitials = (firstName: string, lastName: string) => {
   return `${firstName[0]}${lastName[0]}`.toUpperCase();
@@ -121,22 +121,20 @@ export function PendingUsers() {
     const socket = connectWebSocket();
     joinAdminRoom(address || '');
 
-    // Set up event listener for new registration requests
-    const handleWebSocketEvent = (data: any) => {
-      console.log('PendingUsers received WebSocket event:', data);
-
+    // Set up event listener for new registration requests via custom event
+    const handleRegisterRequest = (event: CustomEvent) => {
+      const data = event.detail;
       if (data.type === 'RegisterRequest') {
         // New registration request - refresh the pending users list
-        console.log('New registration request detected, refreshing pending users');
         fetchPendingUsers(true);
       }
     };
 
-    onWebSocketEvent(handleWebSocketEvent);
+    window.addEventListener('registerRequest', handleRegisterRequest as EventListener);
 
     // Cleanup on unmount
     return () => {
-      offWebSocketEvent(handleWebSocketEvent);
+      window.removeEventListener('registerRequest', handleRegisterRequest as EventListener);
     };
   }, [isConnected, address]);
 

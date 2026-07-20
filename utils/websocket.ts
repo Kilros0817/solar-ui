@@ -47,10 +47,6 @@ export function connectWebSocket(): Socket {
     }
   });
 
-  socket.on('event', (data: WebSocketEvent) => {
-    console.log('Received event:', data);
-  });
-
   return socket;
 }
 

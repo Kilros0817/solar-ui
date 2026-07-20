@@ -1,5 +1,5 @@
 "use client"
-import React, { createContext, useContext, useEffect, useState, ReactNode, useRef } from 'react';
+import React, { createContext, useContext, useEffect, useState, ReactNode, useRef, useCallback } from 'react';
 import { connectWebSocket, disconnectWebSocket, joinDocRoom, leaveDocRoom, joinSectionRoom, leaveSectionRoom, joinClauseRoom, leaveClauseRoom, joinUserRoom, leaveUserRoom, onWebSocketEvent, offWebSocketEvent, joinAdminRoom, WebSocketEvent } from '@/utils/websocket';
 import { useUser } from './UserContext';
 import { USER_ROLE } from '@/utils/constants';
@@ -14,8 +14,6 @@ interface WebSocketContextType {
   leaveClause: (clauseId: string) => void;
   joinUser: (address: string) => void;
   leaveUser: (address: string) => void;
-  onEvent: (callback: (data: WebSocketEvent) => void) => void;
-  offEvent: (callback: (data: WebSocketEvent) => void) => void;
 }
 
 const WebSocketContext = createContext<WebSocketContextType | undefined>(undefined);
@@ -95,10 +93,7 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
   }, [userAddress, userRole]);
 
   // Register event handler once (only depends on userRole and userAddress)
-  useEffect(() => {
-    const handleWebSocketEvent = (data: WebSocketEvent) => {
-      console.log('WebSocket event received:', data.type, 'User role:', userRole, 'User address:', userAddress);
-
+  const handleWebSocketEvent = useCallback((data: WebSocketEvent) => {
       // Handle contract creation events
       if (data.type === 'DocCreated') {
         // Refetch contracts for admin/legal team
@@ -193,6 +188,8 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
       if (data.type === 'LegalApprovedSection' && (userRole === USER_ROLE.LEGAL_TEAM || userRole === USER_ROLE.ADMIN)) {
         // Refetch contracts for legal team/admin to see updated sections
         refetchContractsRef.current?.();
+        // Dispatch custom event for ContractDetails component to refresh
+        window.dispatchEvent(new CustomEvent('LegalApprovedSection', { detail: data }));
       }
 
       // Handle section approved events for division leaders
@@ -200,6 +197,8 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
         // Refetch if the division leader in the event matches the connected user
         if (data.data?.divisionLeader?.toLowerCase() === userAddress?.toLowerCase()) {
           refetchDivisionLeaderSectionsRef.current?.();
+          // Dispatch custom event for ContractDetails component to refresh
+          window.dispatchEvent(new CustomEvent('LegalApprovedSection', { detail: data }));
         }
       }
 
@@ -207,6 +206,8 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
       if (data.type === 'LegalRejectedSection' && (userRole === USER_ROLE.LEGAL_TEAM || userRole === USER_ROLE.ADMIN)) {
         // Refetch contracts for legal team/admin to see updated sections
         refetchContractsRef.current?.();
+        // Dispatch custom event for ContractDetails component to refresh
+        window.dispatchEvent(new CustomEvent('LegalRejectedSection', { detail: data }));
       }
 
       // Handle section rejected events for division leaders
@@ -214,6 +215,8 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
         // Refetch if the division leader in the event matches the connected user
         if (data.data?.divisionLeader?.toLowerCase() === userAddress?.toLowerCase()) {
           refetchDivisionLeaderSectionsRef.current?.();
+          // Dispatch custom event for ContractDetails component to refresh
+          window.dispatchEvent(new CustomEvent('LegalRejectedSection', { detail: data }));
         }
       }
 
@@ -280,14 +283,35 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
           refetchDivisionLeaderSectionsRef.current?.();
         }
       }
-    };
 
+      // Handle registration status change events
+      if (data.type === 'registration_status_change' && data.data?.address?.toLowerCase() === userAddress?.toLowerCase()) {
+        // This event is handled by the register page component
+        // We trigger a custom event that the register page can listen to
+        window.dispatchEvent(new CustomEvent('registrationStatusChange', { detail: data }));
+      }
+
+      // Handle new registration request events (for admin)
+      if (data.type === 'RegisterRequest' && (userRole === USER_ROLE.LEGAL_TEAM || userRole === USER_ROLE.ADMIN)) {
+        // This event is handled by the PendingUsers component
+        // We trigger a custom event that the PendingUsers component can listen to
+        window.dispatchEvent(new CustomEvent('registerRequest', { detail: data }));
+      }
+
+      // Dispatch custom events for RealTime components
+      window.dispatchEvent(new CustomEvent('docEvent', { detail: data }));
+      window.dispatchEvent(new CustomEvent('sectionEvent', { detail: data }));
+      window.dispatchEvent(new CustomEvent('clauseEvent', { detail: data }));
+      window.dispatchEvent(new CustomEvent('userEvent', { detail: data }));
+    }, [userRole, userAddress]);
+
+  useEffect(() => {
     onWebSocketEvent(handleWebSocketEvent);
 
     return () => {
       offWebSocketEvent(handleWebSocketEvent);
     };
-  }, [userRole, userAddress]); // Only re-register when userRole or userAddress changes
+  }, [handleWebSocketEvent]); // Only re-register when handler changes
 
   const joinDoc = (docId: string) => {
     joinDocRoom(docId);
@@ -321,14 +345,6 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
     leaveUserRoom(address);
   };
 
-  const onEvent = (callback: (data: WebSocketEvent) => void) => {
-    onWebSocketEvent(callback);
-  };
-
-  const offEvent = (callback: (data: WebSocketEvent) => void) => {
-    offWebSocketEvent(callback);
-  };
-
   return (
     <WebSocketContext.Provider
       value={{
@@ -341,8 +357,6 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
         leaveClause,
         joinUser,
         leaveUser,
-        onEvent,
-        offEvent,
       }}
     >
       {children}

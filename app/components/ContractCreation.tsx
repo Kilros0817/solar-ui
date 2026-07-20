@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -30,6 +31,7 @@ import { toast } from 'sonner';
 import type { ContractCreationProps } from '../data/interfaces';
 
 export function ContractCreation({ onBack, selectedTemplate }: ContractCreationProps) {
+  const router = useRouter();
   const { address } = useConnection();
   const config = useConfig();
   const baseCategories = ['Services', 'Legal', 'HR', 'Technology', 'Procurement', 'Business', 'Real Estate', 'General', 'Custom'];
@@ -307,7 +309,10 @@ export function ContractCreation({ onBack, selectedTemplate }: ContractCreationP
 
       if (success) {
         toast.success('Contract created successfully');
-        // WebSocket listener in ContractList will handle the refresh automatically
+        // Redirect to pending page to see the newly created contract
+        setTimeout(() => {
+          router.push('/pending');
+        }, 1000);
       } else {
         throw new Error('Failed to create contract on-chain');
       }

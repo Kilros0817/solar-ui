@@ -14,7 +14,7 @@ import { useUser } from '../contexts/UserContext';
 import { getWeb3AuthInstance } from '@/utils/Web3AuthStore';
 import { getUserInfo } from '@/utils/postgres';
 import { checkEIP7702Delegation, copyAddressToClipboard, isValidEmail } from '@/utils/utility';
-import { connectWebSocket, joinUserRoom, onWebSocketEvent, offWebSocketEvent } from '@/utils/websocket';
+import { connectWebSocket, joinUserRoom } from '@/utils/websocket';
 
 
 export default function RegistrationPage() {
@@ -233,13 +233,10 @@ export default function RegistrationPage() {
     const socket = connectWebSocket();
     joinUserRoom(address);
 
-    // Set up event listener for registration status changes
-    const handleWebSocketEvent = (data: any) => {
-      console.log('Received WebSocket event:', data);
-
-      if (data.type === 'registration_status_change' &&
-        data.data?.address?.toLowerCase() === address.toLowerCase()) {
-
+    // Set up event listener for registration status changes via custom event
+    const handleRegistrationStatusChange = (event: CustomEvent) => {
+      const data = event.detail;
+      if (data.data?.address?.toLowerCase() === address.toLowerCase()) {
         if (data.data.status === 'approved') {
           toast.success('Your registration has been approved! Redirecting to dashboard...');
           setTimeout(() => {
@@ -253,11 +250,11 @@ export default function RegistrationPage() {
       }
     };
 
-    onWebSocketEvent(handleWebSocketEvent);
+    window.addEventListener('registrationStatusChange', handleRegistrationStatusChange as EventListener);
 
     // Cleanup on unmount
     return () => {
-      offWebSocketEvent(handleWebSocketEvent);
+      window.removeEventListener('registrationStatusChange', handleRegistrationStatusChange as EventListener);
     };
   }, [address, router, fetchUserData]);
 
